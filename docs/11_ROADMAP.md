@@ -51,10 +51,10 @@ flowchart TD
 * [x] Implementar `CoinLedgerService` con idempotencia diaria, multiplicador $1.5\times$ por sueño reparador, Escudos de Racha y tienda de recompensas.
 * [x] Ensamblar `DashboardScreen` unificando el hábitat de la mascota, anillos de calorías, Bento Grid de estado en vivo y Dock de acciones en 1 toque.
 
-### Fase 5: Ayuno Intermitente, Diario Privado y Analítica Cruzada
-* [ ] Construir `FastingAndAlarmsScreen` con cronómetro metabólico nativo en pantalla de bloqueo (`Chronometer` del sistema) y alarmas exactas.
-* [ ] Construir `JournalAnalyticsProfileScreen`: editor de diario privado con soporte de fotos locales y motor estadístico de correlaciones cruzadas (sueño, estrés, ayuno y peso).
-* [ ] Panel de ajustes del perfil vivo y exportación/importación atómica de `nb_selfcare.sqlite`.
+### Fase 5: Ayuno Intermitente, Diario Privado y Analítica Cruzada (Completada)
+* [x] Construir `FastingScreen` con cronómetro metabólico nativo y fases celulares (anabólica, glucogenólisis, lipólisis, cetosis y autofagia).
+* [x] Construir `JournalAnalyticsProfileScreen`: editor de diario privado con evaluación de ánimo, energía y estrés, y motor estadístico de correlaciones cruzadas (Pearson $r$).
+* [x] Panel de ajustes del perfil vivo y exportación/importación atómica de `nb_selfcare.sqlite` mediante `VACUUM INTO` y verificación de integridad.
 
 ### Fase 6: Motor de IA Local Bajo Demanda (`LocalAiService`)
 * [ ] Implementar el gestor de ciclo de vida del modelo local (`.task` / `.litertlm` / `.gguf`) con carga perezosa (Lazy-Loading) y liberación automática de RAM a los $120\text{ s}$ de inactividad.

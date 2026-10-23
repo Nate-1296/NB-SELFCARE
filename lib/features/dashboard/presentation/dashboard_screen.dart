@@ -14,6 +14,8 @@ import '../../../shared/utils/date_time_extensions.dart';
 import '../../../shared/widgets/nxtpaper_card.dart';
 import '../../../shared/widgets/reactive_macro_ring.dart';
 import '../../body_metrics/presentation/body_and_workout_screen.dart';
+import '../../fasting/presentation/fasting_screen.dart';
+import '../../journal_analytics/presentation/journal_analytics_profile_screen.dart';
 import '../../nutrition_hydration/presentation/nutrition_screen.dart';
 import 'widgets/pet_habitat_widget.dart';
 
@@ -354,6 +356,66 @@ class DashboardScreen extends ConsumerWidget {
                     },
                     loading: () => const NxtpaperCard(child: Center(child: LinearProgressIndicator())),
                     error: (_, _) => const NxtpaperCard(child: Text('Error')),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12.0),
+
+            // Bento Fila 2: Ayuno y Diario / Analítica
+            Row(
+              children: [
+                Expanded(
+                  child: NxtpaperCard(
+                    onTap: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute<void>(
+                          builder: (_) => const FastingScreen(),
+                        ),
+                      );
+                    },
+                    child: const Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Icon(Icons.timer_outlined, color: Colors.purple, size: 24),
+                            Icon(Icons.chevron_right, size: 18, color: Colors.grey),
+                          ],
+                        ),
+                        SizedBox(height: 8.0),
+                        Text('Ayuno y Fases', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                        Text('Cronobiología celular', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12.0),
+                Expanded(
+                  child: NxtpaperCard(
+                    onTap: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute<void>(
+                          builder: (_) => const JournalAnalyticsProfileScreen(),
+                        ),
+                      );
+                    },
+                    child: const Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Icon(Icons.auto_stories_outlined, color: Colors.indigo, size: 24),
+                            Icon(Icons.chevron_right, size: 18, color: Colors.grey),
+                          ],
+                        ),
+                        SizedBox(height: 8.0),
+                        Text('Diario & Analítica', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                        Text('Correlaciones y Perfil', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                      ],
+                    ),
                   ),
                 ),
               ],
