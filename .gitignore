@@ -1,0 +1,118 @@
+# ==============================================================
+# NB Selfcare — .gitignore (Flutter / Dart / Android / Drift)
+# ==============================================================
+
+# ---------- Dart / Flutter ----------
+.dart_tool/
+.packages
+.pub-cache/
+.pub/
+build/
+.flutter-plugins
+.flutter-plugins-dependencies
+.metadata.local
+pubspec_overrides.yaml
+coverage/
+*.lcov
+doc/api/
+
+# Flutter Version Management (se versiona .fvmrc, no el SDK local)
+.fvm/flutter_sdk
+.fvm/versions/
+
+# Código generado (Drift, Riverpod, l10n): NO se versiona; se regenera con
+# `dart run build_runner build -d` y `flutter gen-l10n` (ver AGENTS.md).
+*.g.dart
+*.freezed.dart
+*.mocks.dart
+*.drift.dart
+lib/core/l10n/generated/
+
+# ---------- Android ----------
+android/.gradle/
+android/.kotlin/
+android/captures/
+android/gradlew
+android/gradlew.bat
+android/gradle/wrapper/gradle-wrapper.jar
+android/local.properties
+android/key.properties
+android/app/debug/
+android/app/profile/
+android/app/release/
+android/app/.cxx/
+android/**/GeneratedPluginRegistrant.java
+android/**/GeneratedPluginRegistrant.kt
+*.jks
+*.keystore
+!debug.keystore.example
+*.apk
+*.aab
+*.ap_
+*.idsig
+*.hprof
+
+# ---------- iOS / macOS / Web / Desktop (no soportados; por si flutter create los genera) ----------
+ios/
+macos/
+linux/
+windows/
+web/
+
+# ---------- Datos sensibles del usuario (NUNCA al repo) ----------
+*.sqlite
+*.sqlite-wal
+*.sqlite-shm
+*.sqlite3
+*.db
+*.db-wal
+*.db-shm
+nb_selfcare_backup_*
+# Pesos de modelos LLM locales (1–4 GB, jamás en el repo ni en el APK)
+*.task
+*.litertlm
+*.gguf
+*.tflite
+*.bin
+models/
+
+# Capturas BLE crudas personales (usar solo fixtures anonimizados en test/fixtures)
+captures/
+*.btsnoop
+btsnoop_hci.log
+
+# ---------- Pipeline de semilla USDA ----------
+# Los CSV crudos de FoodData Central pesan cientos de MB; se descargan con el script.
+tool/seed/raw/
+tool/seed/.cache/
+
+# ---------- Secretos ----------
+.env
+.env.*
+!.env.example
+*.pem
+secrets/
+
+# ---------- IDEs / Editores ----------
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+!.vscode/launch.json
+*.swp
+*.swo
+*~
+.history/
+
+# ---------- Sistema operativo ----------
+.DS_Store
+Thumbs.db
+desktop.ini
+.directory
+.Trash-*
+
+# ---------- Logs ----------
+*.log

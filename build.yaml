@@ -1,0 +1,17 @@
+# Configuración de generadores de código (build_runner).
+targets:
+  $default:
+    builders:
+      drift_dev:
+        options:
+          # Fechas como texto ISO-8601: el .sqlite exportado es legible por cualquier
+          # herramienta (DB Browser, Datasette, pandas) sin conocer epoch de Drift.
+          store_date_time_values_as_text: true
+          named_parameters: true
+          case_from_dart_to_sql: snake_case
+          # Soporte de `dart run drift_dev make-migrations` (tests de migración).
+          databases:
+            app_database: lib/core/database/app_database.dart
+          schema_dir: drift_schemas/
+          test_dir: test/drift/
+

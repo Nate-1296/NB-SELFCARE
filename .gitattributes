@@ -1,0 +1,42 @@
+# Normalización de finales de línea
+* text=auto eol=lf
+
+# Scripts de Windows conservan CRLF
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# Código fuente
+*.dart   text diff=dart
+*.kt     text
+*.kts    text
+*.gradle text
+*.xml    text
+*.yaml   text
+*.yml    text
+*.json   text
+*.arb    text
+*.drift  text
+*.sql    text
+*.md     text diff=markdown
+
+# Binarios
+*.png    binary
+*.jpg    binary
+*.jpeg   binary
+*.webp   binary
+*.gif    binary
+*.ico    binary
+*.ttf    binary
+*.otf    binary
+*.riv    binary
+*.jar    binary
+*.keystore binary
+*.jks    binary
+*.sqlite binary
+
+# Código generado: colapsado en los diffs de GitHub
+*.g.dart linguist-generated=true
+lib/core/l10n/generated/** linguist-generated=true
+drift_schemas/** linguist-generated=true
+assets/seed/*.json linguist-generated=true
+

@@ -1,0 +1,51 @@
+# NB Selfcare — Reglas de análisis estático.
+# Objetivo innegociable: `flutter analyze --fatal-infos` con 0 errores, 0 warnings, 0 infos.
+include: package:flutter_lints/flutter.yaml
+
+formatter:
+  page_width: 100
+
+analyzer:
+  language:
+    strict-casts: true
+    strict-inference: true
+    strict-raw-types: true
+  errors:
+    unawaited_futures: warning
+  exclude:
+    - "**/*.g.dart"
+    - "**/*.freezed.dart"
+    - "**/*.mocks.dart"
+    - "lib/core/l10n/generated/**"
+    - "build/**"
+    - "tool/seed/raw/**"
+
+linter:
+  rules:
+    # Robustez
+    - always_declare_return_types
+    - avoid_dynamic_calls
+    - avoid_print
+    - avoid_slow_async_io
+    - avoid_type_to_string
+    - cancel_subscriptions
+    - close_sinks
+    - discarded_futures
+    - only_throw_errors
+    - test_types_in_equals
+    - throw_in_finally
+    - unawaited_futures
+    - unnecessary_await_in_return
+    - use_build_context_synchronously
+    # Estilo / legibilidad
+    - directives_ordering
+    - prefer_const_constructors
+    - prefer_const_declarations
+    - prefer_final_in_for_each
+    - prefer_final_locals
+    - prefer_single_quotes
+    - sort_child_properties_last
+    - unnecessary_lambdas
+    - unnecessary_parenthesis
+    - use_named_constants
+    - use_super_parameters

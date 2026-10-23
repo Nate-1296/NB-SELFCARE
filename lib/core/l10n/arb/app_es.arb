@@ -1,0 +1,8 @@
+{
+  "@@locale": "es",
+  "appTitle": "NB Selfcare",
+  "@appTitle": {
+    "description": "Nombre comercial de la aplicación."
+  }
+}
+
