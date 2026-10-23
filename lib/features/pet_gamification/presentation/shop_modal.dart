@@ -5,7 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/database/app_database.dart';
 import '../../../core/database/daos/pet_dao.dart';
 import '../../../shared/utils/date_time_extensions.dart';
-import '../../../shared/widgets/nxtpaper_card.dart';
+import '../../../shared/widgets/health_card.dart';
 
 /// Modal de la Tienda de Recompensas y Personalización de Nibi.
 class ShopModal extends ConsumerWidget {
@@ -333,7 +333,9 @@ class _ShopItemTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final bool canAfford = currentCoins >= cost;
 
-    return NxtpaperCard(
+    return HealthCard(
+      margin: EdgeInsets.zero,
+      padding: const EdgeInsets.all(12.0),
       child: Row(
         children: [
           Icon(icon, color: iconColor, size: 32),
@@ -391,7 +393,9 @@ class _AccessoryTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return NxtpaperCard(
+    return HealthCard(
+      margin: EdgeInsets.zero,
+      padding: const EdgeInsets.all(12.0),
       child: Row(
         children: [
           Icon(

@@ -12,7 +12,7 @@ import 'package:nb_selfcare/core/database/daos/user_profile_dao.dart';
 import 'package:nb_selfcare/core/services/backup_service.dart';
 import 'package:nb_selfcare/core/services/cross_analytics_engine.dart';
 import 'package:nb_selfcare/features/fasting/presentation/fasting_screen.dart';
-import 'package:nb_selfcare/features/journal_analytics/presentation/journal_analytics_profile_screen.dart';
+import 'package:nb_selfcare/features/profile_goals/presentation/perfil_yo_screen.dart';
 import 'package:nb_selfcare/shared/theme/sc_theme.dart';
 import 'package:nb_selfcare/shared/utils/date_time_extensions.dart';
 
@@ -191,7 +191,11 @@ void main() {
       expect(pet?.coinsBalance, equals(110));
     });
 
-    testWidgets('JournalAnalyticsProfileScreen renderiza pestañas y perfil vivo', (tester) async {
+    testWidgets('PerfilYoScreen renderiza datos del usuario, diario y respaldo', (tester) async {
+      tester.view.physicalSize = const Size(1080, 2400);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
@@ -200,27 +204,19 @@ void main() {
             crossAnalyticsEngineProvider.overrideWithValue(crossAnalyticsEngine),
             backupServiceProvider.overrideWithValue(backupService),
           ],
-          child: const MaterialApp(
-            home: JournalAnalyticsProfileScreen(),
+          child: MaterialApp(
+            theme: ScTheme.build('samsung_dark'),
+            home: const PerfilYoScreen(),
           ),
         ),
       );
 
       await tester.pumpAndSettle();
 
-      expect(find.text('Diario, Analítica y Perfil'), findsOneWidget);
-      expect(find.text('Diario'), findsOneWidget);
-      expect(find.text('Analítica'), findsOneWidget);
-      expect(find.text('Perfil'), findsOneWidget);
-      expect(find.text('Guardar Entrada en SQLite'), findsOneWidget);
-
-      // Cambiar a la pestaña de Perfil
-      await tester.tap(find.text('Perfil'));
-      await tester.pumpAndSettle();
-
+      expect(find.byType(PerfilYoScreen), findsOneWidget);
       expect(find.text('Nathan'), findsOneWidget);
-      expect(find.text('Portabilidad Total y Copia de Seguridad'), findsOneWidget);
-      expect(find.text('Exportar y Compartir .sqlite'), findsOneWidget);
+      expect(find.text('Diario de Reflexión'), findsOneWidget);
+      expect(find.text('Portabilidad y Respaldo Local'), findsOneWidget);
 
       // Limpiar timers reactivos de Drift
       await tester.pumpWidget(const SizedBox());

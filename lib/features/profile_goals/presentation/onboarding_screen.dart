@@ -5,7 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../app.dart';
 import '../../../core/database/app_database.dart';
 import '../../../core/database/daos/user_profile_dao.dart';
-import '../../../shared/widgets/nxtpaper_card.dart';
+import '../../../shared/widgets/health_card.dart';
 
 /// Pantalla de bienvenida y configuración de perfil biométrico inicial.
 class OnboardingScreen extends ConsumerStatefulWidget {
@@ -161,7 +161,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
               const SizedBox(height: 24.0),
 
               // Selector de Motor Visual
-              NxtpaperCard(
+              HealthCard(
+                margin: EdgeInsets.zero,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -212,7 +213,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
               const SizedBox(height: 16.0),
 
               // Datos Personales
-              NxtpaperCard(
+              HealthCard(
+                margin: EdgeInsets.zero,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -339,7 +341,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
               const SizedBox(height: 16.0),
 
               // Metas de Hábitos
-              NxtpaperCard(
+              HealthCard(
+                margin: EdgeInsets.zero,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
