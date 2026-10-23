@@ -392,18 +392,18 @@ class _NutricionScreenState extends ConsumerState<NutricionScreen> {
           const SizedBox(height: 12),
 
           // Resumen de Macronutrientes y Triángulo de Electrolitos
-          StreamBuilder<List<FoodLog>>(
-            stream: foodDao.watchLogsForDate(_dateKey),
+          StreamBuilder<List<FoodLogWithItem>>(
+            stream: foodDao.watchLogsWithItemForDate(_dateKey),
             builder: (context, snapshot) {
-              final logs = snapshot.data ?? [];
-              final double totalKcal = logs.fold(0.0, (acc, item) => acc + item.totalKcal);
-              final double totalP = logs.fold(0.0, (acc, item) => acc + item.totalProteinG);
-              final double totalC = logs.fold(0.0, (acc, item) => acc + item.totalCarbsG);
-              final double totalF = logs.fold(0.0, (acc, item) => acc + item.totalFatG);
-              final double totalSodium = logs.fold(0.0, (acc, item) => acc + item.totalSodiumMg);
-              final double totalPotassium = logs.fold(0.0, (acc, item) => acc + item.totalPotassiumMg);
-              final double totalMagnesium = logs.fold(0.0, (acc, item) => acc + item.totalMagnesiumMg);
-              final double totalFiber = logs.fold(0.0, (acc, item) => acc + item.totalFiberG);
+              final logsWithItems = snapshot.data ?? [];
+              final double totalKcal = logsWithItems.fold(0.0, (acc, item) => acc + item.log.totalKcal);
+              final double totalP = logsWithItems.fold(0.0, (acc, item) => acc + item.log.totalProteinG);
+              final double totalC = logsWithItems.fold(0.0, (acc, item) => acc + item.log.totalCarbsG);
+              final double totalF = logsWithItems.fold(0.0, (acc, item) => acc + item.log.totalFatG);
+              final double totalSodium = logsWithItems.fold(0.0, (acc, item) => acc + item.log.totalSodiumMg);
+              final double totalPotassium = logsWithItems.fold(0.0, (acc, item) => acc + item.log.totalPotassiumMg);
+              final double totalMagnesium = logsWithItems.fold(0.0, (acc, item) => acc + item.log.totalMagnesiumMg);
+              final double totalFiber = logsWithItems.fold(0.0, (acc, item) => acc + item.log.totalFiberG);
 
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -456,10 +456,10 @@ class _NutricionScreenState extends ConsumerState<NutricionScreen> {
                   ),
 
                   // Bloques de Comida
-                  _buildMealSection(context, foodDao, logs, 'Desayuno', 'breakfast'),
-                  _buildMealSection(context, foodDao, logs, 'Almuerzo', 'lunch'),
-                  _buildMealSection(context, foodDao, logs, 'Cena', 'dinner'),
-                  _buildMealSection(context, foodDao, logs, 'Snacks & Colaciones', 'snack'),
+                  _buildMealSection(context, foodDao, logsWithItems, 'Desayuno', 'breakfast'),
+                  _buildMealSection(context, foodDao, logsWithItems, 'Almuerzo', 'lunch'),
+                  _buildMealSection(context, foodDao, logsWithItems, 'Cena', 'dinner'),
+                  _buildMealSection(context, foodDao, logsWithItems, 'Snacks & Colaciones', 'snack'),
                 ],
               );
             },
@@ -472,13 +472,13 @@ class _NutricionScreenState extends ConsumerState<NutricionScreen> {
   Widget _buildMealSection(
     BuildContext context,
     FoodDao foodDao,
-    List<FoodLog> allLogs,
+    List<FoodLogWithItem> allLogsWithItems,
     String title,
     String mealType,
   ) {
     final ScColors c = context.sc;
-    final logs = allLogs.where((l) => l.mealType == mealType).toList();
-    final double mealKcal = logs.fold(0.0, (acc, item) => acc + item.totalKcal);
+    final mealItems = allLogsWithItems.where((l) => l.log.mealType == mealType).toList();
+    final double mealKcal = mealItems.fold(0.0, (acc, item) => acc + item.log.totalKcal);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -489,7 +489,7 @@ class _NutricionScreenState extends ConsumerState<NutricionScreen> {
           actionLabel: '+ Añadir',
           onAction: () => FoodSearchModal.show(context: context, dateKey: _dateKey, mealType: mealType),
         ),
-        if (logs.isEmpty)
+        if (mealItems.isEmpty)
           HealthCard(
             margin: const EdgeInsets.symmetric(horizontal: 18, vertical: 4),
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
@@ -515,32 +515,27 @@ class _NutricionScreenState extends ConsumerState<NutricionScreen> {
             child: ListView.separated(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
-              itemCount: logs.length,
+              itemCount: mealItems.length,
               separatorBuilder: (_, _) => Divider(height: 1, color: c.line),
               itemBuilder: (ctx, idx) {
-                final item = logs[idx];
-                return FutureBuilder<FoodItem?>(
-                  future: foodDao.getById(item.foodItemId),
-                  builder: (context, snapshot) {
-                    final food = snapshot.data;
-                    final name = food?.name ?? 'Alimento';
+                final item = mealItems[idx];
+                final foodLog = item.log;
+                final name = item.foodItem?.name ?? 'Alimento';
 
-                    return ListTile(
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
-                      title: Text(
-                        name,
-                        style: TextStyle(fontFamily: ScFonts.ui, fontSize: 14, fontWeight: FontWeight.w600, color: c.text),
-                      ),
-                      subtitle: Text(
-                        '${item.gramsConsumed.toInt()}g · ${item.totalKcal.toInt()} kcal · P: ${item.totalProteinG.toInt()}g',
-                        style: TextStyle(fontSize: 12, color: c.text2),
-                      ),
-                      trailing: IconButton(
-                        icon: const Icon(AppIcons.delete, size: 18),
-                        onPressed: () => foodDao.deleteFoodLog(item.id),
-                      ),
-                    );
-                  },
+                return ListTile(
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
+                  title: Text(
+                    name,
+                    style: TextStyle(fontFamily: ScFonts.ui, fontSize: 14, fontWeight: FontWeight.w600, color: c.text),
+                  ),
+                  subtitle: Text(
+                    '${foodLog.gramsConsumed.toInt()}g · ${foodLog.totalKcal.toInt()} kcal · P: ${foodLog.totalProteinG.toInt()}g',
+                    style: TextStyle(fontSize: 12, color: c.text2),
+                  ),
+                  trailing: IconButton(
+                    icon: const Icon(AppIcons.delete, size: 18),
+                    onPressed: () => foodDao.deleteFoodLog(foodLog.id),
+                  ),
                 );
               },
             ),

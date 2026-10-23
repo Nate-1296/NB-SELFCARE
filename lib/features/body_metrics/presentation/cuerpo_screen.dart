@@ -150,25 +150,34 @@ class _CuerpoScreenState extends ConsumerState<CuerpoScreen> {
   }) async {
     final double age = BiometricFormulas.calculateDynamicAge(profile.birthDate);
     final bool isMale = profile.biologicalSex == 'male';
-
-    final metrics = BiometricFormulas.deriveAllMetrics(
+    final double bmi = BiometricFormulas.calculateBmi(
       weightKg: weightKg,
       heightCm: profile.heightCm,
-      ageYears: age,
-      isMale: isMale,
-      impedanceOhms: impedanceOhms ?? 500,
     );
+
+    // Derivar métricas BIA solo si hay impedancia real medida por electrodos
+    final metrics = impedanceOhms != null
+        ? BiometricFormulas.deriveAllMetrics(
+            weightKg: weightKg,
+            heightCm: profile.heightCm,
+            ageYears: age,
+            isMale: isMale,
+            impedanceOhms: impedanceOhms,
+          )
+        : null;
 
     final double currentEma = BiometricFormulas.calculateWeightEma(
       currentWeightKg: weightKg,
       previousEmaKg: latest?.trendWeightKg,
     );
 
+    final double? currentWater = metrics?.waterPercentage ?? latest?.waterPercentage;
     final bool isRetention = latest != null &&
+        currentWater != null &&
         BiometricFormulas.detectWaterRetentionSpike(
           currentWeightKg: weightKg,
           previousWeightKg: latest.weightKg,
-          currentWaterPct: metrics.waterPercentage,
+          currentWaterPct: currentWater,
           previousWaterPct: latest.waterPercentage,
         );
 
@@ -180,18 +189,18 @@ class _CuerpoScreenState extends ConsumerState<CuerpoScreen> {
       weightKg: drift.Value(weightKg),
       trendWeightKg: drift.Value(currentEma),
       impedanceOhms: drift.Value(impedanceOhms),
-      bmi: drift.Value(metrics.bmi),
-      bodyFatPercentage: drift.Value(metrics.bodyFatPercentage),
-      muscleMassKg: drift.Value(metrics.muscleMassKg),
-      waterPercentage: drift.Value(metrics.waterPercentage),
-      visceralFatIndex: drift.Value(metrics.visceralFatIndex),
-      boneMassKg: drift.Value(metrics.boneMassKg),
-      proteinPercentage: drift.Value(metrics.proteinPercentage),
-      basalMetabolicRateKcal: drift.Value(metrics.basalMetabolicRateKcal),
-      metabolicAge: drift.Value(metrics.metabolicAgeYears),
-      leanBodyMassKg: drift.Value(metrics.leanBodyMassKg),
-      bodyScore: drift.Value(metrics.bodyScore),
-      somatotype: drift.Value(metrics.bodyType),
+      bmi: drift.Value(bmi),
+      bodyFatPercentage: drift.Value(metrics?.bodyFatPercentage ?? latest?.bodyFatPercentage),
+      muscleMassKg: drift.Value(metrics?.muscleMassKg ?? latest?.muscleMassKg),
+      waterPercentage: drift.Value(currentWater),
+      visceralFatIndex: drift.Value(metrics?.visceralFatIndex ?? latest?.visceralFatIndex),
+      boneMassKg: drift.Value(metrics?.boneMassKg ?? latest?.boneMassKg),
+      proteinPercentage: drift.Value(metrics?.proteinPercentage ?? latest?.proteinPercentage),
+      basalMetabolicRateKcal: drift.Value(metrics?.basalMetabolicRateKcal ?? latest?.basalMetabolicRateKcal),
+      metabolicAge: drift.Value(metrics?.metabolicAgeYears ?? latest?.metabolicAge),
+      leanBodyMassKg: drift.Value(metrics?.leanBodyMassKg ?? latest?.leanBodyMassKg),
+      bodyScore: drift.Value(metrics?.bodyScore ?? latest?.bodyScore),
+      somatotype: drift.Value(metrics?.bodyType ?? latest?.somatotype),
       isWaterRetentionSpike: drift.Value(isRetention),
     );
 
@@ -202,7 +211,7 @@ class _CuerpoScreenState extends ConsumerState<CuerpoScreen> {
     unawaited(
       healthConnect.writeWeightAndBodyFat(
         weightKg: weightKg,
-        bodyFatPercentage: metrics.bodyFatPercentage,
+        bodyFatPercentage: metrics?.bodyFatPercentage ?? latest?.bodyFatPercentage,
         timestamp: now,
       ),
     );
@@ -323,7 +332,22 @@ class _CuerpoScreenState extends ConsumerState<CuerpoScreen> {
                   navyBodyFatPercentage: navyFat,
                 );
 
-                Navigator.of(ctx).pop();
+                // Persistir en SQLite (actualiza el último registro o inserta uno nuevo)
+                await ref.read(bodyMeasurementsDaoProvider).saveNavyTapeMeasurement(
+                  existingMeasurementId: latest?.id,
+                  dateKey: DateTime.now().dateKey,
+                  waistCm: waist,
+                  neckCm: neck,
+                  hipCm: hip,
+                  validatedBodyFatPercentage: validatedFat,
+                  navyBodyFatPercentage: navyFat,
+                  defaultWeightKg: latest?.weightKg ?? profile.targetWeightKg,
+                  heightCm: profile.heightCm,
+                );
+
+                if (ctx.mounted) {
+                  Navigator.of(ctx).pop();
+                }
                 if (mounted) {
                   unawaited(showDialog<void>(
                     context: context,

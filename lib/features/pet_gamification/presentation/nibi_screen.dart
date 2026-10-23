@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/database/app_database.dart';
 import '../../../core/database/daos/fasting_dao.dart';
+import '../../../core/database/daos/health_sync_dao.dart';
 import '../../../core/database/daos/hydration_dao.dart';
 import '../../../core/database/daos/pet_dao.dart';
 import '../../../core/database/daos/user_profile_dao.dart';
@@ -148,6 +149,7 @@ class _NibiScreenState extends ConsumerState<NibiScreen>
 
     final fastingDao = ref.watch(fastingDaoProvider);
     final hydrationDao = ref.watch(hydrationDaoProvider);
+    final healthSyncDao = ref.watch(healthSyncDaoProvider);
 
     final AsyncValue<PetStatusData?> petAsync = ref.watch(petStatusStreamProvider);
     final AsyncValue<UserProfile?> profileAsync = ref.watch(userProfileStreamProvider);
@@ -158,23 +160,30 @@ class _NibiScreenState extends ConsumerState<NibiScreen>
         return StreamBuilder<int>(
           stream: hydrationDao.watchTotalWaterMl(todayKey),
           builder: (context, waterSnap) {
-            final pet = petAsync.value;
-            final profile = profileAsync.value;
-            final activeFast = fastingSnap.data;
-            final waterMl = waterSnap.data ?? 0;
-            final waterGoalMl = profile?.dailyWaterGoalMl ?? 2500;
-            final sleepGoal = profile?.dailySleepGoalHours ?? 7.5;
+            return StreamBuilder<DailySummary?>(
+              stream: healthSyncDao.watchDailySummary(todayKey),
+              builder: (context, summarySnap) {
+                final pet = petAsync.value;
+                final profile = profileAsync.value;
+                final activeFast = fastingSnap.data;
+                final summary = summarySnap.data;
 
-    final bool isKetosis = activeFast != null &&
-        DateTime.now().difference(activeFast.startedAt).inHours >= 12;
+                final int waterMl = waterSnap.data ?? 0;
+                final int waterGoalMl = profile?.dailyWaterGoalMl ?? 2500;
+                final double sleepGoal = profile?.dailySleepGoalHours ?? 7.5;
+                final double sleepHours = (summary?.sleepDurationMinutes ?? 0) / 60.0;
+                final bool isSleepGoalMet = sleepHours >= sleepGoal && sleepHours > 0;
 
-    final double hydrationRatio =
-        waterGoalMl > 0 ? (waterMl / waterGoalMl).clamp(0.0, 1.0) : 0.5;
+                final bool isKetosis = activeFast != null &&
+                    DateTime.now().difference(activeFast.startedAt).inHours >= 12;
 
-    final int coins = pet?.coinsBalance ?? 0;
-    final int streak = pet?.currentStreakDays ?? 0;
-    final int shields = pet?.streakShieldsAvailable ?? 0;
-    final String? equippedHat = pet?.equippedHatId;
+                final double hydrationRatio =
+                    waterGoalMl > 0 ? (waterMl / waterGoalMl).clamp(0.0, 1.0) : 0.5;
+
+                final int coins = pet?.coinsBalance ?? 0;
+                final int streak = pet?.currentStreakDays ?? 0;
+                final int shields = pet?.streakShieldsAvailable ?? 0;
+                final String? equippedHat = pet?.equippedHatId;
 
     final List<String> unlockedItems = <String>['none'];
     if (pet?.unlockedItemsJson != null) {
@@ -301,7 +310,7 @@ class _NibiScreenState extends ConsumerState<NibiScreen>
                               if (pet != null) {
                                 unawaited(_interactWithPet(
                                   pet: pet,
-                                  sleepHours: sleepGoal,
+                                  sleepHours: sleepHours > 0 ? sleepHours : null,
                                   waterMl: waterMl,
                                   waterGoalMl: waterGoalMl,
                                   isKetosis: isKetosis,
@@ -350,8 +359,10 @@ class _NibiScreenState extends ConsumerState<NibiScreen>
                           icon: AppIcons.sueno,
                           iconColor: const Color(0xFF9FA8DA),
                           title: 'Sueño',
-                          value: '${sleepGoal.toStringAsFixed(1)}h',
-                          subtitle: 'x1.5 🪙 activo',
+                          value: sleepHours > 0 ? '${sleepHours.toStringAsFixed(1)}h' : '-- h',
+                          subtitle: isSleepGoalMet
+                              ? 'x1.5 🪙 activo'
+                              : 'Meta: ${sleepGoal.toStringAsFixed(1)}h',
                         ),
                       ),
                       const SizedBox(width: 10),
@@ -386,7 +397,7 @@ class _NibiScreenState extends ConsumerState<NibiScreen>
                             if (pet != null) {
                               unawaited(_interactWithPet(
                                 pet: pet,
-                                sleepHours: sleepGoal,
+                                sleepHours: sleepHours > 0 ? sleepHours : null,
                                 waterMl: waterMl,
                                 waterGoalMl: waterGoalMl,
                                 isKetosis: isKetosis,
@@ -601,10 +612,12 @@ class _NibiScreenState extends ConsumerState<NibiScreen>
       ),
     );
           },
-        );
-      },
-    );
-  }
+          );
+        },
+      );
+    },
+  );
+}
 }
 
 class _StatMiniCard extends StatelessWidget {

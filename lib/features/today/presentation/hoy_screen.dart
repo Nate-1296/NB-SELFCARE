@@ -132,14 +132,9 @@ class _HoyScreenState extends ConsumerState<HoyScreen> {
               final double? w = double.tryParse(weightCtrl.text.trim());
               if (w != null && w > 0) {
                 Navigator.of(ctx).pop();
-                final double age = BiometricFormulas.calculateDynamicAge(profile.birthDate);
-                final bool isMale = profile.biologicalSex == 'male';
-                final metrics = BiometricFormulas.deriveAllMetrics(
+                final double bmi = BiometricFormulas.calculateBmi(
                   weightKg: w,
                   heightCm: profile.heightCm,
-                  ageYears: age,
-                  isMale: isMale,
-                  impedanceOhms: 500,
                 );
                 final double ema = BiometricFormulas.calculateWeightEma(
                   currentWeightKg: w,
@@ -154,18 +149,18 @@ class _HoyScreenState extends ConsumerState<HoyScreen> {
                     source: 'manual_hoy',
                     weightKg: w,
                     trendWeightKg: ema,
-                    bmi: metrics.bmi,
-                    bodyFatPercentage: drift.Value(metrics.bodyFatPercentage),
-                    muscleMassKg: drift.Value(metrics.muscleMassKg),
-                    waterPercentage: drift.Value(metrics.waterPercentage),
-                    visceralFatIndex: drift.Value(metrics.visceralFatIndex),
-                    boneMassKg: drift.Value(metrics.boneMassKg),
-                    proteinPercentage: drift.Value(metrics.proteinPercentage),
-                    basalMetabolicRateKcal: drift.Value(metrics.basalMetabolicRateKcal),
-                    metabolicAge: drift.Value(metrics.metabolicAgeYears),
-                    leanBodyMassKg: drift.Value(metrics.leanBodyMassKg),
-                    bodyScore: drift.Value(metrics.bodyScore),
-                    somatotype: drift.Value(metrics.bodyType),
+                    bmi: bmi,
+                    bodyFatPercentage: drift.Value(latestMeas?.bodyFatPercentage),
+                    muscleMassKg: drift.Value(latestMeas?.muscleMassKg),
+                    waterPercentage: drift.Value(latestMeas?.waterPercentage),
+                    visceralFatIndex: drift.Value(latestMeas?.visceralFatIndex),
+                    boneMassKg: drift.Value(latestMeas?.boneMassKg),
+                    proteinPercentage: drift.Value(latestMeas?.proteinPercentage),
+                    basalMetabolicRateKcal: drift.Value(latestMeas?.basalMetabolicRateKcal),
+                    metabolicAge: drift.Value(latestMeas?.metabolicAge),
+                    leanBodyMassKg: drift.Value(latestMeas?.leanBodyMassKg),
+                    bodyScore: drift.Value(latestMeas?.bodyScore),
+                    somatotype: drift.Value(latestMeas?.somatotype),
                   ),
                 );
 
@@ -555,12 +550,13 @@ class _HoyScreenState extends ConsumerState<HoyScreen> {
                         builder: (context, workoutSnap) {
                           final int netBurnedKcal = workoutSnap.data ?? 0;
                           final int goalKcal = profile.currentAdaptiveTdeeKcal;
+                          final int effectiveGoalKcal = goalKcal + netBurnedKcal;
                           final int goalWater = profile.dailyWaterGoalMl;
                           final double goalProtein =
                               (profile.targetWeightKg * 2.0).clamp(60.0, 220.0);
 
                           final double kcalRatio =
-                              goalKcal > 0 ? (consumedKcal / goalKcal).clamp(0.0, 1.5) : 0.0;
+                              effectiveGoalKcal > 0 ? (consumedKcal / effectiveGoalKcal).clamp(0.0, 1.5) : 0.0;
                           final double proteinRatio =
                               goalProtein > 0 ? (consumedProtein / goalProtein).clamp(0.0, 1.5) : 0.0;
                           final double waterRatio =
@@ -593,7 +589,9 @@ class _HoyScreenState extends ConsumerState<HoyScreen> {
                                       ],
                                     ),
                                     Text(
-                                      'TDEE: $goalKcal kcal',
+                                      netBurnedKcal > 0
+                                          ? 'TDEE: $goalKcal + $netBurnedKcal kcal'
+                                          : 'TDEE: $goalKcal kcal',
                                       style: TextStyle(
                                         fontFamily: ScFonts.ui,
                                         fontSize: 12,
@@ -611,7 +609,7 @@ class _HoyScreenState extends ConsumerState<HoyScreen> {
                                     Expanded(
                                       child: _SummaryMetricColumn(
                                         label: 'Calorías',
-                                        value: '${consumedKcal.toInt()} / $goalKcal',
+                                        value: '${consumedKcal.toInt()} / $effectiveGoalKcal',
                                         unit: 'kcal',
                                         ratio: kcalRatio,
                                         color: c.calories,

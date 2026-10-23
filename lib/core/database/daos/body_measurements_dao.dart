@@ -70,6 +70,53 @@ class BodyMeasurementsDao {
           ..orderBy([(tbl) => OrderingTerm.asc(tbl.measuredAt)]))
         .get();
   }
+
+  /// Guarda o actualiza las mediciones de cinta métrica (cintura, cuello, cadera)
+  /// y el porcentaje de grasa validado por la fórmula US Navy.
+  Future<void> saveNavyTapeMeasurement({
+    required int? existingMeasurementId,
+    required String dateKey,
+    required double waistCm,
+    required double neckCm,
+    double? hipCm,
+    required double validatedBodyFatPercentage,
+    required double navyBodyFatPercentage,
+    required double defaultWeightKg,
+    required double heightCm,
+  }) async {
+    if (existingMeasurementId != null) {
+      await (_db.update(_db.bodyMeasurements)
+            ..where((tbl) => tbl.id.equals(existingMeasurementId)))
+          .write(
+        BodyMeasurementsCompanion(
+          waistCm: Value(waistCm),
+          neckCm: Value(neckCm),
+          hipCm: Value(hipCm),
+          validatedBodyFatPercentage: Value(validatedBodyFatPercentage),
+        ),
+      );
+    } else {
+      final double bmi = (heightCm > 0)
+          ? defaultWeightKg / ((heightCm / 100.0) * (heightCm / 100.0))
+          : 22.0;
+
+      await insertMeasurement(
+        BodyMeasurementsCompanion.insert(
+          dateKey: dateKey,
+          source: 'manual_navy_tape',
+          weightKg: defaultWeightKg,
+          trendWeightKg: defaultWeightKg,
+          bmi: bmi,
+          bodyFatPercentage: Value(navyBodyFatPercentage),
+          waistCm: Value(waistCm),
+          neckCm: Value(neckCm),
+          hipCm: Value(hipCm),
+          validatedBodyFatPercentage: Value(validatedBodyFatPercentage),
+          measuredAt: Value(DateTime.now()),
+        ),
+      );
+    }
+  }
 }
 
 /// Provider de Riverpod para inyectar BodyMeasurementsDao.

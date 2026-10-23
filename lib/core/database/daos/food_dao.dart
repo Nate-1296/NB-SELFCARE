@@ -3,6 +3,17 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../app_database.dart';
 
+/// Registro de comida consumida combinado con los metadatos de su alimento (JOIN).
+class FoodLogWithItem {
+  const FoodLogWithItem({
+    required this.log,
+    this.foodItem,
+  });
+
+  final FoodLog log;
+  final FoodItem? foodItem;
+}
+
 /// DAO especializado en el catálogo de alimentos, búsqueda FTS5 y registro de comidas.
 class FoodDao {
   FoodDao(this._db);
@@ -74,6 +85,24 @@ class FoodDao {
           ..where((tbl) => tbl.dateKey.equals(dateKey))
           ..orderBy([(tbl) => OrderingTerm.asc(tbl.loggedAt)]))
         .watch();
+  }
+
+  /// Emite en vivo todas las comidas registradas para una fecha dada junto con su alimento mediante JOIN.
+  Stream<List<FoodLogWithItem>> watchLogsWithItemForDate(String dateKey) {
+    final query = _db.select(_db.foodLogs).join([
+      leftOuterJoin(_db.foodItems, _db.foodItems.id.equalsExp(_db.foodLogs.foodItemId)),
+    ])
+      ..where(_db.foodLogs.dateKey.equals(dateKey))
+      ..orderBy([OrderingTerm.asc(_db.foodLogs.loggedAt)]);
+
+    return query.watch().map((rows) {
+      return rows.map((row) {
+        return FoodLogWithItem(
+          log: row.readTable(_db.foodLogs),
+          foodItem: row.readTableOrNull(_db.foodItems),
+        );
+      }).toList();
+    });
   }
 
   /// Obtiene los registros de un bloque horario en una fecha (ej. desayuno de ayer).
