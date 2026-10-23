@@ -46,10 +46,10 @@ flowchart TD
 * [x] Implementar `MealCombosWidget` con barra deslizadora de porción ($0.25\times\text{–}3.0\times$) y botón de *"Repetir comida de ayer"*.
 * [x] Implementar registro rápido de vasos de agua (`+250 ml`, `+500 ml`).
 
-### Fase 4: Mascota Virtual Procedural, Economía Positiva y Dashboard
-* [ ] Construir `ProceduralPetCanvas` en `CustomPainter` (60 fps, reactivo a cetosis, agua, sueño, pesaje BLE y accesorios).
-* [ ] Implementar `CoinLedgerService` con idempotencia diaria, multiplicador $1.5\times$ por sueño reparador, Escudos de Racha y tienda de recompensas.
-* [ ] Ensamblar `DashboardScreen` unificando el hábitat de la mascota, anillos de calorías, Bento Grid de estado en vivo y Dock de acciones en 1 toque.
+### Fase 4: Mascota Virtual Procedural, Economía Positiva y Dashboard (Completada)
+* [x] Construir `ProceduralPetCanvas` en `CustomPainter` (60 fps, reactivo a cetosis, agua, sueño, pesaje BLE y accesorios).
+* [x] Implementar `CoinLedgerService` con idempotencia diaria, multiplicador $1.5\times$ por sueño reparador, Escudos de Racha y tienda de recompensas.
+* [x] Ensamblar `DashboardScreen` unificando el hábitat de la mascota, anillos de calorías, Bento Grid de estado en vivo y Dock de acciones en 1 toque.
 
 ### Fase 5: Ayuno Intermitente, Diario Privado y Analítica Cruzada
 * [ ] Construir `FastingAndAlarmsScreen` con cronómetro metabólico nativo en pantalla de bloqueo (`Chronometer` del sistema) y alarmas exactas.

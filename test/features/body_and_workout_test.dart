@@ -62,8 +62,8 @@ void main() {
 
     await tester.pumpAndSettle();
 
-    // Tocar la tarjeta de Laboratorio Corporal en el Dashboard
-    final cardFinder = find.text('Laboratorio Corporal');
+    // Tocar el botón de Pesarme en el Dashboard
+    final cardFinder = find.text('Pesarme');
     expect(cardFinder, findsOneWidget);
     await tester.tap(cardFinder);
     await tester.pumpAndSettle();
@@ -117,8 +117,8 @@ void main() {
 
     await tester.pumpAndSettle();
 
-    // Navegar a BodyAndWorkoutScreen
-    await tester.tap(find.text('Laboratorio Corporal'));
+    // Navegar a BodyAndWorkoutScreen vía botón Entrenar
+    await tester.tap(find.text('Entrenar'));
     await tester.pumpAndSettle();
 
     // Abrir modal de entrenamiento
