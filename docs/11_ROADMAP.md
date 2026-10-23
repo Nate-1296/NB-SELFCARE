@@ -34,11 +34,11 @@ flowchart TD
 * [x] Implementar `lib/core/theme/app_theme.dart` (Material You) y `lib/core/theme/nxtpaper_eink_theme.dart` (Modo Papel E-Ink sin sombras ni elevación con bordes 1.5px).
 * [x] Construir `OnboardingScreen` para configurar el perfil inicial (`UserProfiles`) y seleccionar el modo de visualización.
 
-### Fase 2: Laboratorio Corporal, Báscula BLE y Health Connect
-* [ ] Crear `BodyScaleDriver` (interfaz abstracta) y `XiaomiMiScale2Driver` (escaneo pasivo BLE `0x181B` y decodificación de 13 bytes).
-* [ ] Implementar `BiometricFormulas`: derivación de las 13 métricas, edad al vuelo, Katch-McArdle, Peso Tendencia (EMA $\alpha = 0.1$), Detector de Retención Hídrica, Ecuación US Navy quincenal y calibrador de TDEE Adaptativo (14 días).
-* [ ] Implementar `HealthConnectService` para sincronización bidireccional en Android 16 (sueño, pasos, ritmo cardíaco, peso, grasa e hidratación).
-* [ ] Construir `BodyAndWorkoutScreen`: pesaje en vivo con animación de báscula, gráfica dual de peso bruto vs. EMA, banner de falsa subida y selector de bloques RPE en 5 segundos.
+### Fase 2: Laboratorio Corporal, Báscula BLE y Health Connect (Completada)
+* [x] Crear `BodyScaleDriver` (interfaz abstracta) y `XiaomiMiScale2Driver` (escaneo pasivo BLE `0x181B` y decodificación de 13 bytes).
+* [x] Implementar `BiometricFormulas`: derivación de las 13 métricas, edad al vuelo, Katch-McArdle, Peso Tendencia (EMA $\alpha = 0.1$), Detector de Retención Hídrica, Ecuación US Navy quincenal y calibrador de TDEE Adaptativo (14 días).
+* [x] Implementar `HealthConnectService` para sincronización bidireccional en Android 16 (sueño, pasos, ritmo cardíaco, peso, grasa e hidratación).
+* [x] Construir `BodyAndWorkoutScreen`: pesaje en vivo con animación de báscula, gráfica dual de peso bruto vs. EMA, banner de falsa subida y selector de bloques RPE en 5 segundos.
 
 ### Fase 3: Motor de Nutrición, Escáner EAN-13 y Combos
 * [ ] Construir `NutritionScreen` con anillos dinámicos y semáforo de electrolitos (Na, K, Mg, Fibra, Hierro, Calcio, Vitaminas).
