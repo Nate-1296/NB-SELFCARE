@@ -56,8 +56,8 @@ flowchart TD
 * [x] Construir `JournalAnalyticsProfileScreen`: editor de diario privado con evaluación de ánimo, energía y estrés, y motor estadístico de correlaciones cruzadas (Pearson $r$).
 * [x] Panel de ajustes del perfil vivo y exportación/importación atómica de `nb_selfcare.sqlite` mediante `VACUUM INTO` y verificación de integridad.
 
-### Fase 6: Motor de IA Local Bajo Demanda (`LocalAiService`)
-* [ ] Implementar el gestor de ciclo de vida del modelo local (`.task` / `.litertlm` / `.gguf`) con carga perezosa (Lazy-Loading) y liberación automática de RAM a los $120\text{ s}$ de inactividad.
-* [ ] Conectar dictado de comidas en lenguaje natural con gramática JSON y cruce en `food_items_fts`.
-* [ ] Conectar análisis de sentimiento del diario y generación de saludo empático de la mascota con fallback determinista.
+### Fase 6: Motor de IA Local Bajo Demanda (`LocalAiService`) (Completada)
+* [x] Implementar el gestor de ciclo de vida del modelo local (`.task` / `.litertlm` / `.gguf`) con carga perezosa (Lazy-Loading) y liberación automática de RAM a los $120\text{ s}$ de inactividad (`ttlDuration`).
+* [x] Conectar dictado de comidas en lenguaje natural con gramática JSON, estimación de macros y cruce en `food_items_fts`.
+* [x] Conectar análisis de sentimiento del diario y generación de saludo empático de la mascota con fallback determinista.
 

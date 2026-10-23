@@ -7,6 +7,7 @@ import '../../../core/database/daos/journal_dao.dart';
 import '../../../core/database/daos/user_profile_dao.dart';
 import '../../../core/services/backup_service.dart';
 import '../../../core/services/cross_analytics_engine.dart';
+import '../../../core/services/local_ai_service.dart';
 import '../../../shared/utils/date_time_extensions.dart';
 import '../../../shared/widgets/nxtpaper_card.dart';
 
@@ -153,7 +154,37 @@ class _JournalAnalyticsProfileScreenState
                   border: OutlineInputBorder(),
                 ),
               ),
-              const SizedBox(height: 16.0),
+              const SizedBox(height: 6.0),
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton.icon(
+                  onPressed: () async {
+                    final text = _entryController.text.trim();
+                    if (text.isEmpty) return;
+
+                    final aiService = ref.read(localAiServiceProvider);
+                    final analysis = await aiService.analyzeJournal(text);
+
+                    setState(() {
+                      _moodScore = analysis.moodScore;
+                      _energyLevel = analysis.energyLevel;
+                      _stressLevel = analysis.stressLevel;
+                    });
+
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('IA Local: "${analysis.oneLineInsight}"'),
+                          backgroundColor: Colors.teal,
+                        ),
+                      );
+                    }
+                  },
+                  icon: const Icon(Icons.auto_awesome, size: 16),
+                  label: const Text('Auto-evaluar con IA Local'),
+                ),
+              ),
+              const SizedBox(height: 10.0),
 
               // Sliders de Estado de Ánimo, Energía y Estrés
               Text('Estado de Ánimo (1 = Bajo, 5 = Excelente): $_moodScore/5'),

@@ -9,6 +9,7 @@ import '../../../core/database/daos/food_dao.dart';
 import '../../../core/database/daos/hydration_dao.dart';
 import '../../../core/database/daos/user_profile_dao.dart';
 import '../../../core/services/health_connect_service.dart';
+import '../../../core/services/local_ai_service.dart';
 import '../../../core/services/open_food_facts_service.dart';
 import '../../../shared/utils/date_time_extensions.dart';
 import '../../../shared/widgets/nxtpaper_card.dart';
@@ -540,6 +541,140 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> {
     );
   }
 
+  void _openAiMealModal(BuildContext context) {
+    final textController = TextEditingController();
+    String selectedMealType = 'lunch';
+    bool isProcessing = false;
+
+    unawaited(
+      showModalBottomSheet<void>(
+        context: context,
+        isScrollControlled: true,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        builder: (ctx) {
+          return StatefulBuilder(
+            builder: (context, setModalState) {
+              return Padding(
+                padding: EdgeInsets.only(
+                  left: 20.0,
+                  right: 20.0,
+                  top: 20.0,
+                  bottom: MediaQuery.of(context).viewInsets.bottom + 24.0,
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
+                          children: [
+                            const Icon(Icons.auto_awesome, color: Colors.teal),
+                            const SizedBox(width: 8.0),
+                            Text(
+                              'Dictado / Registro con IA Local',
+                              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                            ),
+                          ],
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.close),
+                          onPressed: () => Navigator.of(ctx).pop(),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8.0),
+                    Text(
+                      'Escribe o dicta libremente lo que comiste. El motor local extraerá '
+                      'los alimentos y porciones para contrastarlos con la base USDA/FTS5.',
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                    const SizedBox(height: 12.0),
+                    TextField(
+                      controller: textController,
+                      maxLines: 3,
+                      decoration: const InputDecoration(
+                        hintText: 'Ej. 200g pechuga de pollo, 150g arroz y 1 huevo cocido',
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                    const SizedBox(height: 12.0),
+                    DropdownButtonFormField<String>(
+                      initialValue: selectedMealType,
+                      decoration: const InputDecoration(
+                        labelText: 'Momento de comida',
+                        border: OutlineInputBorder(),
+                      ),
+                      items: const [
+                        DropdownMenuItem(value: 'breakfast', child: Text('Desayuno')),
+                        DropdownMenuItem(value: 'lunch', child: Text('Almuerzo')),
+                        DropdownMenuItem(value: 'dinner', child: Text('Cena')),
+                        DropdownMenuItem(value: 'snack', child: Text('Snack / Colación')),
+                      ],
+                      onChanged: (val) {
+                        if (val != null) setModalState(() => selectedMealType = val);
+                      },
+                    ),
+                    const SizedBox(height: 16.0),
+                    FilledButton.icon(
+                      onPressed: isProcessing
+                          ? null
+                          : () async {
+                              final text = textController.text.trim();
+                              if (text.isEmpty) return;
+
+                              setModalState(() => isProcessing = true);
+                              try {
+                                final aiService = ref.read(localAiServiceProvider);
+                                final foodDao = ref.read(foodDaoProvider);
+                                final logged = await aiService.resolveAndLogMeal(
+                                  foodDao: foodDao,
+                                  text: text,
+                                  mealType: selectedMealType,
+                                  dateKey: _dateKey,
+                                );
+
+                                if (context.mounted) {
+                                  Navigator.of(ctx).pop();
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text('¡${logged.length} alimentos registrados con éxito con IA Local!'),
+                                      backgroundColor: Colors.teal,
+                                    ),
+                                  );
+                                }
+                              } finally {
+                                setModalState(() => isProcessing = false);
+                              }
+                            },
+                      icon: isProcessing
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                            )
+                          : const Icon(Icons.bolt_rounded),
+                      label: Text(isProcessing ? 'Procesando...' : 'Interpretar y Registrar en SQLite'),
+                      style: FilledButton.styleFrom(
+                        minimumSize: const Size.fromHeight(48),
+                        backgroundColor: Colors.teal,
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          );
+        },
+      ),
+    );
+  }
+
   void _openCombosModal(String mealType) {
     double multiplier = 1.0;
     int? selectedComboId;
@@ -760,6 +895,11 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> {
                     _selectedDate = _selectedDate.add(const Duration(days: 1));
                   });
                 },
+              ),
+              IconButton(
+                tooltip: 'Dictado con IA Local',
+                icon: const Icon(Icons.auto_awesome),
+                onPressed: () => _openAiMealModal(context),
               ),
             ],
           ),
