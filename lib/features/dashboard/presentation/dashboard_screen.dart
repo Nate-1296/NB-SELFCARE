@@ -9,6 +9,7 @@ import '../../../core/database/daos/pet_dao.dart';
 import '../../../core/database/daos/user_profile_dao.dart';
 import '../../../shared/widgets/nxtpaper_card.dart';
 import '../../body_metrics/presentation/body_and_workout_screen.dart';
+import '../../nutrition_hydration/presentation/nutrition_screen.dart';
 
 /// Pantalla principal y centro de mando de NB Selfcare.
 class DashboardScreen extends ConsumerWidget {
@@ -231,7 +232,11 @@ class DashboardScreen extends ConsumerWidget {
                 Expanded(
                   child: NxtpaperCard(
                     onTap: () {
-                      // Módulo preparado para enlazar con Fase 3
+                      Navigator.of(context).push(
+                        MaterialPageRoute<void>(
+                          builder: (_) => const NutritionScreen(),
+                        ),
+                      );
                     },
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,

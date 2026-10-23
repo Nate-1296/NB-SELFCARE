@@ -40,11 +40,11 @@ flowchart TD
 * [x] Implementar `HealthConnectService` para sincronización bidireccional en Android 16 (sueño, pasos, ritmo cardíaco, peso, grasa e hidratación).
 * [x] Construir `BodyAndWorkoutScreen`: pesaje en vivo con animación de báscula, gráfica dual de peso bruto vs. EMA, banner de falsa subida y selector de bloques RPE en 5 segundos.
 
-### Fase 3: Motor de Nutrición, Escáner EAN-13 y Combos
-* [ ] Construir `NutritionScreen` con anillos dinámicos y semáforo de electrolitos (Na, K, Mg, Fibra, Hierro, Calcio, Vitaminas).
-* [ ] Integrar `BarcodeScannerModal` con búsqueda en caché SQLite local y consulta asíncrona a Open Food Facts.
-* [ ] Implementar `MealCombosWidget` con barra deslizadora de porción ($0.25\times\text{–}3.0\times$) y botón de *"Repetir comida de ayer"*.
-* [ ] Implementar registro rápido de vasos de agua (`+250 ml`, `+500 ml`).
+### Fase 3: Motor de Nutrición, Escáner EAN-13 y Combos (Completada)
+* [x] Construir `NutritionScreen` con anillos dinámicos y semáforo de electrolitos (Na, K, Mg, Fibra, Hierro, Calcio, Vitaminas).
+* [x] Integrar `BarcodeScannerModal` con búsqueda en caché SQLite local y consulta asíncrona a Open Food Facts.
+* [x] Implementar `MealCombosWidget` con barra deslizadora de porción ($0.25\times\text{–}3.0\times$) y botón de *"Repetir comida de ayer"*.
+* [x] Implementar registro rápido de vasos de agua (`+250 ml`, `+500 ml`).
 
 ### Fase 4: Mascota Virtual Procedural, Economía Positiva y Dashboard
 * [ ] Construir `ProceduralPetCanvas` en `CustomPainter` (60 fps, reactivo a cetosis, agua, sueño, pesaje BLE y accesorios).

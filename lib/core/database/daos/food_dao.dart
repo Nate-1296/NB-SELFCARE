@@ -47,6 +47,12 @@ class FoodDao {
         .getSingleOrNull();
   }
 
+  /// Obtiene un alimento por su clave primaria ID.
+  Future<FoodItem?> getById(int id) {
+    return (_db.select(_db.foodItems)..where((tbl) => tbl.id.equals(id)))
+        .getSingleOrNull();
+  }
+
   /// Guarda un nuevo alimento (proveniente de Open Food Facts o alta manual).
   Future<int> insertFood(FoodItemsCompanion companion) {
     return _db.into(_db.foodItems).insert(companion);
@@ -116,6 +122,102 @@ class FoodDao {
     });
 
     return newIds;
+  }
+
+  /// Emite la lista de plantillas de combos caseros guardados.
+  Stream<List<MealCombo>> watchMealCombos() {
+    return (_db.select(_db.mealCombos)
+          ..orderBy([(tbl) => OrderingTerm.desc(tbl.timesUsed)]))
+        .watch();
+  }
+
+  /// Crea una nueva plantilla de combo casero con sus ingredientes y gramos base.
+  Future<int> createCombo({
+    required String name,
+    required String defaultMealType,
+    required List<MapEntry<int, double>> itemsWithGrams,
+  }) async {
+    return _db.transaction(() async {
+      final comboId = await _db.into(_db.mealCombos).insert(
+            MealCombosCompanion(
+              name: Value(name),
+              defaultMealType: Value(defaultMealType),
+            ),
+          );
+
+      for (final entry in itemsWithGrams) {
+        await _db.into(_db.mealComboItems).insert(
+              MealComboItemsCompanion(
+                comboId: Value(comboId),
+                foodItemId: Value(entry.key),
+                baseGrams: Value(entry.value),
+              ),
+            );
+      }
+
+      return comboId;
+    });
+  }
+
+  /// Registra un combo escalado proporcionalmente (0.25x - 3.0x) en food_logs.
+  Future<List<int>> logCombo({
+    required int comboId,
+    required double multiplier,
+    required String dateKey,
+    required String mealType,
+  }) async {
+    return _db.transaction(() async {
+      // 1. Obtener ingredientes del combo
+      final items = await (_db.select(_db.mealComboItems)
+            ..where((tbl) => tbl.comboId.equals(comboId)))
+          .get();
+
+      final now = DateTime.now();
+      final List<int> loggedIds = [];
+
+      for (final item in items) {
+        final food = await (_db.select(_db.foodItems)
+              ..where((tbl) => tbl.id.equals(item.foodItemId)))
+            .getSingleOrNull();
+
+        if (food == null) continue;
+
+        final double effectiveGrams = item.baseGrams * multiplier;
+        final double ratio = effectiveGrams / 100.0;
+
+        final logId = await _db.into(_db.foodLogs).insert(
+              FoodLogsCompanion(
+                dateKey: Value(dateKey),
+                loggedAt: Value(now),
+                mealType: Value(mealType),
+                foodItemId: Value(food.id),
+                gramsConsumed: Value(effectiveGrams),
+                portionMultiplier: Value(multiplier),
+                totalKcal: Value(double.parse((food.kcalPer100g * ratio).toStringAsFixed(1))),
+                totalProteinG: Value(double.parse((food.proteinPer100g * ratio).toStringAsFixed(1))),
+                totalCarbsG: Value(double.parse((food.carbsPer100g * ratio).toStringAsFixed(1))),
+                totalFatG: Value(double.parse((food.fatPer100g * ratio).toStringAsFixed(1))),
+                totalFiberG: Value(double.parse((food.fiberPer100g * ratio).toStringAsFixed(1))),
+                totalSodiumMg: Value(double.parse((food.sodiumMgPer100g * ratio).toStringAsFixed(1))),
+                totalPotassiumMg: Value(double.parse((food.potassiumMgPer100g * ratio).toStringAsFixed(1))),
+                totalMagnesiumMg: Value(double.parse((food.magnesiumMgPer100g * ratio).toStringAsFixed(1))),
+              ),
+            );
+
+        loggedIds.add(logId);
+      }
+
+      // Incrementar contador de uso del combo
+      final combo = await (_db.select(_db.mealCombos)
+            ..where((tbl) => tbl.id.equals(comboId)))
+          .getSingleOrNull();
+      if (combo != null) {
+        final query = _db.update(_db.mealCombos)..where((tbl) => tbl.id.equals(comboId));
+        await query.write(MealCombosCompanion(timesUsed: Value(combo.timesUsed + 1)));
+      }
+
+      return loggedIds;
+    });
   }
 }
 
