@@ -74,3 +74,4 @@
 ### ADR-12: Motor Visual Dual por Hardware (Material You + NXTPAPER Anti-Ghosting)
 * **Contexto:** Las pantallas de papel electrónico o modo tinta del TCL 50 Pro sufren de estelas grises (*ghosting*) ante transiciones animadas fluidas y sombras difusas.
 * **Decisión:** Implementar un tema específico `nxtpaper_eink` con elevación cero, bordes sólidos de $1.5\text{ px}$, paleta blanco hueso/negro tinta y desactivación de animaciones de transición en gráficas (`Duration.zero`).
+

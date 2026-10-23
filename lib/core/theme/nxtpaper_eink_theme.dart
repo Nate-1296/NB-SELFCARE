@@ -47,7 +47,7 @@ abstract final class NxtpaperEinkTheme {
         foregroundColor: inkTextLight,
         centerTitle: false,
       ),
-      cardTheme: CardTheme(
+      cardTheme: CardThemeData(
         elevation: 0.0,
         shadowColor: Colors.transparent,
         color: paperSurfaceLight,
@@ -81,21 +81,21 @@ abstract final class NxtpaperEinkTheme {
         fillColor: paperSurfaceLight,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8.0),
-          side: const BorderSide(color: inkBorderLight, width: borderWidth),
+          borderSide: const BorderSide(color: inkBorderLight, width: borderWidth),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8.0),
-          side: const BorderSide(color: inkBorderLight, width: borderWidth),
+          borderSide: const BorderSide(color: inkBorderLight, width: borderWidth),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8.0),
-          side: const BorderSide(color: inkBorderLight, width: 2.0),
+          borderSide: const BorderSide(color: inkBorderLight, width: 2.0),
         ),
       ),
-      navigationBarTheme: NavigationBarThemeData(
+      navigationBarTheme: const NavigationBarThemeData(
         elevation: 0.0,
         backgroundColor: paperBackgroundLight,
-        indicatorColor: const Color(0xFFDDDAD3),
+        indicatorColor: Color(0xFFDDDAD3),
         labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
       ),
     );
@@ -126,7 +126,7 @@ abstract final class NxtpaperEinkTheme {
         foregroundColor: paperTextDark,
         centerTitle: false,
       ),
-      cardTheme: CardTheme(
+      cardTheme: CardThemeData(
         elevation: 0.0,
         shadowColor: Colors.transparent,
         color: inkSurfaceDark,
@@ -160,23 +160,24 @@ abstract final class NxtpaperEinkTheme {
         fillColor: inkSurfaceDark,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8.0),
-          side: const BorderSide(color: paperBorderDark, width: borderWidth),
+          borderSide: const BorderSide(color: paperBorderDark, width: borderWidth),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8.0),
-          side: const BorderSide(color: paperBorderDark, width: borderWidth),
+          borderSide: const BorderSide(color: paperBorderDark, width: borderWidth),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8.0),
-          side: const BorderSide(color: paperBorderDark, width: 2.0),
+          borderSide: const BorderSide(color: paperBorderDark, width: 2.0),
         ),
       ),
-      navigationBarTheme: NavigationBarThemeData(
+      navigationBarTheme: const NavigationBarThemeData(
         elevation: 0.0,
         backgroundColor: inkBackgroundDark,
-        indicatorColor: const Color(0xFF282B30),
+        indicatorColor: Color(0xFF282B30),
         labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
       ),
     );
   }
 }
+

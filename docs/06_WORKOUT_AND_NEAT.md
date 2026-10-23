@@ -59,3 +59,4 @@ El gasto neto calculado se inserta en `workout_blocks` y se refleja inmediatamen
 $$\text{Calorías Restantes} = \text{Meta Adaptativa (TDEE)} + \text{Gasto Neto Entrenamientos} - \text{Calorías Consumidas}$$
 
 Esto garantiza que el usuario consuma más energía solo en proporción al esfuerzo real realizado, sin sobrestimaciones infladas por relojes comerciales.
+

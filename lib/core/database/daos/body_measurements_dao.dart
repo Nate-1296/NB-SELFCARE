@@ -1,0 +1,86 @@
+import 'package:drift/drift.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../app_database.dart';
+import 'pet_dao.dart';
+
+/// DAO especializado en el registro y consulta de biometría corporal y báscula BLE.
+class BodyMeasurementsDao {
+  BodyMeasurementsDao(this._db, this._petDao);
+
+  final AppDatabase _db;
+  final PetDao _petDao;
+
+  /// Emite la medición biométrica más reciente.
+  Stream<BodyMeasurement?> watchLatestMeasurement() {
+    return (_db.select(_db.bodyMeasurements)
+          ..orderBy([(tbl) => OrderingTerm.desc(tbl.measuredAt)])
+          ..limit(1))
+        .watchSingleOrNull();
+  }
+
+  /// Obtiene la última medición registrada.
+  Future<BodyMeasurement?> getLatestMeasurement() {
+    return (_db.select(_db.bodyMeasurements)
+          ..orderBy([(tbl) => OrderingTerm.desc(tbl.measuredAt)])
+          ..limit(1))
+        .getSingleOrNull();
+  }
+
+  /// Emite la serie temporal de mediciones para gráficas de peso y tendencia.
+  Stream<List<BodyMeasurement>> watchRecentMeasurements({int limit = 60}) {
+    return (_db.select(_db.bodyMeasurements)
+          ..orderBy([(tbl) => OrderingTerm.desc(tbl.measuredAt)])
+          ..limit(limit))
+        .watch()
+        .map((list) => list.reversed.toList());
+  }
+
+  /// Guarda una nueva medición (desde báscula BLE, Health Connect o manual)
+  /// y otorga la recompensa diaria de +15 monedas en el libro mayor.
+  Future<int> insertMeasurement(BodyMeasurementsCompanion companion) async {
+    return _db.transaction(() async {
+      final int id = await _db.into(_db.bodyMeasurements).insert(companion);
+
+      // Otorgar +15 monedas por pesaje diario (con idempotencia garantizada)
+      final String dateKey = companion.dateKey.value;
+      await _petDao.grantDailyReward(
+        dateKey: dateKey,
+        actionType: 'weigh_in',
+        baseAmount: 15,
+      );
+
+      return id;
+    });
+  }
+
+  /// Obtiene la medición registrada en una fecha específica (si existe).
+  Future<BodyMeasurement?> getMeasurementForDate(String dateKey) {
+    return (_db.select(_db.bodyMeasurements)
+          ..where((tbl) => tbl.dateKey.equals(dateKey))
+          ..orderBy([(tbl) => OrderingTerm.desc(tbl.measuredAt)])
+          ..limit(1))
+        .getSingleOrNull();
+  }
+
+  /// Obtiene las mediciones de los últimos N días para cálculos de TDEE o EMA.
+  Future<List<BodyMeasurement>> getMeasurementsInDateRange(String fromDateKey, String toDateKey) {
+    return (_db.select(_db.bodyMeasurements)
+          ..where((tbl) => tbl.dateKey.isBiggerOrEqualValue(fromDateKey) & tbl.dateKey.isSmallerOrEqualValue(toDateKey))
+          ..orderBy([(tbl) => OrderingTerm.asc(tbl.measuredAt)]))
+        .get();
+  }
+}
+
+/// Provider de Riverpod para inyectar BodyMeasurementsDao.
+final bodyMeasurementsDaoProvider = Provider<BodyMeasurementsDao>((ref) {
+  final AppDatabase db = ref.watch(appDatabaseProvider);
+  final PetDao petDao = ref.watch(petDaoProvider);
+  return BodyMeasurementsDao(db, petDao);
+});
+
+/// StreamProvider con la última medición registrada.
+final latestMeasurementStreamProvider = StreamProvider<BodyMeasurement?>((ref) {
+  final BodyMeasurementsDao dao = ref.watch(bodyMeasurementsDaoProvider);
+  return dao.watchLatestMeasurement();
+});

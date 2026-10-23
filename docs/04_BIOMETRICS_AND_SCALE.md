@@ -130,3 +130,4 @@ $$\Delta\text{EMA}_{14\text{d}} = \text{EMA}_{\text{hoy}} - \text{EMA}_{\text{ha
 $$\text{TDEE}_{\text{Real}} = \text{round}\left(\overline{\text{KcalConsumidas}}_{14\text{d}} - \frac{\Delta\text{EMA}_{14\text{d}} \times 7700}{14}\right)$$
 
 * **Filtro de Seguridad:** La calibración no puede variar más de $\pm 150\text{ kcal}$ por semana respecto al TDEE previo, y nunca se sitúa por debajo del BMR del usuario.
+

@@ -63,3 +63,4 @@ abstract final class MetConstants {
     return burned.round();
   }
 }
+

@@ -48,3 +48,4 @@ Todo desarrollo debe mantener un estándar de **100% de éxito** en los siguient
 ### D. Gamificación y Escudos de Racha (`test/gamification_test.dart`)
 * Aplicación del multiplicador $1.5\times$ en monedas cuando el sueño alcanza la meta.
 * Consumo automático de `StreakShield` ante día sin registros, preservando `currentStreakDays`.
+

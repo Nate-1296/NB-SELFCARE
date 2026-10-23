@@ -18,13 +18,13 @@ abstract final class AppTheme {
         backgroundColor: scheme.surface,
         scrolledUnderElevation: 2.0,
       ),
-      cardTheme: CardTheme(
+      cardTheme: CardThemeData(
         elevation: 1.0,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16.0),
         ),
       ),
-      navigationBarTheme: NavigationBarThemeData(
+      navigationBarTheme: const NavigationBarThemeData(
         elevation: 2.0,
         labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
       ),
@@ -47,16 +47,17 @@ abstract final class AppTheme {
         backgroundColor: scheme.surface,
         scrolledUnderElevation: 2.0,
       ),
-      cardTheme: CardTheme(
+      cardTheme: CardThemeData(
         elevation: 1.0,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16.0),
         ),
       ),
-      navigationBarTheme: NavigationBarThemeData(
+      navigationBarTheme: const NavigationBarThemeData(
         elevation: 2.0,
         labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
       ),
     );
   }
 }
+

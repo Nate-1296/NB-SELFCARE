@@ -27,12 +27,12 @@ flowchart TD
 * [x] Configuración de generadores en `build.yaml` (`store_date_time_values_as_text: true`).
 * [x] Configuración de internacionalización `l10n.yaml` y plantilla base `app_es.arb`.
 
-### Fase 1: Núcleo de Persistencia Drift, Semilla y Temas Duales
-* [ ] Crear `lib/core/database/tables.dart` con las 14 tablas relacionales.
-* [ ] Crear `lib/core/database/app_database.dart` con soporte de triggers `FTS5`, PRAGMA WAL y método `VACUUM INTO`.
-* [ ] Implementar `DatabaseSeeder` para poblar en el primer arranque el catálogo base de alimentos en español (USDA) con el triángulo de electrolitos y el estado inicial de la mascota.
-* [ ] Implementar `lib/core/theme/app_theme.dart` (Material You) y `lib/core/theme/nxtpaper_eink_theme.dart` (Modo Papel E-Ink sin sombras ni elevación con bordes 1.5px).
-* [ ] Construir `OnboardingScreen` para configurar el perfil inicial (`UserProfiles`) y seleccionar el modo de visualización.
+### Fase 1: Núcleo de Persistencia Drift, Semilla y Temas Duales (Completada)
+* [x] Crear `lib/core/database/tables.dart` con las 14 tablas relacionales.
+* [x] Crear `lib/core/database/app_database.dart` con soporte de triggers `FTS5`, PRAGMA WAL y método `VACUUM INTO`.
+* [x] Implementar `DatabaseSeeder` para poblar en el primer arranque el catálogo base de alimentos en español (USDA) con el triángulo de electrolitos y el estado inicial de la mascota.
+* [x] Implementar `lib/core/theme/app_theme.dart` (Material You) y `lib/core/theme/nxtpaper_eink_theme.dart` (Modo Papel E-Ink sin sombras ni elevación con bordes 1.5px).
+* [x] Construir `OnboardingScreen` para configurar el perfil inicial (`UserProfiles`) y seleccionar el modo de visualización.
 
 ### Fase 2: Laboratorio Corporal, Báscula BLE y Health Connect
 * [ ] Crear `BodyScaleDriver` (interfaz abstracta) y `XiaomiMiScale2Driver` (escaneo pasivo BLE `0x181B` y decodificación de 13 bytes).
@@ -60,3 +60,4 @@ flowchart TD
 * [ ] Implementar el gestor de ciclo de vida del modelo local (`.task` / `.litertlm` / `.gguf`) con carga perezosa (Lazy-Loading) y liberación automática de RAM a los $120\text{ s}$ de inactividad.
 * [ ] Conectar dictado de comidas en lenguaje natural con gramática JSON y cruce en `food_items_fts`.
 * [ ] Conectar análisis de sentimiento del diario y generación de saludo empático de la mascota con fallback determinista.
+

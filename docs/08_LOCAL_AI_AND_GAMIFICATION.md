@@ -83,3 +83,4 @@ Para evitar dependencias de archivos externos binarios que puedan fallar en el p
 * **Escudos de Racha (`StreakShield`):**
   * Se pueden adquirir en la tienda con monedas del juego (ej. Escudo de 1 día por 40 monedas, Pase de Fin de Semana por 100 monedas).
   * Si el usuario no registra actividad un día, el sistema consume automáticamente 1 escudo disponible y mantiene intacta la racha de días (`currentStreakDays`).
+

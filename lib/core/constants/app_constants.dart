@@ -41,3 +41,4 @@ abstract final class AppConstants {
   static const int costShield1Day = 40;
   static const int costShieldWeekend = 100;
 }
+

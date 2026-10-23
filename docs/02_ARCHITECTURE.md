@@ -136,3 +136,4 @@ La base de datos SQLite no es un almacén pasivo; actúa como el **grafo de even
 * **Fuentes Tipográficas:** Prohibido `google_fonts` que descargue fuentes en runtime; las fuentes necesarias (ej. Atkinson Hyperlegible Next) se empaquetan en `assets/fonts/` con licencia abierta.
 * **Bluetooth:** Uso de bibliotecas con licencia libre OSI (como `universal_ble` con driver modular) para garantizar portabilidad y cumplimiento de licenciamiento estricto.
 * **Almacenamiento de Red:** Todo request a Open Food Facts persiste el producto en la tabla `food_items` local y en el índice `FTS5` antes de mostrarlo en pantalla. Si la red falla, la app opera al 100% con su catálogo local.
+

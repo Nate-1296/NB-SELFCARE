@@ -89,3 +89,4 @@ Al registrar una comida habitual (ej. *"Desayuno de Entrenamiento"*):
 * Cada vaso genera un registro en `hydration_logs` con su timestamp exacto.
 * El servicio `HealthConnectService` exporta asíncronamente los registros de hidratación a Android 16 Health Connect con su volumen e instante de ingesta.
 * Recompensa: Al alcanzar el $100\%$ de la meta hídrica diaria, se otorga $+15$ monedas en `CoinLedger` (con multiplicador de sueño si aplica).
+

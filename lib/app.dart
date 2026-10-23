@@ -3,11 +3,31 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'core/constants/app_constants.dart';
+import 'core/database/app_database.dart';
+import 'core/database/daos/user_profile_dao.dart';
 import 'core/theme/app_theme.dart';
 import 'core/theme/nxtpaper_eink_theme.dart';
+import 'features/dashboard/presentation/dashboard_screen.dart';
+import 'features/profile_goals/presentation/onboarding_screen.dart';
 
-/// Provider reactivo para conmutar entre Material You ('material_you') y Modo Papel ('nxtpaper_eink').
-final themeEngineProvider = StateProvider<String>((ref) => 'material_you');
+/// Notifier reactivo para conmutar entre Material You ('material_you') y Modo Papel ('nxtpaper_eink').
+class ThemeEngineNotifier extends Notifier<String> {
+  @override
+  String build() => 'material_you';
+
+  void setEngine(String engine) {
+    if (state != engine) {
+      state = engine;
+    }
+  }
+
+  void toggle() {
+    state = state == 'nxtpaper_eink' ? 'material_you' : 'nxtpaper_eink';
+  }
+}
+
+final themeEngineProvider =
+    NotifierProvider<ThemeEngineNotifier, String>(ThemeEngineNotifier.new);
 
 /// Widget raíz de la aplicación NB Selfcare.
 class NbSelfcareApp extends ConsumerWidget {
@@ -36,93 +56,60 @@ class NbSelfcareApp extends ConsumerWidget {
           theme: lightTheme,
           darkTheme: darkTheme,
           themeMode: ThemeMode.system,
-          home: const _BootstrapScreen(),
+          home: const _OnboardingGate(),
         );
       },
     );
   }
 }
 
-class _BootstrapScreen extends ConsumerWidget {
-  const _BootstrapScreen();
+/// Compuerta reactiva que decide si mostrar Onboarding o el Dashboard principal.
+class _OnboardingGate extends ConsumerWidget {
+  const _OnboardingGate();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final theme = Theme.of(context);
-    final currentEngine = ref.watch(themeEngineProvider);
+    final AsyncValue<UserProfile?> profileAsync = ref.watch(userProfileStreamProvider);
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text(AppConstants.appName),
-        actions: [
-          IconButton(
-            tooltip: currentEngine == 'nxtpaper_eink'
-                ? 'Cambiar a Material You'
-                : 'Cambiar a Modo Papel NXTPAPER',
-            icon: Icon(
-              currentEngine == 'nxtpaper_eink'
-                  ? Icons.palette_outlined
-                  : Icons.menu_book_outlined,
-            ),
-            onPressed: () {
-              ref.read(themeEngineProvider.notifier).state =
-                  currentEngine == 'nxtpaper_eink'
-                      ? 'material_you'
-                      : 'nxtpaper_eink';
-            },
-          ),
-        ],
-      ),
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24.0),
+    return profileAsync.when(
+      data: (UserProfile? profile) {
+        if (profile == null) {
+          return const OnboardingScreen();
+        }
+
+        // Si el perfil guardado tiene un tema específico, sincronizarlo si difiere
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          ref.read(themeEngineProvider.notifier).setEngine(profile.themeMode);
+        });
+
+        return DashboardScreen(profile: profile);
+      },
+      loading: () => const Scaffold(
+        body: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(
-                Icons.spa_rounded,
-                size: 72.0,
-                color: theme.colorScheme.primary,
-              ),
-              const SizedBox(height: 16.0),
+              Icon(Icons.spa_rounded, size: 64, color: Colors.teal),
+              SizedBox(height: 16),
               Text(
-                AppConstants.appName,
-                style: theme.textTheme.headlineMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
+                'Iniciando Santuario...',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               ),
-              const SizedBox(height: 8.0),
-              Text(
-                'Santuario 100% Offline-First de Autocuidado',
-                textAlign: TextAlign.center,
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: theme.colorScheme.onSurface.withOpacity(0.7),
-                ),
-              ),
-              const SizedBox(height: 24.0),
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    children: [
-                      Text(
-                        'Motor Visual Activo:',
-                        style: theme.textTheme.labelMedium,
-                      ),
-                      const SizedBox(height: 4.0),
-                      Text(
-                        currentEngine == 'nxtpaper_eink'
-                            ? 'Modo Papel E-Ink (TCL NXTPAPER)'
-                            : 'Material You (Android 16 Monet)',
-                        style: theme.textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
+              SizedBox(height: 12),
+              CircularProgressIndicator(),
             ],
+          ),
+        ),
+      ),
+      error: (Object error, StackTrace stack) => Scaffold(
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Text(
+              'Error al inicializar base de datos local: $error',
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: Colors.red),
+            ),
           ),
         ),
       ),

@@ -89,3 +89,4 @@ Diseñado para eliminar el efecto estela (*ghosting*), maximizar la legibilidad 
    * **Modo Oscuro Tinta:** Fondo principal `#101214`, superficie de tarjetas `#181A1D`, bordes y texto en marfil `#EAE6DF`.
 4. **Cero Ghosting en Gráficas (Anti-Ghosting Animation):**
    * En modo `nxtpaper_eink`, la propiedad `swapAnimationDuration` de `fl_chart` se fuerza a `Duration.zero`. Esto evita que las transiciones fluidas dejen rastros grises difusos en la matriz de la pantalla.
+

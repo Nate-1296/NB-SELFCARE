@@ -19,6 +19,7 @@ analyzer:
     - "lib/core/l10n/generated/**"
     - "build/**"
     - "tool/seed/raw/**"
+    - android/**
 
 linter:
   rules:
@@ -35,7 +36,6 @@ linter:
     - test_types_in_equals
     - throw_in_finally
     - unawaited_futures
-    - unnecessary_await_in_return
     - use_build_context_synchronously
     # Estilo / legibilidad
     - directives_ordering

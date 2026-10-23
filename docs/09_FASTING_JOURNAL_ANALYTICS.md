@@ -63,3 +63,4 @@ A partir de 14 días de datos en SQLite, el motor ejecuta análisis de correlaci
    * Compara la pendiente de `trendWeightKg` durante semanas con ayunos $\ge 16\text{ h}$ cumplidos frente a semanas sin ayuno.
 
 > **Regla de Rigor:** El motor solo muestra una tarjeta si la serie temporal cuenta con al menos 10 pares de datos válidos y un coeficiente estadísticamente significativo, formulando el hallazgo siempre como una relación observada y no como una orden médica.
+
