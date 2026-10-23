@@ -4,8 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nb_selfcare/app.dart';
 import 'package:nb_selfcare/core/database/app_database.dart';
-import 'package:nb_selfcare/features/dashboard/presentation/dashboard_screen.dart';
 import 'package:nb_selfcare/features/profile_goals/presentation/onboarding_screen.dart';
+import 'package:nb_selfcare/features/today/presentation/hoy_screen.dart';
 
 void main() {
   late AppDatabase db;
@@ -71,10 +71,9 @@ void main() {
     // Esperar a que la transacción termine y el stream reactive la UI
     await tester.pumpAndSettle();
 
-    // Debe mostrar ahora DashboardScreen
-    expect(find.byType(DashboardScreen), findsOneWidget);
-    expect(find.text('Hola, Nathan'), findsOneWidget);
-    expect(find.text('Perfil Biométrico Dinámico'), findsOneWidget);
+    // Debe mostrar ahora HoyScreen
+    expect(find.byType(HoyScreen), findsOneWidget);
+    expect(find.textContaining('Nathan'), findsOneWidget);
 
     // Limpiar árbol para vaciar timers pendientes de Drift
     await tester.pumpWidget(const SizedBox());

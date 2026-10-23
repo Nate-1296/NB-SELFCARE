@@ -33,4 +33,23 @@ extension DateTimeExtensions on DateTime {
   bool isSameDay(DateTime other) {
     return year == other.year && month == other.month && day == other.day;
   }
+
+  /// Retorna el nombre del mes en español.
+  String get monthName {
+    const months = <String>[
+      'enero',
+      'febrero',
+      'marzo',
+      'abril',
+      'mayo',
+      'junio',
+      'julio',
+      'agosto',
+      'septiembre',
+      'octubre',
+      'noviembre',
+      'diciembre',
+    ];
+    return months[(month - 1).clamp(0, 11)];
+  }
 }

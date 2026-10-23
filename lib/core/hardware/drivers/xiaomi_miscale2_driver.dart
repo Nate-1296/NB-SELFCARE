@@ -122,42 +122,70 @@ class XiaomiMiScale2Driver implements BodyScaleDriver {
 
     _isScanning = true;
 
-    UniversalBle.onScanResult = (BleDevice device) {
-      // Si el usuario fijó una MAC específica, filtrar
-      if (targetMacAddress != null &&
-          device.deviceId.toUpperCase() != targetMacAddress.toUpperCase()) {
-        return;
+    Future<void> initAndScan() async {
+      try {
+        final hasPerms = await UniversalBle.hasPermissions();
+        if (!hasPerms) {
+          await UniversalBle.requestPermissions();
+        }
+
+        final state = await UniversalBle.getBluetoothAvailabilityState();
+        if (state != AvailabilityState.poweredOn) {
+          await UniversalBle.enableBluetooth();
+        }
+      } catch (_) {
+        // Continuar con el escaneo nativo
       }
 
-      // 1. Verificar si incluye Service Data 0x181B
-      final Uint8List? serviceData = _extractServiceData(device);
-      if (serviceData != null) {
-        final ScaleMeasurementEvent? event =
-            parseRawAdvertisement(serviceData, device.deviceId);
-        if (event != null && !_scanController!.isClosed) {
-          _scanController!.add(event);
+      UniversalBle.onScanResult = (BleDevice device) {
+        // Si el usuario fijó una MAC específica, filtrar
+        if (targetMacAddress != null &&
+            device.deviceId.toUpperCase() != targetMacAddress.toUpperCase()) {
           return;
         }
-      }
 
-      // 2. Si el fabricante o el nombre coincide, inspeccionar datos de fabricante
-      final String? name = device.name;
-      final bool matchesKnownName = name != null &&
-          BleUuids.knownMiScale2Names.any(
-            (known) => name.toUpperCase().contains(known),
-          );
+        // 1. Verificar si incluye Service Data 0x181B o 0x181D
+        final Uint8List? payload = _extractScalePayload(device);
+        if (payload != null) {
+          final ScaleMeasurementEvent? event =
+              parseRawAdvertisement(payload, device.deviceId);
+          if (event != null && _scanController != null && !_scanController!.isClosed) {
+            _scanController!.add(event);
+            return;
+          }
+        }
 
-      if (matchesKnownName && device.manufacturerDataList.isNotEmpty) {
-        final Uint8List bytes = device.manufacturerDataList.first.payload;
-        final ScaleMeasurementEvent? event =
-            parseRawAdvertisement(bytes, device.deviceId);
-        if (event != null && !_scanController!.isClosed) {
-          _scanController!.add(event);
+        // 2. Si el fabricante o el nombre coincide, inspeccionar datos de fabricante
+        final String? name = device.name;
+        final bool matchesKnownName = name != null &&
+            BleUuids.knownMiScale2Names.any(
+              (known) => name.toUpperCase().contains(known),
+            );
+
+        if (matchesKnownName && device.manufacturerDataList.isNotEmpty) {
+          for (final mfg in device.manufacturerDataList) {
+            if (mfg.payload.length >= 13) {
+              final ScaleMeasurementEvent? event =
+                  parseRawAdvertisement(mfg.payload, device.deviceId);
+              if (event != null && _scanController != null && !_scanController!.isClosed) {
+                _scanController!.add(event);
+                return;
+              }
+            }
+          }
+        }
+      };
+
+      try {
+        await UniversalBle.startScan();
+      } catch (err) {
+        if (_scanController != null && !_scanController!.isClosed) {
+          _scanController!.addError('Error al iniciar escaneo BLE: $err');
         }
       }
-    };
+    }
 
-    unawaited(UniversalBle.startScan());
+    unawaited(initAndScan());
     return _scanController!.stream;
   }
 
@@ -165,17 +193,31 @@ class XiaomiMiScale2Driver implements BodyScaleDriver {
     unawaited(stopScan());
   }
 
-  Uint8List? _extractServiceData(BleDevice device) {
-    for (final service in device.services) {
-      if (service.toLowerCase().contains('181b')) {
-        if (device.manufacturerDataList.isNotEmpty) {
-          final Uint8List payload = device.manufacturerDataList.first.payload;
-          if (payload.length >= 13) {
-            return payload;
-          }
+  Uint8List? _extractScalePayload(BleDevice device) {
+    // 1. Revisar serviceData (Map<String, Uint8List>) de la báscula Xiaomi
+    for (final entry in device.serviceData.entries) {
+      final key = entry.key.toLowerCase();
+      if (key.contains('181b') || key.contains('181d')) {
+        if (entry.value.length >= 13) {
+          return entry.value;
         }
       }
     }
+
+    // 2. Revisar si alguna entrada de serviceData tiene al menos 13 bytes
+    for (final entry in device.serviceData.entries) {
+      if (entry.value.length >= 13) {
+        return entry.value;
+      }
+    }
+
+    // 3. Revisar manufacturerDataList
+    for (final mfg in device.manufacturerDataList) {
+      if (mfg.payload.length >= 13) {
+        return mfg.payload;
+      }
+    }
+
     return null;
   }
 

@@ -8,7 +8,8 @@ import 'package:nb_selfcare/core/database/app_database.dart';
 import 'package:nb_selfcare/core/database/daos/body_measurements_dao.dart';
 import 'package:nb_selfcare/core/database/daos/pet_dao.dart';
 import 'package:nb_selfcare/core/database/daos/user_profile_dao.dart';
-import 'package:nb_selfcare/features/body_metrics/presentation/body_and_workout_screen.dart';
+import 'package:nb_selfcare/features/body_metrics/presentation/cuerpo_screen.dart';
+import 'package:nb_selfcare/shared/theme/sc_theme.dart';
 
 void main() {
   late AppDatabase db;
@@ -46,7 +47,7 @@ void main() {
     await db.close();
   });
 
-  testWidgets('Navegación al Laboratorio Corporal y pesaje manual con derivación de 13 métricas', (tester) async {
+  testWidgets('Laboratorio Corporal y pesaje manual con derivación de 13 métricas', (tester) async {
     tester.view.physicalSize = const Size(1080, 2400);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);
@@ -56,30 +57,27 @@ void main() {
         overrides: [
           appDatabaseProvider.overrideWithValue(db),
         ],
-        child: const NbSelfcareApp(),
+        child: MaterialApp(
+          theme: ScTheme.build('samsung_dark'),
+          home: const CuerpoScreen(),
+        ),
       ),
     );
 
     await tester.pumpAndSettle();
 
-    // Tocar el botón de Pesarme en el Dashboard
-    final cardFinder = find.text('Pesarme');
-    expect(cardFinder, findsOneWidget);
-    await tester.tap(cardFinder);
-    await tester.pumpAndSettle();
-
-    expect(find.byType(BodyAndWorkoutScreen), findsOneWidget);
-    expect(find.text('Xiaomi Mi Scale 2 BLE'), findsOneWidget);
+    expect(find.byType(CuerpoScreen), findsOneWidget);
+    expect(find.text('Composición Corporal'), findsOneWidget);
 
     // Abrir diálogo de pesaje manual
-    final manualWeighBtn = find.byIcon(Icons.edit_note_outlined);
+    final manualWeighBtn = find.text('Manual');
     expect(manualWeighBtn, findsOneWidget);
     await tester.tap(manualWeighBtn);
     await tester.pumpAndSettle();
 
-    expect(find.text('Registro Manual de Peso'), findsOneWidget);
+    expect(find.text('Pesaje Manual'), findsOneWidget);
 
-    // Guardar pesaje de 74.0 kg
+    // Guardar pesaje de 70.0 kg
     final saveBtn = find.text('Guardar');
     await tester.tap(saveBtn);
     await tester.pumpAndSettle();
@@ -117,30 +115,24 @@ void main() {
 
     await tester.pumpAndSettle();
 
-    // Navegar a BodyAndWorkoutScreen vía botón Entrenar
-    await tester.tap(find.text('Entrenar'));
+    // En HoyScreen tocar el botón rápido Entreno 5s
+    final entrenarBtn = find.text('Entreno 5s');
+    expect(entrenarBtn, findsOneWidget);
+    await tester.tap(entrenarBtn);
     await tester.pumpAndSettle();
 
-    // Abrir modal de entrenamiento
-    final registerWorkoutBtn = find.text('Registrar');
-    await tester.ensureVisible(registerWorkoutBtn);
-    await tester.tap(registerWorkoutBtn);
+    expect(find.text('Entrenamiento en 5 Segundos'), findsOneWidget);
+
+    // Guardar entrenamiento de 45 min
+    final submitBtn = find.text('Registrar en 5 segundos');
+    await tester.tap(submitBtn);
     await tester.pumpAndSettle();
 
-    expect(find.text('Entrenamiento en 5 Segundos'), findsNWidgets(2));
-    expect(find.text('Registrar en 5 segundos'), findsOneWidget);
-
-    // Guardar bloque RPE
-    await tester.tap(find.text('Registrar en 5 segundos'));
-    await tester.pumpAndSettle();
-
-    // Verificar inserción en Drift
+    // Verificar que se guardó en workoutDao y se sumaron 20 monedas (50 + 20 = 70)
     final workouts = await db.select(db.workoutBlocks).get();
     expect(workouts, hasLength(1));
-    expect(workouts.first.category, equals('weights'));
-    expect(workouts.first.netCaloriesBurned, greaterThan(100));
+    expect(workouts.first.durationMinutes, equals(45));
 
-    // Verificar recompensa de +20 monedas (50 iniciales + 20 = 70)
     final pet = await PetDao(db).getPetStatus();
     expect(pet!.coinsBalance, equals(70));
 

@@ -44,6 +44,8 @@ dependencies:
   share_plus: ^13.3.1
   universal_ble: ^3.1.2
   http: ^1.6.0
+  mobile_scanner: ^7.4.2
+  image_picker: ^1.2.4
 
 dev_dependencies:
   flutter_test:
@@ -58,17 +60,15 @@ flutter:
   uses-material-design: true
   generate: true
 
-  # Fuentes empaquetadas (offline). Se añaden en Fase 1 (ver docs/07_ANDROID16_AND_NXTPAPER_UI.md §5).
-  # fonts:
-  #   - family: AtkinsonHyperlegibleNext
-  #     fonts:
-  #       - asset: assets/fonts/AtkinsonHyperlegibleNext-Regular.ttf
-  #       - asset: assets/fonts/AtkinsonHyperlegibleNext-Medium.ttf
-  #         weight: 500
-  #       - asset: assets/fonts/AtkinsonHyperlegibleNext-Bold.ttf
-  #         weight: 700
+  fonts:
+    - family: SpaceGrotesk
+      fonts:
+        - asset: assets/fonts/SpaceGrotesk.ttf
+    - family: Manrope
+      fonts:
+        - asset: assets/fonts/Manrope.ttf
 
-  # Semilla nutricional USDA en español (generada por tool/seed, Fase 1).
-  # assets:
-  #   - assets/seed/
+  assets:
+    - assets/images/
+    - assets/images/nibi_sprites/
 

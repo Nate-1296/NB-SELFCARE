@@ -133,10 +133,11 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
               Center(
                 child: Column(
                   children: [
-                    Icon(
-                      Icons.spa_rounded,
-                      size: 64.0,
-                      color: theme.colorScheme.primary,
+                    Image.asset(
+                      'assets/images/logo.png',
+                      width: 84.0,
+                      height: 84.0,
+                      fit: BoxFit.contain,
                     ),
                     const SizedBox(height: 12.0),
                     Text(

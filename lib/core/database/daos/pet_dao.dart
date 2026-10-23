@@ -147,6 +147,22 @@ class PetDao {
     });
   }
 
+  /// Actualiza el nombre personalizado de la mascota.
+  Future<void> updatePetName(String newName) async {
+    final clean = newName.trim();
+    if (clean.isEmpty) return;
+
+    final PetStatusData? pet = await getPetStatus();
+    if (pet == null) return;
+
+    final query = _db.update(_db.petStatus)..where((tbl) => tbl.id.equals(pet.id));
+    await query.write(
+      PetStatusCompanion(
+        petName: Value(clean),
+      ),
+    );
+  }
+
   /// Equipa un sombrero o fondo para la mascota.
   Future<void> equipItem({String? hatId, String? bgId}) async {
     final PetStatusData? pet = await getPetStatus();

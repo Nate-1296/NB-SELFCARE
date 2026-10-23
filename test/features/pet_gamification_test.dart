@@ -7,8 +7,6 @@ import 'package:nb_selfcare/app.dart';
 import 'package:nb_selfcare/core/database/app_database.dart';
 import 'package:nb_selfcare/core/database/daos/pet_dao.dart';
 import 'package:nb_selfcare/core/database/daos/user_profile_dao.dart';
-import 'package:nb_selfcare/features/dashboard/presentation/dashboard_screen.dart';
-import 'package:nb_selfcare/features/dashboard/presentation/widgets/pet_habitat_widget.dart';
 import 'package:nb_selfcare/features/pet_gamification/presentation/shop_modal.dart';
 import 'package:nb_selfcare/features/pet_gamification/presentation/widgets/procedural_pet_canvas.dart';
 
@@ -89,7 +87,7 @@ void main() {
   });
 
   group('PetHabitatWidget & ShopModal', () {
-    testWidgets('Abre la Tienda desde el Hábitat y compra un Escudo de Racha', (tester) async {
+    testWidgets('Abre la Tienda y compra un Escudo de Racha', (tester) async {
       tester.view.physicalSize = const Size(1080, 2400);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.resetPhysicalSize);
@@ -99,35 +97,26 @@ void main() {
           overrides: [
             appDatabaseProvider.overrideWithValue(db),
           ],
-          child: const NbSelfcareApp(),
+          child: const MaterialApp(
+            home: Scaffold(body: ShopModal()),
+          ),
         ),
       );
 
       await tester.pumpAndSettle();
 
-      // Verificar que el Hábitat de Nibi está presente en el Dashboard
-      expect(find.byType(PetHabitatWidget), findsOneWidget);
-      expect(find.text('Nibi · Tu Compañero de Hábitos'), findsOneWidget);
-
-      // Tocar botón de Tienda en el Hábitat
-      final shopBtn = find.text('Tienda');
-      expect(shopBtn, findsOneWidget);
-      await tester.tap(shopBtn);
-      await tester.pumpAndSettle();
-
-      // Debe abrirse ShopModal
-      expect(find.byType(ShopModal), findsOneWidget);
+      // Debe estar visible la Tienda de Recompensas
       expect(find.text('Tienda de Recompensas'), findsOneWidget);
 
-      // Comprar Escudo Diario de Racha (cuesta 40 monedas)
-      final buyShieldBtn = find.widgetWithText(FilledButton, '40');
+      // Comprar Escudo Diario de Racha (cuesta 25 monedas)
+      final buyShieldBtn = find.widgetWithText(FilledButton, '25');
       expect(buyShieldBtn, findsOneWidget);
       await tester.tap(buyShieldBtn);
       await tester.pumpAndSettle();
 
-      // Verificar que el balance de monedas disminuyó de 200 a 160
+      // Verificar que el balance de monedas disminuyó de 200 a 175
       final updatedPet = await petDao.getPetStatus();
-      expect(updatedPet!.coinsBalance, equals(160));
+      expect(updatedPet!.coinsBalance, equals(175));
       // Y los escudos disponibles aumentaron de 1 a 2
       expect(updatedPet.streakShieldsAvailable, equals(2));
 
@@ -135,7 +124,7 @@ void main() {
       await tester.pump(const Duration(milliseconds: 100));
     });
 
-    testWidgets('DashboardScreen unifica macro rings, bento grid de agua y peso', (tester) async {
+    testWidgets('HoyScreen unifica resumen diario y dock de acciones rápidas', (tester) async {
       tester.view.physicalSize = const Size(1080, 2400);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.resetPhysicalSize);
@@ -151,13 +140,11 @@ void main() {
 
       await tester.pumpAndSettle();
 
-      expect(find.byType(DashboardScreen), findsOneWidget);
-      expect(find.text('Calorías y Balance Nutricional'), findsOneWidget);
-      expect(find.text('Agua de hoy'), findsOneWidget);
-      expect(find.text('Acciones Rápidas (1 Toque)'), findsOneWidget);
+      expect(find.text('Acciones Rápidas'), findsOneWidget);
+      expect(find.text('Objetivos del Día'), findsOneWidget);
 
-      // Tocar botón rápido de agua +250ml
-      final addWaterBtn = find.text('+250ml');
+      // Tocar botón rápido de agua +250 ml
+      final addWaterBtn = find.text('+250 ml');
       expect(addWaterBtn, findsOneWidget);
       await tester.tap(addWaterBtn);
       await tester.pumpAndSettle();

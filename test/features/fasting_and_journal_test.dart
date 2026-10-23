@@ -13,6 +13,7 @@ import 'package:nb_selfcare/core/services/backup_service.dart';
 import 'package:nb_selfcare/core/services/cross_analytics_engine.dart';
 import 'package:nb_selfcare/features/fasting/presentation/fasting_screen.dart';
 import 'package:nb_selfcare/features/journal_analytics/presentation/journal_analytics_profile_screen.dart';
+import 'package:nb_selfcare/shared/theme/sc_theme.dart';
 import 'package:nb_selfcare/shared/utils/date_time_extensions.dart';
 
 void main() {
@@ -131,27 +132,31 @@ void main() {
     });
 
     testWidgets('FastingScreen renderiza temporizador, protocolos y tarjeta informativa', (tester) async {
+      tester.view.physicalSize = const Size(1080, 2400);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
             appDatabaseProvider.overrideWithValue(db),
             fastingDaoProvider.overrideWithValue(fastingDao),
           ],
-          child: const MaterialApp(
-            home: FastingScreen(),
+          child: MaterialApp(
+            theme: ScTheme.build('samsung_dark'),
+            home: const FastingScreen(),
           ),
         ),
       );
 
       await tester.pumpAndSettle();
 
-      expect(find.text('Ayuno Intermitente y Cronobiología'), findsOneWidget);
-      expect(find.text('Temporizador de Ayuno'), findsOneWidget);
-      expect(find.text('16:8 (16h)'), findsOneWidget);
-      expect(find.text('18:6 (18h)'), findsOneWidget);
-      expect(find.text('20:4 (20h)'), findsOneWidget);
-      expect(find.text('OMAD 23:1 (23h)'), findsOneWidget);
-      expect(find.text('Iniciar Ayuno de 16 Horas'), findsOneWidget);
+      expect(find.text('Ayuno Intermitente'), findsOneWidget);
+      expect(find.text('Elegir Protocolo de Ayuno'), findsOneWidget);
+      expect(find.text('16:8'), findsOneWidget);
+      expect(find.text('18:6'), findsOneWidget);
+      expect(find.text('20:4'), findsOneWidget);
+      expect(find.text('Iniciar Ayuno (16:8)'), findsOneWidget);
 
       // Limpiar timers reactivos de Drift
       await tester.pumpWidget(const SizedBox());

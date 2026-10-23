@@ -134,6 +134,113 @@ class OpenFoodFactsService {
     }
   }
 
+  /// Busca alimentos en línea por texto en Open Food Facts y los guarda en SQLite local.
+  Future<List<FoodItem>> searchOnlineFoods(String query, {int pageSize = 12}) async {
+    final cleanQuery = query.trim();
+    if (cleanQuery.length < 2) return [];
+
+    try {
+      final uri = Uri.parse(
+        'https://world.openfoodfacts.org/cgi/search.pl?search_terms=${Uri.encodeComponent(cleanQuery)}&search_simple=1&action=process&json=1&page_size=$pageSize',
+      );
+
+      final response = await _client.get(
+        uri,
+        headers: {'User-Agent': _userAgent},
+      ).timeout(const Duration(seconds: 4));
+
+      if (response.statusCode != 200) return [];
+
+      final Map<String, dynamic> json =
+          jsonDecode(response.body) as Map<String, dynamic>;
+      final List<dynamic>? products = json['products'] as List<dynamic>?;
+      if (products == null || products.isEmpty) return [];
+
+      final List<FoodItem> results = [];
+      for (final dynamic item in products) {
+        if (item is! Map<String, dynamic>) continue;
+        final String? barcode = item['code'] as String?;
+        if (barcode != null && barcode.isNotEmpty) {
+          final existing = await _foodDao.getByBarcode(barcode);
+          if (existing != null) {
+            results.add(existing);
+            continue;
+          }
+        }
+
+        final Map<String, dynamic> nutriments =
+            (item['nutriments'] as Map<String, dynamic>?) ?? {};
+
+        final String name = (item['product_name_es'] as String?)?.trim() ??
+            (item['product_name'] as String?)?.trim() ??
+            (item['generic_name'] as String?)?.trim() ??
+            '';
+        if (name.isEmpty) continue;
+
+        final String? brand = (item['brands'] as String?)?.trim();
+        final String? nutriScore =
+            (item['nutriscore_grade'] as String?)?.toUpperCase();
+
+        final double kcal = _extractNum(nutriments, 'energy-kcal_100g') ??
+            ((_extractNum(nutriments, 'energy_100g') ?? 0.0) / 4.184);
+        final double protein = _extractNum(nutriments, 'proteins_100g') ?? 0.0;
+        final double carbs = _extractNum(nutriments, 'carbohydrates_100g') ?? 0.0;
+        final double fat = _extractNum(nutriments, 'fat_100g') ?? 0.0;
+        final double? fiber = _extractNum(nutriments, 'fiber_100g');
+
+        double? sodiumMg = _extractNum(nutriments, 'sodium_100g');
+        if (sodiumMg != null) {
+          sodiumMg *= 1000.0;
+        }
+
+        double? potassiumMg = _extractNum(nutriments, 'potassium_100g');
+        if (potassiumMg != null && potassiumMg < 10.0) {
+          potassiumMg *= 1000.0;
+        }
+
+        double? magnesiumMg = _extractNum(nutriments, 'magnesium_100g');
+        if (magnesiumMg != null && magnesiumMg < 5.0) {
+          magnesiumMg *= 1000.0;
+        }
+
+        final companion = FoodItemsCompanion(
+          barcode: drift.Value(barcode),
+          name: drift.Value(name),
+          brand: drift.Value(brand),
+          source: const drift.Value('open_food_facts'),
+          nutriScore: drift.Value(nutriScore),
+          defaultServingGrams: const drift.Value(100.0),
+          servingLabel: const drift.Value('100g'),
+          kcalPer100g: drift.Value(double.parse(kcal.toStringAsFixed(1))),
+          proteinPer100g: drift.Value(double.parse(protein.toStringAsFixed(1))),
+          carbsPer100g: drift.Value(double.parse(carbs.toStringAsFixed(1))),
+          fatPer100g: drift.Value(double.parse(fat.toStringAsFixed(1))),
+          fiberPer100g: drift.Value(fiber ?? 0.0),
+          sugarPer100g: const drift.Value(0.0),
+          sodiumMgPer100g: drift.Value(sodiumMg ?? 0.0),
+          potassiumMgPer100g: drift.Value(potassiumMg ?? 0.0),
+          magnesiumMgPer100g: drift.Value(magnesiumMg ?? 0.0),
+          calciumMgPer100g: const drift.Value(0.0),
+          ironMgPer100g: const drift.Value(0.0),
+          zincMgPer100g: const drift.Value(0.0),
+          vitaminCMgPer100g: const drift.Value(0.0),
+          vitaminDUgPer100g: const drift.Value(0.0),
+          vitaminB12UgPer100g: const drift.Value(0.0),
+        );
+
+        try {
+          final id = await _foodDao.insertFood(companion);
+          final saved = await _foodDao.getById(id);
+          if (saved != null) results.add(saved);
+        } catch (_) {}
+      }
+
+      return results;
+    } catch (_) {
+      return [];
+    }
+  }
+
   double? _extractNum(Map<String, dynamic> map, String key) {
     final dynamic val = map[key];
     if (val is num) return val.toDouble();
