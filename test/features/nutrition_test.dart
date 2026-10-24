@@ -2,15 +2,29 @@ import 'dart:convert';
 
 import 'package:drift/drift.dart' as drift;
 import 'package:drift/native.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:nb_selfcare/core/database/app_database.dart';
+import 'package:nb_selfcare/core/database/daos/fasting_dao.dart';
 import 'package:nb_selfcare/core/database/daos/food_dao.dart';
 import 'package:nb_selfcare/core/database/daos/hydration_dao.dart';
 import 'package:nb_selfcare/core/database/daos/pet_dao.dart';
 import 'package:nb_selfcare/core/database/daos/user_profile_dao.dart';
 import 'package:nb_selfcare/core/services/open_food_facts_service.dart';
+import 'package:nb_selfcare/features/nutrition_hydration/presentation/nutricion_screen.dart';
+import 'package:nb_selfcare/shared/theme/sc_theme.dart';
+import 'package:nb_selfcare/shared/utils/current_date_provider.dart';
+
+class _FixedDateNotifier extends CurrentDateNotifier {
+  _FixedDateNotifier(this._fixed);
+  final DateTime _fixed;
+
+  @override
+  DateTime build() => _fixed;
+}
 
 void main() {
   late AppDatabase db;
@@ -234,5 +248,292 @@ void main() {
       pet = await petDao.getPetStatus();
       expect(pet!.coinsBalance, equals(65));
     });
+  });
+
+  group('NutricionScreen ("Comer") y Subpáginas rediseñadas', () {
+    testWidgets(
+      'Renderiza Comer sin overflows en Material You y Modo Papel NXTPAPER con fecha corta DD/MM/YYYY',
+      (WidgetTester tester) async {
+        // Ancho compacto realista de móvil (390 px lógicos) para detectar cualquier corte o overflow
+        tester.view.physicalSize = const Size(390, 900);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.resetPhysicalSize);
+
+        final FastingDao fastingDao = FastingDao(db, petDao);
+        final DateTime fixedDate = DateTime(2026, 10, 24, 13, 0);
+
+        for (final String themeId in <String>[
+          'samsung_dark',
+          'nxtpaper_eink',
+        ]) {
+          await tester.pumpWidget(
+            ProviderScope(
+              overrides: [
+                appDatabaseProvider.overrideWithValue(db),
+                foodDaoProvider.overrideWithValue(foodDao),
+                hydrationDaoProvider.overrideWithValue(hydrationDao),
+                petDaoProvider.overrideWithValue(petDao),
+                fastingDaoProvider.overrideWithValue(fastingDao),
+                currentDateProvider.overrideWith(
+                  () => _FixedDateNotifier(fixedDate),
+                ),
+              ],
+              child: MaterialApp(
+                theme: ScTheme.build(themeId),
+                home: const NutricionScreen(),
+              ),
+            ),
+          );
+
+          await tester.pumpAndSettle();
+
+          expect(find.text('Comida'), findsOneWidget);
+          expect(find.text('24/10/2026'), findsOneWidget);
+          expect(find.text('Buscar alimento o marca...'), findsOneWidget);
+          expect(find.text('Dictado IA'), findsOneWidget);
+          expect(find.text('Mis Combos'), findsOneWidget);
+          expect(find.text('Ayuno'), findsOneWidget);
+          expect(find.text('Crear alimento'), findsOneWidget);
+          expect(find.text('Balance energético'), findsOneWidget);
+          expect(find.text('Electrolitos y Fibra'), findsOneWidget);
+
+          // Desplazar hasta el bloque de Hidratación para validar toda la lista sin overflows
+          final Finder waterTitle = find.text('Agua acumulada');
+          await tester.scrollUntilVisible(
+            waterTitle,
+            300,
+            scrollable: find.byType(Scrollable).first,
+          );
+          await tester.pumpAndSettle();
+          expect(waterTitle, findsOneWidget);
+          expect(find.text('A medida'), findsOneWidget);
+
+          // Reiniciar árbol entre temas para volver al inicio del scroll
+          await tester.pumpWidget(const SizedBox());
+          await tester.pump(const Duration(milliseconds: 50));
+        }
+      },
+    );
+
+    testWidgets(
+      'Subpáginas FoodSearchModal y FoodDetailSheet muestran Nutri-Score, Honestidad de Datos y registran alimento',
+      (WidgetTester tester) async {
+        tester.view.physicalSize = const Size(412, 920);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.resetPhysicalSize);
+
+        final FastingDao fastingDao = FastingDao(db, petDao);
+        final DateTime fixedDate = DateTime(2026, 10, 24, 13, 0);
+
+        // Insertar un producto comercial con Nutri-Score B y sin potasio/magnesio reportados
+        await foodDao.insertFood(
+          const FoodItemsCompanion(
+            name: drift.Value('Yogur Griego Artesanal'),
+            brand: drift.Value('Alpina'),
+            source: drift.Value('open_food_facts'),
+            nutriScore: drift.Value('B'),
+            defaultServingGrams: drift.Value(150.0),
+            servingLabel: drift.Value('1 vaso'),
+            kcalPer100g: drift.Value(95.0),
+            proteinPer100g: drift.Value(10.0),
+            carbsPer100g: drift.Value(4.0),
+            fatPer100g: drift.Value(4.2),
+            sodiumMgPer100g: drift.Value(45.0),
+            potassiumMgPer100g: drift.Value(0.0),
+            magnesiumMgPer100g: drift.Value(0.0),
+            isFavorite: drift.Value(true),
+          ),
+        );
+
+        await tester.pumpWidget(
+          ProviderScope(
+            overrides: [
+              appDatabaseProvider.overrideWithValue(db),
+              foodDaoProvider.overrideWithValue(foodDao),
+              hydrationDaoProvider.overrideWithValue(hydrationDao),
+              petDaoProvider.overrideWithValue(petDao),
+              fastingDaoProvider.overrideWithValue(fastingDao),
+              currentDateProvider.overrideWith(
+                () => _FixedDateNotifier(fixedDate),
+              ),
+            ],
+            child: MaterialApp(
+              theme: ScTheme.build('samsung_dark'),
+              home: const NutricionScreen(),
+            ),
+          ),
+        );
+
+        await tester.pumpAndSettle();
+
+        // Abrir subpágina de búsqueda FTS5
+        await tester.tap(find.text('Buscar alimento o marca...'));
+        await tester.pumpAndSettle();
+
+        expect(find.text('Añadir alimento'), findsOneWidget);
+        expect(find.text('Yogur Griego Artesanal'), findsOneWidget);
+        expect(find.text('Nutri-Score B'), findsOneWidget);
+
+        // Abrir subpágina de detalle al tocar la tarjeta del alimento
+        await tester.tap(find.text('Yogur Griego Artesanal'));
+        await tester.pumpAndSettle();
+
+        // Regla de Honestidad de Datos (potasio y magnesio no reportados en etiqueta)
+        expect(find.text('Dato no reportado'), findsNWidgets(2));
+
+        // Registrar la porción de 150 g en el momento seleccionado
+        final Finder registerBtn = find.textContaining('Registrar en ');
+        await tester.ensureVisible(registerBtn);
+        await tester.pumpAndSettle();
+        await tester.tap(registerBtn);
+        await tester.pumpAndSettle();
+
+        final List<FoodLog> logs = await (db.select(db.foodLogs)
+              ..where((tbl) => tbl.dateKey.equals('2026-10-24')))
+            .get();
+        expect(logs, hasLength(1));
+        expect(logs.first.gramsConsumed, equals(150.0));
+
+        await tester.pumpWidget(const SizedBox());
+        await tester.pump(const Duration(milliseconds: 100));
+      },
+    );
+
+    testWidgets(
+      'Subpágina CustomWaterSheet registra vaso personalizado desde Hidratación en Comer',
+      (WidgetTester tester) async {
+        tester.view.physicalSize = const Size(412, 920);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.resetPhysicalSize);
+
+        final FastingDao fastingDao = FastingDao(db, petDao);
+        final DateTime fixedDate = DateTime(2026, 10, 24, 13, 0);
+
+        await tester.pumpWidget(
+          ProviderScope(
+            overrides: [
+              appDatabaseProvider.overrideWithValue(db),
+              foodDaoProvider.overrideWithValue(foodDao),
+              hydrationDaoProvider.overrideWithValue(hydrationDao),
+              petDaoProvider.overrideWithValue(petDao),
+              fastingDaoProvider.overrideWithValue(fastingDao),
+              currentDateProvider.overrideWith(
+                () => _FixedDateNotifier(fixedDate),
+              ),
+            ],
+            child: MaterialApp(
+              theme: ScTheme.build('samsung_dark'),
+              home: const NutricionScreen(),
+            ),
+          ),
+        );
+
+        await tester.pumpAndSettle();
+
+        final Finder customWaterBtn = find.text('A medida');
+        await tester.scrollUntilVisible(
+          customWaterBtn,
+          300,
+          scrollable: find.byType(Scrollable).first,
+        );
+        await tester.pumpAndSettle();
+
+        await tester.tap(customWaterBtn);
+        await tester.pumpAndSettle();
+
+        expect(find.text('Vaso o botella a medida'), findsOneWidget);
+        await tester.tap(find.text('330 ml'));
+        await tester.pumpAndSettle();
+
+        await tester.tap(find.text('Registrar +330 ml'));
+        await tester.pumpAndSettle();
+
+        final List<HydrationLog> waterLogs = await (db.select(db.hydrationLogs)
+              ..where((tbl) => tbl.dateKey.equals('2026-10-24')))
+            .get();
+        final int totalWater =
+            waterLogs.fold(0, (int s, HydrationLog l) => s + l.volumeMl);
+        expect(totalWater, equals(330));
+
+        await tester.pumpWidget(const SizedBox());
+        await tester.pump(const Duration(milliseconds: 100));
+      },
+    );
+
+    testWidgets(
+      'Subpáginas Dictado IA, Mis Combos y Crear alimento abren sin overflows en 390px',
+      (WidgetTester tester) async {
+        tester.view.physicalSize = const Size(390, 920);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.resetPhysicalSize);
+
+        final FastingDao fastingDao = FastingDao(db, petDao);
+        final DateTime fixedDate = DateTime(2026, 10, 24, 9, 0);
+
+        final int avenaId = await foodDao.insertFood(
+          const FoodItemsCompanion(
+            name: drift.Value('Avena Integral'),
+            source: drift.Value('usda_seed'),
+            kcalPer100g: drift.Value(375.0),
+            proteinPer100g: drift.Value(13.0),
+            carbsPer100g: drift.Value(66.0),
+            fatPer100g: drift.Value(7.0),
+          ),
+        );
+        await foodDao.createCombo(
+          name: 'Desayuno Avena Base',
+          defaultMealType: 'breakfast',
+          itemsWithGrams: <MapEntry<int, double>>[
+            MapEntry<int, double>(avenaId, 80.0),
+          ],
+        );
+
+        await tester.pumpWidget(
+          ProviderScope(
+            overrides: [
+              appDatabaseProvider.overrideWithValue(db),
+              foodDaoProvider.overrideWithValue(foodDao),
+              hydrationDaoProvider.overrideWithValue(hydrationDao),
+              petDaoProvider.overrideWithValue(petDao),
+              fastingDaoProvider.overrideWithValue(fastingDao),
+              currentDateProvider.overrideWith(
+                () => _FixedDateNotifier(fixedDate),
+              ),
+            ],
+            child: MaterialApp(
+              theme: ScTheme.build('samsung_dark'),
+              home: const NutricionScreen(),
+            ),
+          ),
+        );
+
+        await tester.pumpAndSettle();
+
+        // 1. Dictado IA
+        await tester.tap(find.text('Dictado IA'));
+        await tester.pumpAndSettle();
+        expect(find.text('Dictado con IA Local'), findsOneWidget);
+        await tester.tap(find.byTooltip('Cerrar'));
+        await tester.pumpAndSettle();
+
+        // 2. Mis Combos
+        await tester.tap(find.text('Mis Combos'));
+        await tester.pumpAndSettle();
+        expect(find.text('Mis Combos Caseros'), findsOneWidget);
+        expect(find.text('Desayuno Avena Base'), findsOneWidget);
+        await tester.tap(find.byTooltip('Cerrar'));
+        await tester.pumpAndSettle();
+
+        // 3. Crear alimento
+        await tester.tap(find.text('Crear alimento'));
+        await tester.pumpAndSettle();
+        expect(find.text('Crear alimento propio'), findsOneWidget);
+        await tester.tap(find.byTooltip('Cerrar'));
+        await tester.pumpAndSettle();
+
+        await tester.pumpWidget(const SizedBox());
+        await tester.pump(const Duration(milliseconds: 100));
+      },
+    );
   });
 }

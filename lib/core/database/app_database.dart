@@ -4,6 +4,7 @@ import 'package:drift/drift.dart';
 import 'package:drift_flutter/drift_flutter.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'seeder/database_seeder.dart';
 import 'tables.dart';
 
 part 'app_database.g.dart';
@@ -34,7 +35,11 @@ part 'app_database.g.dart';
   ],
 )
 class AppDatabase extends _$AppDatabase {
-  AppDatabase([QueryExecutor? executor]) : super(executor ?? _openConnection());
+  AppDatabase([QueryExecutor? executor])
+      : _autoSeed = executor == null,
+        super(executor ?? _openConnection());
+
+  final bool _autoSeed;
 
   @override
   int get schemaVersion => 1;
@@ -53,6 +58,15 @@ class AppDatabase extends _$AppDatabase {
         beforeOpen: (OpeningDetails details) async {
           await customStatement('PRAGMA foreign_keys = ON;');
           await customStatement('PRAGMA journal_mode = WAL;');
+          await customStatement('''
+            CREATE TABLE IF NOT EXISTS ui_preferences (
+              pref_key TEXT PRIMARY KEY NOT NULL,
+              pref_value TEXT NOT NULL
+            );
+          ''');
+          if (_autoSeed) {
+            await DatabaseSeeder.seedIfEmpty(this);
+          }
         },
         onCreate: (Migrator m) async {
           await m.createAll();
@@ -121,6 +135,25 @@ class AppDatabase extends _$AppDatabase {
 
     await customStatement('VACUUM INTO ?', <Object>[backupPath]);
     return file;
+  }
+
+  /// Lee una preferencia local de interfaz persistida en SQLite (ej. layout de widgets en Hoy).
+  Future<String?> readUiPreference(String key) async {
+    final rows = await customSelect(
+      'SELECT pref_value FROM ui_preferences WHERE pref_key = ? LIMIT 1',
+      variables: [Variable.withString(key)],
+    ).get();
+    if (rows.isEmpty) return null;
+    return rows.first.read<String>('pref_value');
+  }
+
+  /// Persiste de forma atómica una preferencia local de interfaz en SQLite.
+  Future<void> writeUiPreference(String key, String value) async {
+    await customStatement(
+      'INSERT INTO ui_preferences (pref_key, pref_value) VALUES (?, ?) '
+      'ON CONFLICT(pref_key) DO UPDATE SET pref_value = excluded.pref_value;',
+      <Object>[key, value],
+    );
   }
 }
 

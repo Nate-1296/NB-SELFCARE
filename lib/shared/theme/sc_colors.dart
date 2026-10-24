@@ -22,9 +22,14 @@ class ScColors extends ThemeExtension<ScColors> {
     required this.ambient,
     required this.calories,
     required this.protein,
+    required this.carbs,
+    required this.fat,
     required this.water,
     required this.steps,
     required this.fasting,
+    required this.success,
+    required this.warning,
+    required this.danger,
     this.isFlat = false,
   });
 
@@ -73,6 +78,12 @@ class ScColors extends ThemeExtension<ScColors> {
   /// Color para métricas de proteína y músculo (cian / turquesa).
   final Color protein;
 
+  /// Color semántico para carbohidratos y glucógeno (ámbar dorado).
+  final Color carbs;
+
+  /// Color semántico para lípidos saludables (terracota cálido).
+  final Color fat;
+
   /// Color para hidratación y agua (azul cielo).
   final Color water;
 
@@ -81,6 +92,15 @@ class ScColors extends ThemeExtension<ScColors> {
 
   /// Color para ayuno intermitente y autofagia (púrpura / violeta místico).
   final Color fasting;
+
+  /// Color de confirmación y metas cumplidas.
+  final Color success;
+
+  /// Color de alerta moderada (picos hídricos, avisos).
+  final Color warning;
+
+  /// Color de acción destructiva o error.
+  final Color danger;
 
   /// Indica si el modo actual es plano (E-Ink NXTPAPER), suprimiendo desenfoques y sombras.
   final bool isFlat;
@@ -102,9 +122,14 @@ class ScColors extends ThemeExtension<ScColors> {
     Color? ambient,
     Color? calories,
     Color? protein,
+    Color? carbs,
+    Color? fat,
     Color? water,
     Color? steps,
     Color? fasting,
+    Color? success,
+    Color? warning,
+    Color? danger,
     bool? isFlat,
   }) {
     return ScColors(
@@ -123,9 +148,14 @@ class ScColors extends ThemeExtension<ScColors> {
       ambient: ambient ?? this.ambient,
       calories: calories ?? this.calories,
       protein: protein ?? this.protein,
+      carbs: carbs ?? this.carbs,
+      fat: fat ?? this.fat,
       water: water ?? this.water,
       steps: steps ?? this.steps,
       fasting: fasting ?? this.fasting,
+      success: success ?? this.success,
+      warning: warning ?? this.warning,
+      danger: danger ?? this.danger,
       isFlat: isFlat ?? this.isFlat,
     );
   }
@@ -149,9 +179,14 @@ class ScColors extends ThemeExtension<ScColors> {
       ambient: Color.lerp(ambient, other.ambient, t)!,
       calories: Color.lerp(calories, other.calories, t)!,
       protein: Color.lerp(protein, other.protein, t)!,
+      carbs: Color.lerp(carbs, other.carbs, t)!,
+      fat: Color.lerp(fat, other.fat, t)!,
       water: Color.lerp(water, other.water, t)!,
       steps: Color.lerp(steps, other.steps, t)!,
       fasting: Color.lerp(fasting, other.fasting, t)!,
+      success: Color.lerp(success, other.success, t)!,
+      warning: Color.lerp(warning, other.warning, t)!,
+      danger: Color.lerp(danger, other.danger, t)!,
       isFlat: t < 0.5 ? isFlat : other.isFlat,
     );
   }
@@ -177,9 +212,13 @@ extension ScColorsBuildContextX on BuildContext {
         ambient: Color(0x3800D2A0),
         calories: Color(0xFFFF6B4A),
         protein: Color(0xFF00D2C4),
+        carbs: Color(0xFFF59E0B),
+        fat: Color(0xFFFB7185),
         water: Color(0xFF38BDF8),
         steps: Color(0xFF84CC16),
         fasting: Color(0xFFA855F7),
+        success: Color(0xFF10B981),
+        warning: Color(0xFFF59E0B),
+        danger: Color(0xFFEF4444),
       );
 }
-

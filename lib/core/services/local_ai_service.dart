@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:drift/drift.dart' as drift;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../constants/app_constants.dart';
 import '../database/app_database.dart';
 import '../database/daos/food_dao.dart';
 
@@ -108,7 +109,7 @@ class JournalAiAnalysis {
 /// y respaldo determinista de alta precisión sin dependencias externas obligatorias.
 class LocalAiService {
   LocalAiService({
-    this.ttlDuration = const Duration(seconds: 120),
+    this.ttlDuration = const Duration(seconds: AppConstants.localAiMemoryTtlSeconds),
     this.localModelPath,
   });
 
@@ -206,6 +207,9 @@ class LocalAiService {
   }
 
   /// Genera un saludo conciso, cálido y sin regaños para la mascota Nibi (máximo 22 palabras).
+  ///
+  /// Acepta [variationSeed] y [hourOfDay] para que la IA varíe dinámicamente su mensaje
+  /// en cada ingreso a la vista de inicio sin repetir frases monótonas.
   Future<String> generatePetGreeting({
     required String petName,
     double? sleepHours,
@@ -214,6 +218,8 @@ class LocalAiService {
     int? waterGoalMl,
     double? weightTrendDelta7d,
     int? streak,
+    int variationSeed = 0,
+    int? hourOfDay,
   }) async {
     _touchOrLoad();
 
@@ -225,6 +231,8 @@ class LocalAiService {
       waterGoalMl: waterGoalMl,
       weightTrendDelta7d: weightTrendDelta7d,
       streak: streak,
+      variationSeed: variationSeed,
+      hourOfDay: hourOfDay,
     );
   }
 
@@ -236,10 +244,27 @@ class LocalAiService {
     required String dateKey,
   }) async {
     final result = await parseMealText(text);
+    return logParsedItems(
+      foodDao: foodDao,
+      items: result.items,
+      mealType: mealType,
+      dateKey: dateKey,
+    );
+  }
+
+  /// Resuelve e inserta una lista de items ya extraídos y validados por el usuario.
+  Future<List<FoodItem>> logParsedItems({
+    required FoodDao foodDao,
+    required List<ParsedMealItem> items,
+    required String mealType,
+    required String dateKey,
+  }) async {
     final List<FoodItem> loggedItems = [];
 
-    for (final item in result.items) {
-      final List<FoodItem> searchMatches = await foodDao.searchFood(item.searchTerm, limit: 1);
+    for (final item in items) {
+      if (item.searchTerm.trim().isEmpty || item.grams <= 0) continue;
+      final List<FoodItem> searchMatches =
+          await foodDao.searchFood(item.searchTerm, limit: 1);
       final FoodItem targetItem;
 
       if (searchMatches.isNotEmpty) {
@@ -248,7 +273,7 @@ class LocalAiService {
         // Alimento de respaldo insertado en caché local
         final newId = await foodDao.insertFood(
           FoodItemsCompanion(
-            name: drift.Value(item.searchTerm),
+            name: drift.Value(item.searchTerm.trim()),
             source: const drift.Value('ai_fallback'),
             kcalPer100g: drift.Value(item.fallbackKcal),
             proteinPer100g: drift.Value(item.fallbackP),
@@ -268,14 +293,22 @@ class LocalAiService {
           foodItemId: drift.Value(targetItem.id),
           gramsConsumed: drift.Value(item.grams),
           portionMultiplier: const drift.Value(1.0),
-          totalKcal: drift.Value(double.parse((targetItem.kcalPer100g * ratio).toStringAsFixed(1))),
-          totalProteinG: drift.Value(double.parse((targetItem.proteinPer100g * ratio).toStringAsFixed(1))),
-          totalCarbsG: drift.Value(double.parse((targetItem.carbsPer100g * ratio).toStringAsFixed(1))),
-          totalFatG: drift.Value(double.parse((targetItem.fatPer100g * ratio).toStringAsFixed(1))),
-          totalSodiumMg: drift.Value(double.parse((targetItem.sodiumMgPer100g * ratio).toStringAsFixed(1))),
-          totalPotassiumMg: drift.Value(double.parse((targetItem.potassiumMgPer100g * ratio).toStringAsFixed(1))),
-          totalMagnesiumMg: drift.Value(double.parse((targetItem.magnesiumMgPer100g * ratio).toStringAsFixed(1))),
-          totalFiberG: drift.Value(double.parse((targetItem.fiberPer100g * ratio).toStringAsFixed(1))),
+          totalKcal: drift.Value(
+              double.parse((targetItem.kcalPer100g * ratio).toStringAsFixed(1))),
+          totalProteinG: drift.Value(double.parse(
+              (targetItem.proteinPer100g * ratio).toStringAsFixed(1))),
+          totalCarbsG: drift.Value(double.parse(
+              (targetItem.carbsPer100g * ratio).toStringAsFixed(1))),
+          totalFatG: drift.Value(
+              double.parse((targetItem.fatPer100g * ratio).toStringAsFixed(1))),
+          totalSodiumMg: drift.Value(double.parse(
+              (targetItem.sodiumMgPer100g * ratio).toStringAsFixed(1))),
+          totalPotassiumMg: drift.Value(double.parse(
+              (targetItem.potassiumMgPer100g * ratio).toStringAsFixed(1))),
+          totalMagnesiumMg: drift.Value(double.parse(
+              (targetItem.magnesiumMgPer100g * ratio).toStringAsFixed(1))),
+          totalFiberG: drift.Value(double.parse(
+              (targetItem.fiberPer100g * ratio).toStringAsFixed(1))),
         ),
       );
 
@@ -289,11 +322,17 @@ class LocalAiService {
   List<ParsedMealItem> _parseMealDeterministically(String text) {
     final List<ParsedMealItem> items = [];
 
-    // Normaliza separadores habituales (comas, ' y ', saltos de línea)
+    // Normaliza separadores habituales preservando modificadores culinarios ("con piel", "con cáscara", "con sal")
     final segments = text
         .replaceAll(RegExp(r'\s+y\s+', caseSensitive: false), ', ')
         .replaceAll(RegExp(r'\s+e\s+', caseSensitive: false), ', ')
-        .replaceAll(RegExp(r'\s+con\s+', caseSensitive: false), ', ')
+        .replaceAll(
+          RegExp(
+            r'\s+con\s+(?!(?:piel|cáscara|cascara|hueso|sal|azúcar|azucar|agua)\b)',
+            caseSensitive: false,
+          ),
+          ', ',
+        )
         .replaceAll('\n', ', ')
         .split(',');
 
@@ -486,6 +525,104 @@ class LocalAiService {
     );
   }
 
+  /// Genera un saludo positivo instantáneo sin despertar el temporizador de VRAM GPU.
+  ///
+  /// Cuando [variationSeed] cambia en cada visita a Hoy, la IA selecciona y sintetiza
+  /// variantes frescas adaptadas a la hora del día y al estado fisiológico del usuario.
+  static String buildInstantGreeting({
+    required String petName,
+    double? sleepHours,
+    double? fastingHours,
+    int? waterMl,
+    int? waterGoalMl,
+    double? weightTrendDelta7d,
+    int? streak,
+    int variationSeed = 0,
+    int? hourOfDay,
+  }) {
+    final int safeSeed = variationSeed.abs();
+    final int h = hourOfDay ?? DateTime.now().hour;
+
+    if (fastingHours != null && fastingHours >= 14.0) {
+      const List<String> ketosisPool = <String>[
+        '¡Cetosis activa y autofagia profunda! Tu claridad mental y renovación celular están en su punto más alto ✨',
+        '¡Cetosis activa en marcha! Tu cuerpo aprovecha reservas con serenidad y enfoque extraordinario 🔥',
+        '¡Cetosis activa hoy! Cada minuto de descanso digestivo fortalece tu energía metabólica con calma ✨',
+        '¡Cetosis activa! Qué admirable constancia; escucha a tu cuerpo e hidrátate suavemente 💧',
+      ];
+      return ketosisPool[safeSeed % ketosisPool.length];
+    }
+
+    if (waterMl != null && waterGoalMl != null && waterMl >= waterGoalMl) {
+      const List<String> waterPool = <String>[
+        '¡Meta de hidratación completada! Cada célula de tu cuerpo está llena de energía y vitalidad 💧',
+        '¡Excelente hidratación hoy! Tu mente y tus músculos agradecen cada vaso de agua pura 🌊',
+        '¡Hidratación al día! Cuidar el agua que tomas ilumina tu concentración y bienestar celular ✨',
+        '¡Lograste tu hidratación diaria! Pequeños gestos conscientes como este transforman tu salud 💧',
+      ];
+      return waterPool[safeSeed % waterPool.length];
+    }
+
+    if (sleepHours != null && sleepHours >= 7.5) {
+      const List<String> sleepPool = <String>[
+        '¡Gran noche de sueño reparador! Despertar descansado es el mejor combustible para tus metas de hoy 🌅',
+        'Dormiste de maravilla; hoy tienes energía limpia y tu bono de descanso activo conmigo ✨',
+        'Un descanso profundo renueva todo tu sistema nervioso. ¡Disfruta este día con calma y foco! 🌿',
+        'Qué buen descanso lograste anoche; tu recuperación muscular y claridad hoy brillan al máximo 🌟',
+      ];
+      return sleepPool[safeSeed % sleepPool.length];
+    }
+
+    if (streak != null && streak >= 5) {
+      final List<String> streakPool = <String>[
+        '¡Llevas $streak días cuidando de ti sin pausa! La constancia tranquila es tu mayor superpoder 🌟',
+        '$streak días sumando hábitos amables contigo. Estoy muy orgulloso de acompañarte hoy 🐉',
+        '¡$streak días de ritmo constante! Sin prisas y con cariño, estás construyendo algo duradero ✨',
+        'Tu racha de $streak días refleja equilibrio real. Vamos paso a paso en este nuevo día 🌱',
+      ];
+      return streakPool[safeSeed % streakPool.length];
+    }
+
+    if (weightTrendDelta7d != null && weightTrendDelta7d < -0.2) {
+      const List<String> trendPool = <String>[
+        'Tu tendencia de peso avanza sólida hacia tu meta. La paciencia y los buenos hábitos dan frutos 🌱',
+        'La curva EMA muestra progreso firme y saludable. Confía en tu proceso diario sin presiones ✨',
+        'Tu composición responde muy bien a tu constancia reciente. ¡Sigamos cuidando tu energía hoy! 🌿',
+      ];
+      return trendPool[safeSeed % trendPool.length];
+    }
+
+    if (variationSeed == 0) {
+      return '¡Hola! Qué alegría verte hoy. Recuerda que cada pequeño paso consciente cuenta para tu bienestar 🌿';
+    }
+
+    if (h >= 5 && h < 12) {
+      const List<String> morningPool = <String>[
+        '¡Qué alegría empezar la mañana contigo! Un vaso de agua y respirar hondo son un gran inicio ☀️',
+        'Nueva mañana, nueva oportunidad para cuidarte con calma. Aquí estoy contigo en cada paso 🌱',
+        '¡Buen comienzo de día! Escucha qué necesita tu cuerpo hoy y avancemos a tu propio ritmo ✨',
+        'La mañana huele a energía fresca. Registra lo que te sume paz y vitalidad hoy 🌿',
+      ];
+      return morningPool[safeSeed % morningPool.length];
+    } else if (h >= 12 && h < 19) {
+      const List<String> afternoonPool = <String>[
+        '¡Qué gusto verte esta tarde! Haz una pausa breve, estira los hombros y toma un poco de agua 🌤️',
+        'Mitad del día ideal para recargar energía nutritiva y celebrar lo que ya lograste hoy ✨',
+        'Aquí sigo acompañándote esta tarde; recuerda que la constancia amable vale más que la perfección 🌿',
+        '¿Cómo va tu energía esta tarde? Cualquier pequeño registro hoy suma claridad a tu camino 🐉',
+      ];
+      return afternoonPool[safeSeed % afternoonPool.length];
+    } else {
+      const List<String> nightPool = <String>[
+        'La noche invita a bajar el ritmo. Escribir unas líneas en tu diario te regalará calma interior 🌙',
+        '¡Qué bueno cerrar el día contigo! Agradece a tu cuerpo por todo lo que sostuvo hoy ✨',
+        'Hora de soltar tensiones del día y preparar un descanso reparador. Aquí cuido tu rincón tranquilo 🌌',
+        'Respira suave esta noche; todo lo que hiciste hoy por tu bienestar ya dejó huella positiva 🌿',
+      ];
+      return nightPool[safeSeed % nightPool.length];
+    }
+  }
+
   /// Generador contextual determinista de saludos para Nibi (≤ 22 palabras, sin regaños).
   String _generateGreetingDeterministically({
     required String petName,
@@ -495,28 +632,20 @@ class LocalAiService {
     int? waterGoalMl,
     double? weightTrendDelta7d,
     int? streak,
+    int variationSeed = 0,
+    int? hourOfDay,
   }) {
-    if (fastingHours != null && fastingHours >= 14.0) {
-      return '¡Cetosis activa y autofagia profunda! Tu claridad mental y renovación celular están en su punto más alto ✨';
-    }
-
-    if (waterMl != null && waterGoalMl != null && waterMl >= waterGoalMl) {
-      return '¡Meta de hidratación completada! Cada célula de tu cuerpo está llena de energía y vitalidad 💧';
-    }
-
-    if (sleepHours != null && sleepHours >= 7.5) {
-      return '¡Gran noche de sueño reparador! Despertar descansado es el mejor combustible para tus metas de hoy 🌅';
-    }
-
-    if (streak != null && streak >= 5) {
-      return '¡Llevas $streak días cuidando de ti sin pausa! La constancia tranquila es tu mayor superpoder 🌟';
-    }
-
-    if (weightTrendDelta7d != null && weightTrendDelta7d < -0.2) {
-      return 'Tu tendencia de peso avanza sólida hacia tu meta. La paciencia y los buenos hábitos dan frutos 🌱';
-    }
-
-    return '¡Hola! Qué alegría verte hoy. Recuerda que cada pequeño paso consciente cuenta para tu bienestar 🌿';
+    return buildInstantGreeting(
+      petName: petName,
+      sleepHours: sleepHours,
+      fastingHours: fastingHours,
+      waterMl: waterMl,
+      waterGoalMl: waterGoalMl,
+      weightTrendDelta7d: weightTrendDelta7d,
+      streak: streak,
+      variationSeed: variationSeed,
+      hourOfDay: hourOfDay,
+    );
   }
 
   /// Limpia todos los recursos y controladores abiertos al destruir el servicio.

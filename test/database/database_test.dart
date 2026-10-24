@@ -2,6 +2,7 @@ import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nb_selfcare/core/database/app_database.dart';
+import 'package:nb_selfcare/core/database/daos/food_dao.dart';
 import 'package:nb_selfcare/core/database/seeder/database_seeder.dart';
 
 void main() {
@@ -138,6 +139,82 @@ void main() {
 
       final ledgerEntries = await db.select(db.coinLedger).get();
       expect(ledgerEntries.length, 3);
+    });
+
+    test('FoodDao.searchFood soporta tildes Unicode, operadores reservados FTS5 y favoritos', () async {
+      await DatabaseSeeder.seedIfEmpty(db);
+      final foodDao = FoodDao(db);
+
+      // Consultas CON tilde escrita por el usuario (antes fallaban al truncarse caracteres Unicode)
+      final conTildePlatano = await foodDao.searchFood('plátano');
+      expect(conTildePlatano, isNotEmpty);
+      expect(conTildePlatano.first.name, contains('Plátano'));
+
+      final conTildeBrocoli = await foodDao.searchFood('brócoli');
+      expect(conTildeBrocoli, isNotEmpty);
+      expect(conTildeBrocoli.first.name, contains('Brócoli'));
+
+      final conTildeCafe = await foodDao.searchFood('café');
+      expect(conTildeCafe, isNotEmpty);
+      expect(conTildeCafe.first.name, contains('Café'));
+
+      // Operadores reservados FTS5 y símbolos especiales no deben lanzar SqliteException
+      final reservedOnly = await foodDao.searchFood('AND OR NOT NEAR () * "');
+      expect(reservedOnly, isNotEmpty);
+
+      final mixedQuery = await foodDao.searchFood('pollo AND (pechuga)');
+      expect(mixedQuery, isNotEmpty);
+      expect(mixedQuery.first.name, contains('Pechuga de pollo'));
+
+      // Alternar favorito y verificar persistencia
+      final FoodItem target = conTildeCafe.first;
+      await foodDao.toggleFavorite(target.id, true);
+      final FoodItem? refreshed = await foodDao.getById(target.id);
+      expect(refreshed?.isFavorite, isTrue);
+    });
+
+    test('FoodDao permite editar gramos/horario y restaurar registros eliminados (Undo)', () async {
+      await DatabaseSeeder.seedIfEmpty(db);
+      final foodDao = FoodDao(db);
+      final food = (await foodDao.searchFood('avena')).first;
+
+      final int logId = await foodDao.logFood(
+        FoodLogsCompanion.insert(
+          dateKey: '2026-10-23',
+          mealType: 'breakfast',
+          foodItemId: food.id,
+          gramsConsumed: 100.0,
+          totalKcal: food.kcalPer100g,
+          totalProteinG: food.proteinPer100g,
+          totalCarbsG: food.carbsPer100g,
+          totalFatG: food.fatPer100g,
+          totalFiberG: food.fiberPer100g,
+          totalSodiumMg: food.sodiumMgPer100g,
+          totalPotassiumMg: food.potassiumMgPer100g,
+          totalMagnesiumMg: food.magnesiumMgPer100g,
+        ),
+      );
+
+      final inserted = await (db.select(db.foodLogs)..where((t) => t.id.equals(logId))).getSingle();
+      await foodDao.updateFoodLogEntry(
+        existingLog: inserted,
+        food: food,
+        newGrams: 150.0,
+        mealType: 'snack',
+      );
+
+      final updated = await (db.select(db.foodLogs)..where((t) => t.id.equals(logId))).getSingle();
+      expect(updated.gramsConsumed, equals(150.0));
+      expect(updated.mealType, equals('snack'));
+      expect(updated.totalKcal, closeTo(food.kcalPer100g * 1.5, 0.5));
+
+      await foodDao.deleteFoodLog(logId);
+      expect(await db.select(db.foodLogs).get(), isEmpty);
+
+      await foodDao.restoreFoodLog(updated);
+      final restoredList = await db.select(db.foodLogs).get();
+      expect(restoredList, hasLength(1));
+      expect(restoredList.first.gramsConsumed, equals(150.0));
     });
   });
 }

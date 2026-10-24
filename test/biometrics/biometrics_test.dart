@@ -1,8 +1,11 @@
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:nb_selfcare/core/database/app_database.dart';
 import 'package:nb_selfcare/core/hardware/drivers/xiaomi_miscale2_driver.dart';
 import 'package:nb_selfcare/shared/utils/biometric_formulas.dart';
+import 'package:nb_selfcare/shared/utils/daily_targets_calculator.dart';
+import 'package:universal_ble/universal_ble.dart';
 
 void main() {
   group('Xiaomi Mi Body Composition Scale 2 (Parser 13 bytes)', () {
@@ -52,6 +55,106 @@ void main() {
       // Trama truncada (< 13 bytes)
       final truncatedBytes = Uint8List.fromList([0x02, 0x22, 0xEA]);
       expect(XiaomiMiScale2Driver.parseRawAdvertisement(truncatedBytes, 'AA:BB:CC:DD:EE:FF'), isNull);
+    });
+
+    test('Filtra estrictamente periféricos BLE ajenos y acepta 0x181B / 0x181D / Huami 0x0157', () {
+      final validFrame = Uint8List.fromList([
+        0x02, 0x22, 0xEA, 0x07, 10, 23, 8, 30, 15, 0xF4, 0x01, 0xA4, 0x38,
+      ]);
+
+      // 1. Dispositivo ajeno (ej. auriculares o TV con 15 bytes de ManufacturerData Apple 0x004C) -> RECHAZADO
+      final unrelatedBeacon = BleDevice(
+        deviceId: '11:22:33:44:55:66',
+        name: 'Living Room TV',
+        manufacturerDataList: [
+          ManufacturerData(0x004C, Uint8List.fromList([...validFrame, 0x99, 0x88])),
+        ],
+      );
+      expect(
+        XiaomiMiScale2Driver.extractScalePayloadForDevice(unrelatedBeacon),
+        isNull,
+      );
+
+      // 2. Báscula transmitiendo en Service Data oficial 0x181B -> ACEPTADA
+      final scaleService181b = BleDevice(
+        deviceId: 'AA:BB:CC:DD:EE:01',
+        name: null,
+        serviceData: {
+          '0000181b-0000-1000-8000-00805f9b34fb': validFrame,
+        },
+      );
+      expect(
+        XiaomiMiScale2Driver.extractScalePayloadForDevice(scaleService181b),
+        equals(validFrame),
+      );
+
+      // 3. Báscula transmitiendo Manufacturer Data Huami (0x0157) -> ACEPTADA
+      final scaleHuamiMfg = BleDevice(
+        deviceId: 'AA:BB:CC:DD:EE:02',
+        name: 'MIBFS',
+        manufacturerDataList: [
+          ManufacturerData(XiaomiMiScale2Driver.huamiCompanyId, validFrame),
+        ],
+      );
+      expect(
+        XiaomiMiScale2Driver.extractScalePayloadForDevice(scaleHuamiMfg),
+        equals(validFrame),
+      );
+
+      // 4. Si el usuario fijó una MAC distinta, ignora otras básculas cercanas
+      expect(
+        XiaomiMiScale2Driver.extractScalePayloadForDevice(
+          scaleHuamiMfg,
+          targetMacAddress: 'FF:EE:DD:CC:BB:AA',
+        ),
+        isNull,
+      );
+    });
+  });
+
+  group('Calculadora Unificada de Objetivos Diarios (DailyTargetsCalculator)', () {
+    test('Calcula TDEE inicial personalizado y metas diarias con entrenamiento neto', () {
+      final birthDate = DateTime(1998, 5, 20);
+      final initialTdee = DailyTargetsCalculator.estimateInitialTdee(
+        weightKg: 75.0,
+        heightCm: 178.0,
+        birthDate: birthDate,
+        biologicalSex: 'male',
+        dailyStepsGoal: 9000,
+      );
+      expect(initialTdee, inInclusiveRange(2200, 2700));
+
+      final profile = UserProfile(
+        id: 1,
+        name: 'Nathan',
+        birthDate: birthDate,
+        biologicalSex: 'male',
+        heightCm: 178.0,
+        targetWeightKg: 72.0,
+        weeklyGoalRateKg: -0.5, // Déficit ~ -550 kcal/día
+        currentAdaptiveTdeeKcal: 2400,
+        dailyWaterGoalMl: 2500,
+        dailyStepsGoal: 8000,
+        dailySleepGoalHours: 7.5,
+        themeMode: 'samsung_dark',
+        isLocalAiEnabled: false,
+        createdAt: DateTime(2026, 1, 1),
+      );
+
+      final restDay = DailyTargetsCalculator.compute(
+        profile: profile,
+        currentWeightKg: 74.0,
+        netWorkoutKcal: 0,
+      );
+      final workoutDay = DailyTargetsCalculator.compute(
+        profile: profile,
+        currentWeightKg: 74.0,
+        netWorkoutKcal: 300,
+      );
+
+      expect(workoutDay.effectiveCalorieTargetKcal, equals(restDay.effectiveCalorieTargetKcal + 300));
+      expect(workoutDay.proteinTargetG, equals(144.0)); // 72.0 * 2.0 g/kg
+      expect(workoutDay.carbsTargetG, greaterThan(restDay.carbsTargetG));
     });
   });
 
@@ -174,6 +277,53 @@ void main() {
         durationMinutes: 60,
       );
       expect(netKcal, equals(300.0));
+    });
+
+    test('Derivación de las 13 métricas con impedancia nula (Fallback Antropométrico)', () {
+      final metrics = BiometricFormulas.deriveMetrics(
+        weightKg: 75.0,
+        heightCm: 180.0,
+        ageYears: 30.0,
+        isMale: true,
+        impedanceOhms: null,
+      );
+
+      expect(metrics.weightKg, equals(75.0));
+      expect(metrics.bmi, closeTo(23.15, 0.05));
+      expect(metrics.bodyFatPercentage, inInclusiveRange(10.0, 25.0));
+      expect(metrics.muscleMassKg, greaterThan(45.0));
+      expect(metrics.waterPercentage, inInclusiveRange(45.0, 75.0));
+      expect(metrics.boneMassKg, inInclusiveRange(2.0, 4.5));
+      expect(metrics.proteinPercentage, inInclusiveRange(10.0, 26.0));
+      expect(metrics.visceralFatIndex, inInclusiveRange(1, 15));
+      expect(metrics.basalMetabolicRateKcal, inInclusiveRange(1400, 2000));
+      expect(metrics.metabolicAgeYears, inInclusiveRange(20, 45));
+      expect(metrics.leanBodyMassKg, greaterThan(50.0));
+      expect(metrics.bodyScore, inInclusiveRange(50, 100));
+      expect(metrics.bodyType, isNotEmpty);
+    });
+
+    test('Derivación de las 13 métricas con impedancia válida (BIA Xiaomi Mi Scale 2)', () {
+      final metrics = BiometricFormulas.deriveMetrics(
+        weightKg: 75.0,
+        heightCm: 180.0,
+        ageYears: 30.0,
+        isMale: true,
+        impedanceOhms: 500,
+      );
+
+      expect(metrics.weightKg, equals(75.0));
+      expect(metrics.bodyFatPercentage, isNotNull);
+      expect(metrics.muscleMassKg, isNotNull);
+      expect(metrics.waterPercentage, isNotNull);
+      expect(metrics.boneMassKg, isNotNull);
+      expect(metrics.proteinPercentage, isNotNull);
+      expect(metrics.visceralFatIndex, isNotNull);
+      expect(metrics.basalMetabolicRateKcal, isNotNull);
+      expect(metrics.metabolicAgeYears, isNotNull);
+      expect(metrics.leanBodyMassKg, isNotNull);
+      expect(metrics.bodyScore, isNotNull);
+      expect(metrics.bodyType, isNotNull);
     });
   });
 }

@@ -19,7 +19,7 @@ class CrossCorrelationInsight {
   final int sampleSize;
   final String domain;
 
-  /// Intensidad descriptiva de la correlación
+  /// Intensidad descriptiva de la correlación.
   String get strengthLabel {
     final abs = correlationR.abs();
     if (abs >= 0.7) return 'Correlación Fuerte';
@@ -27,6 +27,23 @@ class CrossCorrelationInsight {
     if (abs >= 0.2) return 'Correlación Leve';
     return 'Sin relación lineal significativa';
   }
+}
+
+/// Estado de preparación de datos para activar correlaciones de Pearson (mínimo 10 días emparejados).
+class AnalyticsReadinessStats {
+  const AnalyticsReadinessStats({
+    required this.journalDays,
+    required this.foodDays,
+    required this.sleepDays,
+    required this.fastingDays,
+  });
+
+  final int journalDays;
+  final int foodDays;
+  final int sleepDays;
+  final int fastingDays;
+
+  int get maxPairedProgress => math.min(10, math.max(journalDays, fastingDays));
 }
 
 /// Motor estadístico de correlaciones cruzadas (Pearson) entre variables biométricas y conductuales.
@@ -62,41 +79,75 @@ class CrossAnalyticsEngine {
     return double.parse(r.clamp(-1.0, 1.0).toStringAsFixed(2));
   }
 
-  /// Ejecuta el análisis cruzado sobre la base de datos SQLite y retorna los hallazgos validados.
+  /// Obtiene el conteo de días únicos registrados por dominio para informar progreso en la UI.
+  Future<AnalyticsReadinessStats> getReadinessStats() async {
+    final jRow = await _db.customSelect(
+      'SELECT COUNT(DISTINCT date_key) AS cnt FROM journal_entries',
+      readsFrom: {_db.journalEntries},
+    ).getSingle();
+    final fRow = await _db.customSelect(
+      'SELECT COUNT(DISTINCT date_key) AS cnt FROM food_logs',
+      readsFrom: {_db.foodLogs},
+    ).getSingle();
+    final sRow = await _db.customSelect(
+      'SELECT COUNT(DISTINCT date_key) AS cnt FROM daily_summaries WHERE sleep_duration_minutes > 0',
+      readsFrom: {_db.dailySummaries},
+    ).getSingle();
+    final fastRow = await _db.customSelect(
+      'SELECT COUNT(DISTINCT substr(started_at, 1, 10)) AS cnt FROM fasting_sessions WHERE actual_ended_at IS NOT NULL',
+      readsFrom: {_db.fastingSessions},
+    ).getSingle();
+
+    return AnalyticsReadinessStats(
+      journalDays: jRow.read<int>('cnt'),
+      foodDays: fRow.read<int>('cnt'),
+      sleepDays: sRow.read<int>('cnt'),
+      fastingDays: fastRow.read<int>('cnt'),
+    );
+  }
+
+  /// Ejecuta el análisis cruzado sobre subconsultas diarias pre-agregadas (sin inflación cartesiana)
+  /// y retorna únicamente los hallazgos con relación lineal significativa (|r| >= 0.30 y n >= 10).
   Future<List<CrossCorrelationInsight>> computeInsights() async {
     final List<CrossCorrelationInsight> insights = [];
 
-    // 1. Análisis de Estrés vs Carbohidratos (JournalEntries vs FoodLogs)
+    // 1. Estrés Diario vs Consumo de Carbohidratos (subconsultas diarias 1:1)
     final stressCarbQuery = await _db.customSelect(
       '''
-      SELECT j.stress_level, SUM(f.total_carbs_g) as carbs
-      FROM journal_entries j
-      JOIN food_logs f ON j.date_key = f.date_key
-      WHERE j.stress_level IS NOT NULL
-      GROUP BY j.date_key
-      HAVING carbs > 0
+      SELECT j.avg_stress AS stress_val, f.daily_carbs AS carbs_val
+      FROM (
+        SELECT date_key, AVG(stress_level) AS avg_stress
+        FROM journal_entries
+        WHERE stress_level IS NOT NULL
+        GROUP BY date_key
+      ) j
+      JOIN (
+        SELECT date_key, SUM(total_carbs_g) AS daily_carbs
+        FROM food_logs
+        GROUP BY date_key
+        HAVING daily_carbs > 0
+      ) f ON j.date_key = f.date_key
       ORDER BY j.date_key ASC
       ''',
       readsFrom: {_db.journalEntries, _db.foodLogs},
     ).get();
 
     if (stressCarbQuery.length >= 10) {
-      final List<double> stressLevels = [];
-      final List<double> carbsGrams = [];
-
-      for (final row in stressCarbQuery) {
-        stressLevels.add(row.read<int>('stress_level').toDouble());
-        carbsGrams.add(row.read<double>('carbs'));
-      }
+      final List<double> stressLevels = stressCarbQuery
+          .map((row) => row.read<double>('stress_val'))
+          .toList();
+      final List<double> carbsGrams = stressCarbQuery
+          .map((row) => row.read<double>('carbs_val'))
+          .toList();
 
       final double r = calculatePearsonR(stressLevels, carbsGrams);
-      if (r.abs() >= 0.3) {
+      if (r.abs() >= 0.30) {
         insights.add(
           CrossCorrelationInsight(
             title: 'Estrés y Consumo de Carbohidratos',
             description: r > 0
-                ? 'En los días con mayor nivel de estrés (4-5), tu consumo de carbohidratos tiende a aumentar.'
-                : 'En los días con menor estrés sueles mantener un consumo más balanceado de carbohidratos.',
+                ? 'En los días con mayor estrés percibido, tu ingesta diaria de carbohidratos tiende a elevarse.'
+                : 'En los días de mayor calma mental tiendes a sostener una carga de carbohidratos más uniforme.',
             correlationR: r,
             sampleSize: stressCarbQuery.length,
             domain: 'stress_vs_carbs',
@@ -105,40 +156,133 @@ class CrossAnalyticsEngine {
       }
     }
 
-    // 2. Análisis de Horas de Ayuno vs Calorías Totales del Día
+    // 2. Duración Real del Ayuno vs Ingesta Calórica Total del Día
     final fastCalQuery = await _db.customSelect(
       '''
-      SELECT s.target_hours, SUM(f.total_kcal) as total_kcal
-      FROM fasting_sessions s
-      JOIN food_logs f ON s.started_at LIKE f.date_key || '%'
-      WHERE s.is_completed = 1
-      GROUP BY f.date_key
-      HAVING total_kcal > 0
+      SELECT s.fast_hours AS hours_val, f.daily_kcal AS kcal_val
+      FROM (
+        SELECT substr(started_at, 1, 10) AS date_key,
+               AVG((julianday(actual_ended_at) - julianday(started_at)) * 24.0) AS fast_hours
+        FROM fasting_sessions
+        WHERE actual_ended_at IS NOT NULL
+        GROUP BY substr(started_at, 1, 10)
+      ) s
+      JOIN (
+        SELECT date_key, SUM(total_kcal) AS daily_kcal
+        FROM food_logs
+        GROUP BY date_key
+        HAVING daily_kcal > 0
+      ) f ON s.date_key = f.date_key
+      WHERE s.fast_hours > 0
+      ORDER BY s.date_key ASC
       ''',
       readsFrom: {_db.fastingSessions, _db.foodLogs},
     ).get();
 
     if (fastCalQuery.length >= 10) {
-      final List<double> fastHours = [];
-      final List<double> totalKcals = [];
-
-      for (final row in fastCalQuery) {
-        fastHours.add(row.read<int>('target_hours').toDouble());
-        totalKcals.add(row.read<double>('total_kcal'));
-      }
+      final List<double> fastHours =
+          fastCalQuery.map((row) => row.read<double>('hours_val')).toList();
+      final List<double> totalKcals =
+          fastCalQuery.map((row) => row.read<double>('kcal_val')).toList();
 
       final double r = calculatePearsonR(fastHours, totalKcals);
-      insights.add(
-        CrossCorrelationInsight(
-          title: 'Duración del Ayuno vs Ingesta Calórica',
-          description: r < 0
-              ? 'Tus ayunos más prolongados se asocian de forma natural con un menor consumo calórico total sin sensación de restricción.'
-              : 'Tus sesiones de ayuno mantienen una ingesta calórica estable y controlada.',
-          correlationR: r,
-          sampleSize: fastCalQuery.length,
-          domain: 'fasting_vs_calories',
-        ),
-      );
+      if (r.abs() >= 0.30) {
+        insights.add(
+          CrossCorrelationInsight(
+            title: 'Duración del Ayuno vs Ingesta Calórica',
+            description: r < 0
+                ? 'Tus ventanas de ayuno más amplias se asocian de forma natural con menor ingesta calórica sin esfuerzo.'
+                : 'En días de ayuno prolongado sueles concentrar comidas más densas en tu ventana nutritiva.',
+            correlationR: r,
+            sampleSize: fastCalQuery.length,
+            domain: 'fasting_vs_calories',
+          ),
+        );
+      }
+    }
+
+    // 3. Horas de Sueño vs Nivel de Energía Percibida
+    final sleepEnergyQuery = await _db.customSelect(
+      '''
+      SELECT (d.sleep_duration_minutes / 60.0) AS sleep_h, j.avg_energy AS energy_val
+      FROM daily_summaries d
+      JOIN (
+        SELECT date_key, AVG(energy_level) AS avg_energy
+        FROM journal_entries
+        WHERE energy_level IS NOT NULL
+        GROUP BY date_key
+      ) j ON d.date_key = j.date_key
+      WHERE d.sleep_duration_minutes > 0
+      ORDER BY d.date_key ASC
+      ''',
+      readsFrom: {_db.dailySummaries, _db.journalEntries},
+    ).get();
+
+    if (sleepEnergyQuery.length >= 10) {
+      final List<double> sleepHours =
+          sleepEnergyQuery.map((row) => row.read<double>('sleep_h')).toList();
+      final List<double> energyLevels = sleepEnergyQuery
+          .map((row) => row.read<double>('energy_val'))
+          .toList();
+
+      final double r = calculatePearsonR(sleepHours, energyLevels);
+      if (r.abs() >= 0.30) {
+        insights.add(
+          CrossCorrelationInsight(
+            title: 'Sueño Reparador vs Vitalidad Diaria',
+            description: r > 0
+                ? 'Dormir más horas impulsa directamente tu energía percibida al día siguiente.'
+                : 'Tu energía percibida varía de forma inversa a la duración total de sueño registrada.',
+            correlationR: r,
+            sampleSize: sleepEnergyQuery.length,
+            domain: 'sleep_vs_energy',
+          ),
+        );
+      }
+    }
+
+    // 4. Hidratación Diaria vs Nivel de Energía
+    final waterEnergyQuery = await _db.customSelect(
+      '''
+      SELECT h.daily_ml AS water_val, j.avg_energy AS energy_val
+      FROM (
+        SELECT date_key, SUM(volume_ml) AS daily_ml
+        FROM hydration_logs
+        GROUP BY date_key
+        HAVING daily_ml > 0
+      ) h
+      JOIN (
+        SELECT date_key, AVG(energy_level) AS avg_energy
+        FROM journal_entries
+        WHERE energy_level IS NOT NULL
+        GROUP BY date_key
+      ) j ON h.date_key = j.date_key
+      ORDER BY h.date_key ASC
+      ''',
+      readsFrom: {_db.hydrationLogs, _db.journalEntries},
+    ).get();
+
+    if (waterEnergyQuery.length >= 10) {
+      final List<double> waterMl =
+          waterEnergyQuery.map((row) => row.read<double>('water_val')).toList();
+      final List<double> energyVals = waterEnergyQuery
+          .map((row) => row.read<double>('energy_val'))
+          .toList();
+
+      final double r = calculatePearsonR(waterMl, energyVals);
+      if (r.abs() >= 0.30) {
+        insights.add(
+          CrossCorrelationInsight(
+            title: 'Hidratación vs Claridad y Energía',
+            description: r > 0
+                ? 'Los días mejor hidratados coinciden consistentemente con mayor vitalidad registrada en tu diario.'
+                : 'En días de menor energía tiendes a incrementar tu ingesta de agua para compensar.',
+            correlationR: r,
+            sampleSize: waterEnergyQuery.length,
+            domain: 'hydration_vs_energy',
+          ),
+        );
+      }
     }
 
     return insights;

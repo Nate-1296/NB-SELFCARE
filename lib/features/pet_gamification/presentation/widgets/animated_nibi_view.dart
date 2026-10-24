@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -11,6 +12,8 @@ enum NibiMood {
   sleeping,
   zen,
   workout,
+  weighing,
+  curious,
 }
 
 class AnimatedNibiView extends StatefulWidget {
@@ -41,6 +44,7 @@ class AnimatedNibiViewState extends State<AnimatedNibiView>
   final List<_HeartParticle> _particles = [];
   final Random _rnd = Random();
   Timer? _particleTimer;
+  DateTime? _lastPetAt;
 
   @override
   void initState() {
@@ -48,11 +52,30 @@ class AnimatedNibiViewState extends State<AnimatedNibiView>
     _floatController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 2200),
-    )..repeat(reverse: true);
-
+    );
     _floatAnimation = Tween<double>(begin: -5.0, end: 5.0).animate(
       CurvedAnimation(parent: _floatController, curve: Curves.easeInOut),
     );
+    _syncAnimationMode();
+  }
+
+  @override
+  void didUpdateWidget(covariant AnimatedNibiView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.isEink != widget.isEink) {
+      _syncAnimationMode();
+    }
+  }
+
+  void _syncAnimationMode() {
+    if (widget.isEink) {
+      _floatController.stop();
+      _floatController.value = 0.5;
+      _particleTimer?.cancel();
+      _particles.clear();
+    } else if (!_floatController.isAnimating) {
+      unawaited(_floatController.repeat(reverse: true));
+    }
   }
 
   @override
@@ -62,15 +85,30 @@ class AnimatedNibiViewState extends State<AnimatedNibiView>
     super.dispose();
   }
 
+  void _handleGesturePet() {
+    final DateTime now = DateTime.now();
+    if (_lastPetAt != null &&
+        now.difference(_lastPetAt!).inMilliseconds < 600) {
+      return;
+    }
+    _lastPetAt = now;
+    triggerPetHearts();
+    widget.onPet?.call();
+  }
+
   void triggerPetHearts() {
     unawaited(HapticFeedback.lightImpact());
+    if (widget.isEink) {
+      return;
+    }
+
     setState(() {
       for (int i = 0; i < 4; i++) {
         _particles.add(
           _HeartParticle(
             x: (_rnd.nextDouble() - 0.5) * (widget.size * 0.7),
             y: widget.size * 0.2,
-            symbol: ['💖', '💕', '✨', '🌸'][_rnd.nextInt(4)],
+            symbol: const ['💖', '💕', '✨', '🌸'][_rnd.nextInt(4)],
             createdAt: DateTime.now(),
           ),
         );
@@ -85,7 +123,9 @@ class AnimatedNibiViewState extends State<AnimatedNibiView>
       }
       final now = DateTime.now();
       setState(() {
-        _particles.removeWhere((p) => now.difference(p.createdAt).inMilliseconds > 1200);
+        _particles.removeWhere(
+          (p) => now.difference(p.createdAt).inMilliseconds > 1200,
+        );
       });
       if (_particles.isEmpty) {
         timer.cancel();
@@ -93,22 +133,27 @@ class AnimatedNibiViewState extends State<AnimatedNibiView>
     });
   }
 
+  /// Mapeo canónico verificado de sprites limpios de Nibi (positividad radical).
   String _getSpritePath() {
     switch (widget.mood) {
-      case NibiMood.happy:
-        return 'assets/images/nibi_sprites/sprite_02.png';
-      case NibiMood.eating:
-        return 'assets/images/nibi_sprites/sprite_05.png';
-      case NibiMood.drinking:
-        return 'assets/images/nibi_sprites/sprite_09.png';
-      case NibiMood.sleeping:
-        return 'assets/images/nibi_sprites/sprite_04.png';
-      case NibiMood.zen:
-        return 'assets/images/nibi_sprites/sprite_08.png';
-      case NibiMood.workout:
-        return 'assets/images/nibi_sprites/sprite_07.png';
       case NibiMood.idle:
         return 'assets/images/nibi_sprites/sprite_01.png';
+      case NibiMood.workout:
+        return 'assets/images/nibi_sprites/sprite_02.png';
+      case NibiMood.zen:
+        return 'assets/images/nibi_sprites/sprite_03.png';
+      case NibiMood.drinking:
+        return 'assets/images/nibi_sprites/sprite_04.png';
+      case NibiMood.weighing:
+        return 'assets/images/nibi_sprites/sprite_05.png';
+      case NibiMood.curious:
+        return 'assets/images/nibi_sprites/sprite_06.png';
+      case NibiMood.happy:
+        return 'assets/images/nibi_sprites/sprite_07.png';
+      case NibiMood.eating:
+        return 'assets/images/nibi_sprites/sprite_10.png';
+      case NibiMood.sleeping:
+        return 'assets/images/nibi_hero.png';
     }
   }
 
@@ -118,14 +163,8 @@ class AnimatedNibiViewState extends State<AnimatedNibiView>
     final double s = widget.size;
 
     return GestureDetector(
-      onTap: () {
-        triggerPetHearts();
-        widget.onPet?.call();
-      },
-      onPanUpdate: (_) {
-        triggerPetHearts();
-        widget.onPet?.call();
-      },
+      onTap: _handleGesturePet,
+      onPanUpdate: (_) => _handleGesturePet(),
       child: SizedBox(
         width: s,
         height: s,
@@ -133,7 +172,6 @@ class AnimatedNibiViewState extends State<AnimatedNibiView>
           alignment: Alignment.center,
           clipBehavior: Clip.none,
           children: [
-            // Sombra suave bajo la mascota (desactivada en e-ink)
             if (!widget.isEink)
               Positioned(
                 bottom: 8,
@@ -142,17 +180,20 @@ class AnimatedNibiViewState extends State<AnimatedNibiView>
                   height: 16,
                   decoration: BoxDecoration(
                     color: Colors.black.withValues(alpha: 0.08),
-                    borderRadius: BorderRadius.all(Radius.elliptical(s * 0.55, 16)),
+                    borderRadius:
+                        BorderRadius.all(Radius.elliptical(s * 0.55, 16)),
                   ),
                 ),
               ),
-
-            // Mascota con animación de respiración y flotación
             AnimatedBuilder(
               animation: _floatAnimation,
               builder: (context, child) {
+                final double dy =
+                    (widget.isEink || widget.mood == NibiMood.sleeping)
+                        ? 0.0
+                        : _floatAnimation.value;
                 return Transform.translate(
-                  offset: Offset(0, widget.mood == NibiMood.sleeping ? 0 : _floatAnimation.value),
+                  offset: Offset(0, dy),
                   child: child,
                 );
               },
@@ -172,8 +213,6 @@ class AnimatedNibiViewState extends State<AnimatedNibiView>
                       fit: BoxFit.contain,
                     ),
                   ),
-
-                  // Accesorio equipado superpuesto
                   if (widget.equippedHatId != null &&
                       widget.equippedHatId != 'none' &&
                       widget.mood != NibiMood.sleeping)
@@ -184,28 +223,26 @@ class AnimatedNibiViewState extends State<AnimatedNibiView>
                 ],
               ),
             ),
+            if (!widget.isEink)
+              ..._particles.map((p) {
+                final int elapsed =
+                    DateTime.now().difference(p.createdAt).inMilliseconds;
+                final double progress = (elapsed / 1200.0).clamp(0.0, 1.0);
+                final double currentY = p.y - (progress * 70.0);
+                final double opacity = (1.0 - progress).clamp(0.0, 1.0);
 
-            // Partículas de corazón flotantes
-            ..._particles.map((p) {
-              final elapsed = DateTime.now().difference(p.createdAt).inMilliseconds;
-              final progress = (elapsed / 1200.0).clamp(0.0, 1.0);
-              final currentY = p.y - (progress * 70.0);
-              final opacity = (1.0 - progress).clamp(0.0, 1.0);
-
-              return Positioned(
-                left: (s / 2) + p.x,
-                top: currentY,
-                child: Opacity(
-                  opacity: opacity,
-                  child: Text(
-                    p.symbol,
-                    style: TextStyle(
-                      fontSize: 22 + (progress * 8),
+                return Positioned(
+                  left: (s / 2) + p.x,
+                  top: currentY,
+                  child: Opacity(
+                    opacity: opacity,
+                    child: Text(
+                      p.symbol,
+                      style: TextStyle(fontSize: 22 + (progress * 8)),
                     ),
                   ),
-                ),
-              );
-            }),
+                );
+              }),
           ],
         ),
       ),
@@ -213,20 +250,16 @@ class AnimatedNibiViewState extends State<AnimatedNibiView>
   }
 
   Widget _buildHatOverlay(String hatId, double s) {
-    String emoji = '👑';
+    final String emoji;
     switch (hatId) {
       case 'hat_chef':
         emoji = '👨‍🍳';
-        break;
       case 'hat_headband':
         emoji = '🏃';
-        break;
       case 'hat_zen_halo':
         emoji = '✨';
-        break;
       case 'hat_crown':
         emoji = '👑';
-        break;
       default:
         return const SizedBox.shrink();
     }
@@ -234,16 +267,11 @@ class AnimatedNibiViewState extends State<AnimatedNibiView>
     return Container(
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.9),
+        color: Colors.white.withValues(alpha: widget.isEink ? 1.0 : 0.9),
         shape: BoxShape.circle,
-        boxShadow: widget.isEink
-            ? null
-            : [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.15),
-                  blurRadius: 6,
-                ),
-              ],
+        border: widget.isEink
+            ? Border.all(color: const Color(0xFF121212), width: 1.5)
+            : null,
       ),
       child: Text(emoji, style: TextStyle(fontSize: s * 0.16)),
     );

@@ -2,6 +2,7 @@ import 'package:drift/drift.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../shared/utils/date_time_extensions.dart';
+import '../../constants/app_constants.dart';
 import '../app_database.dart';
 import 'pet_dao.dart';
 
@@ -78,12 +79,42 @@ class FastingDao {
         await _petDao.grantDailyReward(
           dateKey: now.dateKey,
           actionType: 'fast_done',
-          baseAmount: 20,
+          baseAmount: AppConstants.coinsFastDone,
         );
       }
 
       return true;
     });
+  }
+
+  /// Ajusta la hora de inicio de un ayuno en curso (útil si el usuario olvidó iniciarlo anoche).
+  Future<bool> updateActiveFastStart({
+    required int sessionId,
+    required DateTime newStartedAt,
+  }) async {
+    final sessionQuery = _db.select(_db.fastingSessions)
+      ..where((tbl) => tbl.id.equals(sessionId));
+    final FastingSession? session = await sessionQuery.getSingleOrNull();
+    if (session == null || session.actualEndedAt != null) return false;
+
+    final DateTime newPlannedEnd =
+        newStartedAt.add(Duration(hours: session.targetHours));
+    final query = _db.update(_db.fastingSessions)
+      ..where((tbl) => tbl.id.equals(sessionId));
+    final int updated = await query.write(
+      FastingSessionsCompanion(
+        startedAt: Value(newStartedAt),
+        plannedEndAt: Value(newPlannedEnd),
+      ),
+    );
+    return updated > 0;
+  }
+
+  /// Elimina una sesión histórica de ayuno por su ID.
+  Future<int> deleteSession(int sessionId) {
+    return (_db.delete(_db.fastingSessions)
+          ..where((tbl) => tbl.id.equals(sessionId)))
+        .go();
   }
 
   /// Emite las sesiones históricas completadas para estadísticas y gráficas.

@@ -1,6 +1,7 @@
 import 'package:drift/drift.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../constants/app_constants.dart';
 import '../app_database.dart';
 import 'pet_dao.dart';
 
@@ -56,7 +57,7 @@ class HydrationDao {
         await _petDao.grantDailyReward(
           dateKey: dateKey,
           actionType: 'water_goal',
-          baseAmount: 15,
+          baseAmount: AppConstants.coinsWaterGoal,
         );
       }
 

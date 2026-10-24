@@ -81,6 +81,48 @@ class HealthConnectService {
     }
   }
 
+  /// Verifica si un permiso de Android específico está concedido.
+  Future<bool> checkAppPermission(String permission) async {
+    try {
+      final bool? granted = await _channel.invokeMethod<bool>(
+        'checkAppPermission',
+        <String, dynamic>{'permission': permission},
+      );
+      return granted ?? false;
+    } on MissingPluginException {
+      return false;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  /// Solicita un permiso de Android específico mediante el diálogo nativo o pantalla del sistema.
+  Future<bool> requestAppPermission(String permission) async {
+    try {
+      final bool? result = await _channel.invokeMethod<bool>(
+        'requestAppPermission',
+        <String, dynamic>{'permission': permission},
+      );
+      return result ?? false;
+    } on MissingPluginException {
+      return false;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  /// Abre la pantalla de ajustes del sistema de la aplicación para gestión de permisos.
+  Future<bool> openAppSettings() async {
+    try {
+      final bool? result = await _channel.invokeMethod<bool>('openAppSettings');
+      return result ?? false;
+    } on MissingPluginException {
+      return false;
+    } catch (_) {
+      return false;
+    }
+  }
+
   /// Exporta una medición de peso y grasa a Health Connect tras la captura en la báscula BLE.
   Future<bool> writeWeightAndBodyFat({
     required double weightKg,

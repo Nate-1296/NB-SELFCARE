@@ -49,7 +49,7 @@ abstract final class MetConstants {
 
   /// Calcula las calorías netas quemadas descontando el gasto en reposo (1.0 MET).
   ///
-  /// Fórmula: round((MET - 1.0) * 3.5 * (userWeightKg / 200) * durationMinutes)
+  /// Fórmula: round((MET - 1.0) * userWeightKg * (durationMinutes / 60.0))
   static int calculateNetCalories({
     required WorkoutCategory category,
     required RpeIntensity intensity,
@@ -59,7 +59,7 @@ abstract final class MetConstants {
     if (userWeightKg <= 0 || durationMinutes <= 0) return 0;
     final double rawMet = getMet(category, intensity);
     final double netMet = (rawMet - 1.0).clamp(0.0, 20.0);
-    final double burned = netMet * 3.5 * (userWeightKg / 200.0) * durationMinutes;
+    final double burned = netMet * userWeightKg * (durationMinutes / 60.0);
     return burned.round();
   }
 }

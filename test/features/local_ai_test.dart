@@ -196,6 +196,31 @@ void main() {
 
       service.dispose();
     });
+
+    test('Varía dinámicamente el saludo IA de Nibi en cada visita según semilla y hora', () async {
+      final service = LocalAiService();
+      final Set<String> generatedMorning = <String>{};
+      for (int seed = 1; seed <= 4; seed++) {
+        final String g = await service.generatePetGreeting(
+          petName: 'Nibi',
+          variationSeed: seed,
+          hourOfDay: 8,
+        );
+        expect(g.split(' ').length, lessThanOrEqualTo(22));
+        generatedMorning.add(g);
+      }
+      expect(generatedMorning.length, greaterThanOrEqualTo(3));
+
+      final String nightGreeting = LocalAiService.buildInstantGreeting(
+        petName: 'Nibi',
+        variationSeed: 2,
+        hourOfDay: 22,
+      );
+      expect(nightGreeting.split(' ').length, lessThanOrEqualTo(22));
+      expect(generatedMorning.contains(nightGreeting), isFalse);
+
+      service.dispose();
+    });
   });
 
   group('LocalAiService + FoodDao Resolution and Logging', () {

@@ -23,11 +23,16 @@ abstract final class AppIcons {
   static const IconData refresh = Icons.refresh_rounded;
   static const IconData delete = Icons.delete_outline_rounded;
   static const IconData edit = Icons.edit_outlined;
+  static const IconData undo = Icons.undo_rounded;
+  static const IconData star = Icons.star_border_rounded;
+  static const IconData starFilled = Icons.star_rounded;
 
   // Salud y Biometría (Inglés y Español)
   static const IconData calories = Icons.local_fire_department_rounded;
   static const IconData fuego = Icons.local_fire_department_rounded;
   static const IconData protein = Icons.fitness_center_rounded;
+  static const IconData pesa = Icons.fitness_center_rounded;
+  static const IconData bolt = Icons.bolt_rounded;
   static const IconData water = Icons.water_drop_rounded;
   static const IconData gota = Icons.water_drop_rounded;
   static const IconData steps = Icons.directions_walk_rounded;
@@ -69,7 +74,11 @@ abstract final class AppIcons {
   static const IconData settings = Icons.tune_rounded;
   static const IconData palette = Icons.palette_outlined;
   static const IconData backup = Icons.cloud_download_outlined;
+  static const IconData restore = Icons.upload_file_rounded;
   static const IconData export = Icons.share_outlined;
   static const IconData brain = Icons.psychology_outlined;
   static const IconData lock = Icons.lock_outline_rounded;
+  static const IconData alarm = Icons.notifications_active_outlined;
+  static const IconData insights = Icons.insights_rounded;
+  static const IconData air = Icons.air_rounded;
 }

@@ -4,7 +4,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../app.dart';
 import '../../../core/database/app_database.dart';
+import '../../../core/database/daos/reminders_dao.dart';
 import '../../../core/database/daos/user_profile_dao.dart';
+import '../../../shared/theme/sc_colors.dart';
+import '../../../shared/theme/sc_theme.dart';
+import '../../../shared/theme/theme_controller.dart';
+import '../../../shared/utils/daily_targets_calculator.dart';
 import '../../../shared/widgets/health_card.dart';
 
 /// Pantalla de bienvenida y configuración de perfil biométrico inicial.
@@ -22,17 +27,18 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   final _heightController = TextEditingController(text: '175');
   final _targetWeightController = TextEditingController(text: '70.0');
 
-  DateTime _birthDate = DateTime.now().subtract(const Duration(days: 365 * 25));
+  DateTime _birthDate =
+      DateTime.now().subtract(const Duration(days: 365 * 25));
   String _biologicalSex = 'male';
   double _weeklyGoalRateKg = -0.5;
   int _dailyWaterGoalMl = 2500;
   int _dailyStepsGoal = 8000;
-  final double _dailySleepGoalHours = 7.5;
+  double _dailySleepGoalHours = 7.5;
   bool _isSaving = false;
 
   @override
   void dispose() {
-    _nameController.dispose() ;
+    _nameController.dispose();
     _heightController.dispose();
     _targetWeightController.dispose();
     super.dispose();
@@ -40,6 +46,23 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
 
   double get _derivedAge {
     return DateTime.now().difference(_birthDate).inDays / 365.25;
+  }
+
+  int _computePreviewTdee() {
+    final double h =
+        double.tryParse(_heightController.text.trim().replaceAll(',', '.')) ??
+            175.0;
+    final double w = double.tryParse(
+          _targetWeightController.text.trim().replaceAll(',', '.'),
+        ) ??
+        70.0;
+    return DailyTargetsCalculator.estimateInitialTdee(
+      weightKg: w.clamp(30.0, 300.0),
+      heightCm: h.clamp(100.0, 250.0),
+      birthDate: _birthDate,
+      biologicalSex: _biologicalSex,
+      dailyStepsGoal: _dailyStepsGoal,
+    );
   }
 
   Future<void> _pickBirthDate() async {
@@ -66,9 +89,19 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     setState(() => _isSaving = true);
 
     try {
-      final String currentTheme = ref.read(themeEngineProvider);
-      final double heightCm = double.parse(_heightController.text.trim());
-      final double targetWeightKg = double.parse(_targetWeightController.text.trim());
+      final String activeThemeKey = ref.read(themeControllerProvider);
+      final double heightCm =
+          double.parse(_heightController.text.trim().replaceAll(',', '.'));
+      final double targetWeightKg = double.parse(
+        _targetWeightController.text.trim().replaceAll(',', '.'),
+      );
+      final int initialTdee = DailyTargetsCalculator.estimateInitialTdee(
+        weightKg: targetWeightKg,
+        heightCm: heightCm,
+        birthDate: _birthDate,
+        biologicalSex: _biologicalSex,
+        dailyStepsGoal: _dailyStepsGoal,
+      );
 
       final companion = UserProfilesCompanion(
         name: drift.Value(_nameController.text.trim()),
@@ -80,12 +113,13 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         dailyWaterGoalMl: drift.Value(_dailyWaterGoalMl),
         dailyStepsGoal: drift.Value(_dailyStepsGoal),
         dailySleepGoalHours: drift.Value(_dailySleepGoalHours),
-        themeMode: drift.Value(currentTheme),
-        currentAdaptiveTdeeKcal: const drift.Value(2000),
+        themeMode: drift.Value(activeThemeKey),
+        currentAdaptiveTdeeKcal: drift.Value(initialTdee),
       );
 
       final dao = ref.read(userProfileDaoProvider);
       await dao.createProfile(companion);
+      await ref.read(remindersDaoProvider).seedDefaultRemindersIfEmpty();
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -102,7 +136,13 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   @override
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
+    final ScColors c = context.sc;
     final String currentEngine = ref.watch(themeEngineProvider);
+
+    final int previewTdee = _computePreviewTdee();
+    final int goalDelta = ((_weeklyGoalRateKg * 7700.0) / 7.0).round();
+    final int previewDailyKcal =
+        (previewTdee + goalDelta).clamp(1200, 4500);
 
     return Scaffold(
       appBar: AppBar(
@@ -127,7 +167,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         child: Form(
           key: _formKey,
           child: ListView(
-            padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
+            padding:
+                const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
             children: [
               // Encabezado
               Center(
@@ -151,7 +192,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                     Text(
                       '100% Offline-First · Cero Cuentas · Privacidad Absoluta',
                       style: theme.textTheme.bodyMedium?.copyWith(
-                        color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                        color:
+                            theme.colorScheme.onSurface.withValues(alpha: 0.7),
                       ),
                       textAlign: TextAlign.center,
                     ),
@@ -187,25 +229,28 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                       style: theme.textTheme.bodySmall,
                     ),
                     const SizedBox(height: 12.0),
-                    SegmentedButton<String>(
-                      segments: const [
-                        ButtonSegment(
-                          value: 'material_you',
-                          icon: Icon(Icons.palette_outlined),
-                          label: Text('Material You'),
-                        ),
-                        ButtonSegment(
-                          value: 'nxtpaper_eink',
-                          icon: Icon(Icons.menu_book_outlined),
-                          label: Text('Papel E-Ink'),
-                        ),
-                      ],
-                      selected: {currentEngine},
-                      onSelectionChanged: (selection) {
-                        if (selection.first != currentEngine) {
-                          ref.read(themeEngineProvider.notifier).toggle();
-                        }
-                      },
+                    SizedBox(
+                      width: double.infinity,
+                      child: SegmentedButton<String>(
+                        segments: const [
+                          ButtonSegment(
+                            value: 'material_you',
+                            icon: Icon(Icons.palette_outlined),
+                            label: Text('Material You'),
+                          ),
+                          ButtonSegment(
+                            value: 'nxtpaper_eink',
+                            icon: Icon(Icons.menu_book_outlined),
+                            label: Text('Papel E-Ink'),
+                          ),
+                        ],
+                        selected: {currentEngine},
+                        onSelectionChanged: (selection) {
+                          if (selection.first != currentEngine) {
+                            ref.read(themeEngineProvider.notifier).toggle();
+                          }
+                        },
+                      ),
                     ),
                   ],
                 ),
@@ -271,29 +316,32 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                     ),
                     const SizedBox(height: 12.0),
 
-                    // Sexo Biológico (requerido para BIA y Katch-McArdle)
+                    // Sexo Biológico
                     Text(
                       'Sexo Biológico (requerido para fórmulas metabólicas BIA)',
                       style: theme.textTheme.labelMedium,
                     ),
                     const SizedBox(height: 6.0),
-                    SegmentedButton<String>(
-                      segments: const [
-                        ButtonSegment(
-                          value: 'male',
-                          icon: Icon(Icons.male_rounded),
-                          label: Text('Masculino'),
-                        ),
-                        ButtonSegment(
-                          value: 'female',
-                          icon: Icon(Icons.female_rounded),
-                          label: Text('Femenino'),
-                        ),
-                      ],
-                      selected: {_biologicalSex},
-                      onSelectionChanged: (set) {
-                        setState(() => _biologicalSex = set.first);
-                      },
+                    SizedBox(
+                      width: double.infinity,
+                      child: SegmentedButton<String>(
+                        segments: const [
+                          ButtonSegment(
+                            value: 'male',
+                            icon: Icon(Icons.male_rounded),
+                            label: Text('Masculino'),
+                          ),
+                          ButtonSegment(
+                            value: 'female',
+                            icon: Icon(Icons.female_rounded),
+                            label: Text('Femenino'),
+                          ),
+                        ],
+                        selected: {_biologicalSex},
+                        onSelectionChanged: (set) {
+                          setState(() => _biologicalSex = set.first);
+                        },
+                      ),
                     ),
                     const SizedBox(height: 16.0),
 
@@ -306,9 +354,13 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                         prefixIcon: Icon(Icons.height_rounded),
                         suffixText: 'cm',
                       ),
-                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      keyboardType:
+                          const TextInputType.numberWithOptions(decimal: true),
+                      onChanged: (_) => setState(() {}),
                       validator: (value) {
-                        final val = double.tryParse(value ?? '');
+                        final val = double.tryParse(
+                          (value ?? '').replaceAll(',', '.'),
+                        );
                         if (val == null || val < 100 || val > 250) {
                           return 'Ingresa una altura válida (100 - 250 cm)';
                         }
@@ -326,9 +378,13 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                         prefixIcon: Icon(Icons.flag_outlined),
                         suffixText: 'kg',
                       ),
-                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      keyboardType:
+                          const TextInputType.numberWithOptions(decimal: true),
+                      onChanged: (_) => setState(() {}),
                       validator: (value) {
-                        final val = double.tryParse(value ?? '');
+                        final val = double.tryParse(
+                          (value ?? '').replaceAll(',', '.'),
+                        );
                         if (val == null || val < 30 || val > 300) {
                           return 'Ingresa un peso objetivo válido (30 - 300 kg)';
                         }
@@ -363,7 +419,6 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                     ),
                     const SizedBox(height: 16.0),
 
-                    // Ritmo de cambio semanal
                     Text(
                       'Objetivo semanal: ${_weeklyGoalRateKg == 0.0 ? 'Mantenimiento' : '${_weeklyGoalRateKg > 0 ? '+' : ''}${_weeklyGoalRateKg.toStringAsFixed(2)} kg/semana'}',
                       style: theme.textTheme.bodyMedium,
@@ -374,11 +429,11 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                       max: 0.5,
                       divisions: 6,
                       label: '${_weeklyGoalRateKg.toStringAsFixed(2)} kg',
-                      onChanged: (val) => setState(() => _weeklyGoalRateKg = val),
+                      onChanged: (val) =>
+                          setState(() => _weeklyGoalRateKg = val),
                     ),
                     const SizedBox(height: 8.0),
 
-                    // Meta de Agua
                     Text(
                       'Meta de hidratación: $_dailyWaterGoalMl ml (${(_dailyWaterGoalMl / 250).toStringAsFixed(0)} vasos)',
                       style: theme.textTheme.bodyMedium,
@@ -389,11 +444,11 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                       max: 4000,
                       divisions: 10,
                       label: '$_dailyWaterGoalMl ml',
-                      onChanged: (val) => setState(() => _dailyWaterGoalMl = val.toInt()),
+                      onChanged: (val) =>
+                          setState(() => _dailyWaterGoalMl = val.toInt()),
                     ),
                     const SizedBox(height: 8.0),
 
-                    // Meta de Pasos
                     Text(
                       'Meta de pasos (NEAT): $_dailyStepsGoal pasos',
                       style: theme.textTheme.bodyMedium,
@@ -404,7 +459,83 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                       max: 16000,
                       divisions: 12,
                       label: '$_dailyStepsGoal',
-                      onChanged: (val) => setState(() => _dailyStepsGoal = val.toInt()),
+                      onChanged: (val) =>
+                          setState(() => _dailyStepsGoal = val.toInt()),
+                    ),
+                    const SizedBox(height: 8.0),
+
+                    Text(
+                      'Meta de sueño reparador: ${_dailySleepGoalHours.toStringAsFixed(1)} horas',
+                      style: theme.textTheme.bodyMedium,
+                    ),
+                    Slider(
+                      value: _dailySleepGoalHours,
+                      min: 6.0,
+                      max: 9.5,
+                      divisions: 7,
+                      label: '${_dailySleepGoalHours.toStringAsFixed(1)} h',
+                      onChanged: (val) =>
+                          setState(() => _dailySleepGoalHours = val),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16.0),
+
+              // Vista previa en vivo del TDEE y meta calórica personalizada
+              HealthCard(
+                margin: EdgeInsets.zero,
+                backgroundColor: c.bg3,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Estimación Metabólica Inicial',
+                            style: TextStyle(
+                              fontFamily: ScFonts.display,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w700,
+                              color: c.text,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            'TDEE base: $previewTdee kcal · Se auto-calibrará cada 14 días según tu evolución real.',
+                            style: TextStyle(
+                              fontFamily: ScFonts.ui,
+                              fontSize: 11.5,
+                              color: c.text2,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Text(
+                          '$previewDailyKcal',
+                          style: TextStyle(
+                            fontFamily: ScFonts.display,
+                            fontSize: 22,
+                            fontWeight: FontWeight.w900,
+                            color: c.accent,
+                          ),
+                        ),
+                        Text(
+                          'kcal/día',
+                          style: TextStyle(
+                            fontFamily: ScFonts.ui,
+                            fontSize: 11,
+                            color: c.text2,
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
@@ -422,8 +553,13 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                       )
                     : const Icon(Icons.check_circle_outline_rounded),
                 label: Text(
-                  _isSaving ? 'Guardando en SQLite local...' : 'Comenzar mi Santuario',
-                  style: const TextStyle(fontSize: 16.0, fontWeight: FontWeight.bold),
+                  _isSaving
+                      ? 'Guardando en SQLite local...'
+                      : 'Comenzar mi Santuario',
+                  style: const TextStyle(
+                    fontSize: 16.0,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 style: FilledButton.styleFrom(
                   minimumSize: const Size.fromHeight(54.0),

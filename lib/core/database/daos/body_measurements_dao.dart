@@ -1,6 +1,7 @@
 import 'package:drift/drift.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../constants/app_constants.dart';
 import '../app_database.dart';
 import 'pet_dao.dart';
 
@@ -47,11 +48,49 @@ class BodyMeasurementsDao {
       await _petDao.grantDailyReward(
         dateKey: dateKey,
         actionType: 'weigh_in',
-        baseAmount: 15,
+        baseAmount: AppConstants.coinsWeighIn,
       );
 
       return id;
     });
+  }
+
+  /// Elimina una medición corporal por su ID.
+  Future<int> deleteMeasurement(int id) {
+    return (_db.delete(_db.bodyMeasurements)..where((tbl) => tbl.id.equals(id)))
+        .go();
+  }
+
+  /// Restaura una medición corporal previamente eliminada (flujo Deshacer).
+  Future<int> restoreMeasurement(BodyMeasurement m) {
+    return _db.into(_db.bodyMeasurements).insert(
+          BodyMeasurementsCompanion.insert(
+            measuredAt: Value(m.measuredAt),
+            dateKey: m.dateKey,
+            source: m.source,
+            weightKg: m.weightKg,
+            trendWeightKg: m.trendWeightKg,
+            impedanceOhms: Value(m.impedanceOhms),
+            bmi: m.bmi,
+            bodyFatPercentage: Value(m.bodyFatPercentage),
+            muscleMassKg: Value(m.muscleMassKg),
+            waterPercentage: Value(m.waterPercentage),
+            visceralFatIndex: Value(m.visceralFatIndex),
+            boneMassKg: Value(m.boneMassKg),
+            proteinPercentage: Value(m.proteinPercentage),
+            basalMetabolicRateKcal: Value(m.basalMetabolicRateKcal),
+            metabolicAge: Value(m.metabolicAge),
+            leanBodyMassKg: Value(m.leanBodyMassKg),
+            bodyScore: Value(m.bodyScore),
+            somatotype: Value(m.somatotype),
+            isWaterRetentionSpike: Value(m.isWaterRetentionSpike),
+            spikeExplanation: Value(m.spikeExplanation),
+            waistCm: Value(m.waistCm),
+            neckCm: Value(m.neckCm),
+            hipCm: Value(m.hipCm),
+            validatedBodyFatPercentage: Value(m.validatedBodyFatPercentage),
+          ),
+        );
   }
 
   /// Obtiene la medición registrada en una fecha específica (si existe).
@@ -130,4 +169,11 @@ final bodyMeasurementsDaoProvider = Provider<BodyMeasurementsDao>((ref) {
 final latestMeasurementStreamProvider = StreamProvider<BodyMeasurement?>((ref) {
   final BodyMeasurementsDao dao = ref.watch(bodyMeasurementsDaoProvider);
   return dao.watchLatestMeasurement();
+});
+
+/// StreamProvider con el historial temporal de mediciones corporales para gráficas y tendencias.
+final recentMeasurementsStreamProvider =
+    StreamProvider.autoDispose<List<BodyMeasurement>>((ref) {
+  final BodyMeasurementsDao dao = ref.watch(bodyMeasurementsDaoProvider);
+  return dao.watchRecentMeasurements(limit: 90);
 });

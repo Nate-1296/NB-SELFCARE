@@ -12,7 +12,9 @@ import 'package:nb_selfcare/core/database/daos/user_profile_dao.dart';
 import 'package:nb_selfcare/core/services/backup_service.dart';
 import 'package:nb_selfcare/core/services/cross_analytics_engine.dart';
 import 'package:nb_selfcare/features/fasting/presentation/fasting_screen.dart';
+import 'package:nb_selfcare/features/profile_goals/presentation/app_settings_screen.dart';
 import 'package:nb_selfcare/features/profile_goals/presentation/perfil_yo_screen.dart';
+import 'package:nb_selfcare/features/today/presentation/hoy_screen.dart';
 import 'package:nb_selfcare/shared/theme/sc_theme.dart';
 import 'package:nb_selfcare/shared/utils/date_time_extensions.dart';
 
@@ -191,7 +193,7 @@ void main() {
       expect(pet?.coinsBalance, equals(110));
     });
 
-    testWidgets('PerfilYoScreen renderiza datos del usuario, diario y respaldo', (tester) async {
+    testWidgets('PerfilYoScreen renderiza identidad y respaldo sin duplicar el Diario', (tester) async {
       tester.view.physicalSize = const Size(1080, 2400);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.resetPhysicalSize);
@@ -215,10 +217,76 @@ void main() {
 
       expect(find.byType(PerfilYoScreen), findsOneWidget);
       expect(find.text('Nathan'), findsOneWidget);
-      expect(find.text('Diario de Reflexión'), findsOneWidget);
-      expect(find.text('Portabilidad y Respaldo Local'), findsOneWidget);
+      // El Diario vive exclusivamente en el widget 4×4 de Hoy, jamás en Perfil
+      expect(find.text('Diario de Reflexión'), findsNothing);
+      expect(find.text('Diario Personal'), findsNothing);
+      expect(find.text('Ajustes de la Aplicación'), findsOneWidget);
+
+      await tester.tap(find.text('Ajustes de la Aplicación'));
+      await tester.pumpAndSettle();
+      expect(find.byType(AppSettingsScreen), findsOneWidget);
+      expect(find.text('Aspecto y Pantalla'), findsOneWidget);
 
       // Limpiar timers reactivos de Drift
+      await tester.pumpWidget(const SizedBox());
+      await tester.pump(const Duration(milliseconds: 100));
+    });
+
+    testWidgets('HoyScreen aloja el único widget gigante 4×4 de Diario Personal y guarda entrada (+10 🪙)', (tester) async {
+      tester.view.physicalSize = const Size(1080, 2400);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+
+      final beforePet = await petDao.getPetStatus();
+      final int initialCoins = beforePet?.coinsBalance ?? 0;
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            appDatabaseProvider.overrideWithValue(db),
+            journalDaoProvider.overrideWithValue(journalDao),
+          ],
+          child: MaterialApp(
+            theme: ScTheme.build('samsung_dark'),
+            home: const HoyScreen(),
+          ),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      final journalHeader = find.text('Diario Personal');
+      await tester.scrollUntilVisible(
+        journalHeader,
+        350,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.pumpAndSettle();
+      expect(journalHeader, findsOneWidget);
+
+      final textField = find.byType(TextField);
+      await tester.ensureVisible(textField);
+      await tester.pumpAndSettle();
+      await tester.enterText(
+        textField,
+        'Me siento muy tranquilo y feliz por cuidar mi energía hoy.',
+      );
+      await tester.pumpAndSettle();
+
+      final saveBtn = find.text('Guardar en mi diario (+10 🪙)');
+      await tester.ensureVisible(saveBtn);
+      await tester.pumpAndSettle();
+      await tester.tap(saveBtn);
+      await tester.pumpAndSettle();
+
+      final savedEntries = await db.select(db.journalEntries).get();
+      expect(savedEntries, hasLength(1));
+      expect(savedEntries.first.content, contains('tranquilo y feliz'));
+
+      final afterPet = await petDao.getPetStatus();
+      expect(afterPet?.coinsBalance, equals(initialCoins + 10));
+
+      // Desmontar ProviderScope para limpiar timers reactivos y el TTL de 120s de LocalAiService
       await tester.pumpWidget(const SizedBox());
       await tester.pump(const Duration(milliseconds: 100));
     });
@@ -241,6 +309,152 @@ void main() {
       } finally {
         tempDir.deleteSync(recursive: true);
       }
+    });
+
+    test('Restaura respaldo .sqlite en vivo recuperando registros eliminados y FTS5', () async {
+      final tempDir = Directory.systemTemp.createTempSync('nb_restore_test_');
+      try {
+        // 1. Insertar entrada de diario y alimento personalizado antes del respaldo
+        await journalDao.insertEntry(
+          JournalEntriesCompanion(
+            dateKey: const drift.Value('2026-10-20'),
+            createdAt: drift.Value(DateTime(2026, 10, 20, 20)),
+            content: const drift.Value('Entrada crítica antes del respaldo'),
+            moodScore: const drift.Value(5),
+            energyLevel: const drift.Value(5),
+            stressLevel: const drift.Value(1),
+          ),
+        );
+        await db.into(db.foodItems).insert(
+              FoodItemsCompanion.insert(
+                name: 'Arepa de choclo artesanal',
+                source: 'custom',
+                kcalPer100g: 230,
+                proteinPer100g: 6,
+                carbsPer100g: 38,
+                fatPer100g: 6,
+              ),
+            );
+
+        final exportedFile = await db.exportCleanDatabaseBackup(tempDir.path);
+
+        // 2. Borrar entradas en la base de datos activa
+        await db.delete(db.journalEntries).go();
+        await db.delete(db.foodItems).go();
+        expect(await db.select(db.journalEntries).get(), isEmpty);
+
+        // 3. Restaurar en caliente desde el archivo .sqlite
+        final bool restored =
+            await backupService.restoreDatabaseFromFile(exportedFile.path);
+        expect(restored, isTrue);
+
+        // 4. Verificar que los datos y el índice FTS5 volvieron intactos
+        final entries = await db.select(db.journalEntries).get();
+        expect(entries, hasLength(1));
+        expect(entries.first.content, contains('antes del respaldo'));
+
+        final ftsRows = await db.customSelect(
+          'SELECT name FROM food_items_fts WHERE food_items_fts MATCH ?',
+          variables: [drift.Variable.withString('choclo*')],
+        ).get();
+        expect(ftsRows, hasLength(1));
+      } finally {
+        tempDir.deleteSync(recursive: true);
+      }
+    });
+  });
+
+  group('CrossAnalyticsEngine (Agregación 1:1 diaria sin producto cartesiano)', () {
+    test('Pre-agrega múltiples comidas por día y filtra correlaciones débiles', () async {
+      final int foodId = await db.into(db.foodItems).insert(
+            FoodItemsCompanion.insert(
+              name: 'Avena integral',
+              source: 'usda',
+              kcalPer100g: 370,
+              proteinPer100g: 13,
+              carbsPer100g: 60,
+              fatPer100g: 7,
+            ),
+          );
+
+      // Poblar 6 días donde mayor estrés coincide linealmente con más carbohidratos (3 comidas/día)
+      for (int i = 1; i <= 6; i++) {
+        final String dayKey = '2026-10-0$i';
+        await db.into(db.journalEntries).insert(
+              JournalEntriesCompanion.insert(
+                dateKey: dayKey,
+                content: 'Día $i',
+                moodScore: const drift.Value(4),
+                energyLevel: const drift.Value(4),
+                stressLevel: drift.Value(i.clamp(1, 5)),
+              ),
+            );
+
+        for (int meal = 0; meal < 3; meal++) {
+          final double carbs = (i * 25).toDouble();
+          await db.into(db.foodLogs).insert(
+                FoodLogsCompanion.insert(
+                  dateKey: dayKey,
+                  mealType: 'lunch',
+                  foodItemId: foodId,
+                  gramsConsumed: 100,
+                  totalKcal: carbs * 4,
+                  totalProteinG: 10,
+                  totalCarbsG: carbs,
+                  totalFatG: 5,
+                  totalFiberG: 4,
+                  totalSodiumMg: 50,
+                  totalPotassiumMg: 150,
+                  totalMagnesiumMg: 30,
+                ),
+              );
+        }
+      }
+
+      // Con solo 6 días únicos (aunque haya 18 registros en food_logs), no debe inflar n >= 10
+      expect(await crossAnalyticsEngine.computeInsights(), isEmpty);
+
+      // Completar hasta 12 días únicos (36 comidas totales)
+      for (int i = 7; i <= 12; i++) {
+        final String dayKey = '2026-10-${i.toString().padLeft(2, '0')}';
+        final int stress = (((i - 1) * 4) / 11 + 1).round().clamp(1, 5);
+        await db.into(db.journalEntries).insert(
+              JournalEntriesCompanion.insert(
+                dateKey: dayKey,
+                content: 'Día $i',
+                moodScore: const drift.Value(4),
+                energyLevel: const drift.Value(4),
+                stressLevel: drift.Value(stress),
+              ),
+            );
+
+        for (int meal = 0; meal < 3; meal++) {
+          final double carbs = (stress * 30).toDouble();
+          await db.into(db.foodLogs).insert(
+                FoodLogsCompanion.insert(
+                  dateKey: dayKey,
+                  mealType: 'lunch',
+                  foodItemId: foodId,
+                  gramsConsumed: 100,
+                  totalKcal: carbs * 4,
+                  totalProteinG: 10,
+                  totalCarbsG: carbs,
+                  totalFatG: 5,
+                  totalFiberG: 4,
+                  totalSodiumMg: 50,
+                  totalPotassiumMg: 150,
+                  totalMagnesiumMg: 30,
+                ),
+              );
+        }
+      }
+
+      final insights = await crossAnalyticsEngine.computeInsights();
+      final stressInsight = insights.where((e) => e.domain == 'stress_vs_carbs').toList();
+      expect(stressInsight, hasLength(1));
+      // Debe contar exactamente 12 días únicos, jamás 36 filas infladas por JOIN cartesiano
+      expect(stressInsight.first.sampleSize, equals(12));
+      expect(stressInsight.first.correlationR, greaterThan(0.85));
     });
   });
 }

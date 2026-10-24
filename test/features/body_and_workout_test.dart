@@ -10,6 +10,7 @@ import 'package:nb_selfcare/core/database/daos/pet_dao.dart';
 import 'package:nb_selfcare/core/database/daos/user_profile_dao.dart';
 import 'package:nb_selfcare/features/body_metrics/presentation/cuerpo_screen.dart';
 import 'package:nb_selfcare/shared/theme/sc_theme.dart';
+import 'package:nb_selfcare/shared/utils/date_time_extensions.dart';
 
 void main() {
   late AppDatabase db;
@@ -115,8 +116,14 @@ void main() {
 
     await tester.pumpAndSettle();
 
-    // En HoyScreen tocar el botón rápido Entreno 5s
+    // En HoyScreen tocar el botón embebido Entreno 5s de la tarjeta de Entrenamiento
     final entrenarBtn = find.text('Entreno 5s');
+    await tester.scrollUntilVisible(
+      entrenarBtn,
+      250,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.pumpAndSettle();
     expect(entrenarBtn, findsOneWidget);
     await tester.tap(entrenarBtn);
     await tester.pumpAndSettle();
@@ -135,6 +142,201 @@ void main() {
 
     final pet = await PetDao(db).getPetStatus();
     expect(pet!.coinsBalance, equals(70));
+
+    await tester.pumpWidget(const SizedBox());
+    await tester.pump(const Duration(milliseconds: 100));
+  });
+
+  testWidgets('WeightTrendChartCard renderiza gráfica temporal y permite conmutar métricas', (tester) async {
+    tester.view.physicalSize = const Size(1080, 2400);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+
+    // Insertar serie de 3 pesajes para trazar la línea
+    final dao = BodyMeasurementsDao(db, PetDao(db));
+    final now = DateTime.now();
+
+    for (int i = 3; i >= 1; i--) {
+      await dao.insertMeasurement(
+        BodyMeasurementsCompanion.insert(
+          measuredAt: drift.Value(now.subtract(Duration(days: i))),
+          dateKey: now.subtract(Duration(days: i)).dateKey,
+          source: 'mi_scale_2_ble',
+          weightKg: 73.0 - (i * 0.5),
+          trendWeightKg: 73.0 - (i * 0.4),
+          bmi: 23.0,
+          bodyFatPercentage: const drift.Value(18.5),
+          muscleMassKg: const drift.Value(55.0),
+          waterPercentage: const drift.Value(58.0),
+        ),
+      );
+    }
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          appDatabaseProvider.overrideWithValue(db),
+        ],
+        child: MaterialApp(
+          theme: ScTheme.build('samsung_dark'),
+          home: const CuerpoScreen(),
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    // Debe mostrar la tarjeta de Evolución Temporal
+    expect(find.text('Evolución Temporal'), findsOneWidget);
+    expect(find.text('Peso & Tendencia'), findsOneWidget);
+    expect(find.text('% Grasa'), findsOneWidget);
+
+    // Conmutar a % Grasa
+    final fatMetricBtn = find.text('% Grasa');
+    await tester.tap(fatMetricBtn);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Evolución Temporal'), findsOneWidget);
+
+    await tester.pumpWidget(const SizedBox());
+    await tester.pump(const Duration(milliseconds: 100));
+  });
+
+  testWidgets('CuerpoScreen en 390px (Samsung Dark) sin overflows, con detalle métrico y cinta Navy', (tester) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+
+    final dao = BodyMeasurementsDao(db, PetDao(db));
+    final now = DateTime.now();
+    await dao.insertMeasurement(
+      BodyMeasurementsCompanion.insert(
+        measuredAt: drift.Value(now),
+        dateKey: now.dateKey,
+        source: 'mi_scale_2_ble',
+        weightKg: 71.4,
+        trendWeightKg: 71.6,
+        impedanceOhms: const drift.Value(485),
+        bmi: 22.5,
+        bodyFatPercentage: const drift.Value(17.8),
+        muscleMassKg: const drift.Value(55.2),
+        waterPercentage: const drift.Value(59.5),
+        visceralFatIndex: const drift.Value(5),
+        boneMassKg: const drift.Value(2.85),
+        proteinPercentage: const drift.Value(17.2),
+        basalMetabolicRateKcal: const drift.Value(1620),
+        metabolicAge: const drift.Value(24),
+        leanBodyMassKg: const drift.Value(58.7),
+        bodyScore: const drift.Value(86),
+        somatotype: const drift.Value('balanced_muscular'),
+      ),
+    );
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          appDatabaseProvider.overrideWithValue(db),
+        ],
+        child: MaterialApp(
+          theme: ScTheme.build('samsung_dark'),
+          home: const CuerpoScreen(),
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    expect(find.text('Cuerpo'), findsOneWidget);
+    expect(find.text('71.4'), findsOneWidget);
+
+    // Abrir modal de Cinta US Navy desde la Estación de Pesaje
+    final navyBtn = find.text('Cinta US Navy');
+    expect(navyBtn, findsOneWidget);
+    await tester.tap(navyBtn);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Validación US Navy (Cinta)'), findsOneWidget);
+    expect(find.text('Guardar validación'), findsOneWidget);
+
+    await tester.tap(find.text('Guardar validación'));
+    await tester.pumpAndSettle();
+
+    // Desplazar hacia la sección de Composición Corporal
+    final compHead = find.text('Composición Corporal');
+    await tester.scrollUntilVisible(
+      compHead,
+      150,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.pumpAndSettle();
+
+    expect(compHead, findsOneWidget);
+    final somatotypeCard = find.text('Atlético Muscular');
+    expect(somatotypeCard, findsOneWidget);
+    await tester.tap(somatotypeCard);
+    await tester.pumpAndSettle();
+
+    expect(find.text('¿Qué representa?'), findsOneWidget);
+    expect(find.text('Valor actual'), findsOneWidget);
+
+    final closeBtn = find.text('Cerrar');
+    expect(closeBtn, findsOneWidget);
+    await tester.tap(closeBtn);
+    await tester.pumpAndSettle();
+
+    // Abrir entrenamiento RPE desde Cuerpo
+    final rpeBtn = find.text('Registrar entrenamiento (5s)');
+    await tester.scrollUntilVisible(
+      rpeBtn,
+      250,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.pumpAndSettle();
+    expect(rpeBtn, findsOneWidget);
+    await tester.tap(rpeBtn);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Entrenamiento en 5 Segundos'), findsOneWidget);
+    expect(find.text('Pesas / Fuerza'), findsOneWidget);
+    expect(find.text('Moderado'), findsOneWidget);
+
+    await tester.tap(find.byIcon(Icons.close_rounded).last);
+    await tester.pumpAndSettle();
+
+    await tester.pumpWidget(const SizedBox());
+    await tester.pump(const Duration(milliseconds: 100));
+  });
+
+  testWidgets('CuerpoScreen en 390px (NXTPAPER E-Ink) sin overflows', (tester) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          appDatabaseProvider.overrideWithValue(db),
+        ],
+        child: MaterialApp(
+          theme: ScTheme.build('nxtpaper_eink'),
+          home: const CuerpoScreen(),
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    expect(find.text('Cuerpo'), findsOneWidget);
+
+    final compHead = find.text('Composición Corporal');
+    await tester.scrollUntilVisible(
+      compHead,
+      150,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.pumpAndSettle();
+
+    expect(compHead, findsOneWidget);
 
     await tester.pumpWidget(const SizedBox());
     await tester.pump(const Duration(milliseconds: 100));

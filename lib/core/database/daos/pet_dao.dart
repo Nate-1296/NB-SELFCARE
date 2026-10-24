@@ -4,6 +4,7 @@ import 'package:drift/drift.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sqlite3/sqlite3.dart';
 
+import '../../constants/app_constants.dart';
 import '../app_database.dart';
 
 /// DAO especializado en el estado de la mascota Nibi y el libro mayor de monedas.
@@ -11,6 +12,8 @@ class PetDao {
   PetDao(this._db);
 
   final AppDatabase _db;
+
+  static const Object _unset = Object();
 
   /// Emite en vivo el estado actual de la mascota Nibi.
   Stream<PetStatusData?> watchPetStatus() {
@@ -30,33 +33,102 @@ class PetDao {
   /// Otorga una recompensa en monedas con idempotencia diaria por (dateKey, actionType).
   ///
   /// Si ya se otorgó la recompensa para ese día y acción, ignora silenciosamente.
-  /// Si es válida, aplica el multiplicador de sueño si corresponde y actualiza el saldo.
+  /// Si `sleepMultiplier` es `1.0`, verifica si el usuario registró sueño reparador hoy
+  /// (`>= 7.5h` o `REM + Profundo >= 90 min`) para aplicar `1.5x` automáticamente,
+  /// y actualiza la racha diaria de forma positiva al completar el primer hábito del día.
   Future<bool> grantDailyReward({
     required String dateKey,
     required String actionType,
     required int baseAmount,
     double sleepMultiplier = 1.0,
   }) async {
-    final int finalAmount = (baseAmount * sleepMultiplier).ceil();
-
     return _db.transaction(() async {
       try {
+        double effectiveMultiplier = sleepMultiplier;
+        if (effectiveMultiplier == 1.0) {
+          final DailySummary? summary = await (_db.select(_db.dailySummaries)
+                ..where((tbl) => tbl.dateKey.equals(dateKey)))
+              .getSingleOrNull();
+          if (summary != null) {
+            final int restorativeMin =
+                summary.sleepDeepMinutes + summary.sleepRemMinutes;
+            if (restorativeMin >= 90 || summary.sleepDurationMinutes >= 450) {
+              effectiveMultiplier = AppConstants.goodSleepMultiplier;
+            }
+          }
+        }
+
+        final int finalAmount = (baseAmount * effectiveMultiplier).ceil();
+
+        // Revisar si es la primera recompensa positiva del día para avanzar la racha
+        final priorTodayRows = await _db.customSelect(
+          'SELECT COUNT(*) AS cnt FROM coin_ledger WHERE date_key = ? AND amount > 0',
+          variables: [Variable.withString(dateKey)],
+          readsFrom: {_db.coinLedger},
+        ).getSingle();
+        final bool isFirstHabitToday = (priorTodayRows.read<int>('cnt')) == 0;
+
         await _db.into(_db.coinLedger).insert(
               CoinLedgerCompanion(
                 dateKey: Value(dateKey),
                 actionType: Value(actionType),
                 amount: Value(finalAmount),
-                sleepMultiplierApplied: Value(sleepMultiplier),
+                sleepMultiplierApplied: Value(effectiveMultiplier),
               ),
             );
 
-        // Actualizar saldo de monedas en PetStatus
+        // Actualizar saldo de monedas y racha diaria en PetStatus
         final PetStatusData? pet = await getPetStatus();
         if (pet != null) {
-          final query = _db.update(_db.petStatus)..where((tbl) => tbl.id.equals(pet.id));
+          int nextStreak = pet.currentStreakDays;
+          int nextHighest = pet.highestStreakDays;
+          int nextShields = pet.streakShieldsAvailable;
+
+          if (isFirstHabitToday) {
+            final DateTime? parsedDate = DateTime.tryParse(dateKey);
+            if (parsedDate != null && pet.currentStreakDays > 0) {
+              final DateTime y = parsedDate.subtract(const Duration(days: 1));
+              final String yesterdayKey =
+                  '${y.year.toString().padLeft(4, '0')}-${y.month.toString().padLeft(2, '0')}-${y.day.toString().padLeft(2, '0')}';
+
+              final yesterdayRows = await _db.customSelect(
+                'SELECT COUNT(*) AS cnt FROM coin_ledger WHERE date_key = ? AND amount > 0',
+                variables: [Variable.withString(yesterdayKey)],
+                readsFrom: {_db.coinLedger},
+              ).getSingle();
+              final bool activeYesterday =
+                  yesterdayRows.read<int>('cnt') > 0;
+
+              final earlierRows = await _db.customSelect(
+                'SELECT COUNT(*) AS cnt FROM coin_ledger WHERE date_key < ? AND amount > 0',
+                variables: [Variable.withString(yesterdayKey)],
+                readsFrom: {_db.coinLedger},
+              ).getSingle();
+              final bool hadEarlierHistory = earlierRows.read<int>('cnt') > 0;
+
+              if (!activeYesterday && hadEarlierHistory) {
+                if (nextShields > 0) {
+                  nextShields -= 1;
+                } else {
+                  nextStreak = 0;
+                }
+              }
+            }
+
+            nextStreak += 1;
+            if (nextStreak > nextHighest) {
+              nextHighest = nextStreak;
+            }
+          }
+
+          final query = _db.update(_db.petStatus)
+            ..where((tbl) => tbl.id.equals(pet.id));
           await query.write(
             PetStatusCompanion(
               coinsBalance: Value(pet.coinsBalance + finalAmount),
+              currentStreakDays: Value(nextStreak),
+              highestStreakDays: Value(nextHighest),
+              streakShieldsAvailable: Value(nextShields),
             ),
           );
         }
@@ -78,7 +150,8 @@ class PetDao {
       return false;
     }
 
-    final query = _db.update(_db.petStatus)..where((tbl) => tbl.id.equals(pet.id));
+    final query = _db.update(_db.petStatus)
+      ..where((tbl) => tbl.id.equals(pet.id));
     await query.write(
       PetStatusCompanion(
         streakShieldsAvailable: Value(pet.streakShieldsAvailable - 1),
@@ -93,9 +166,11 @@ class PetDao {
     if (pet == null) return;
 
     final int newStreak = pet.currentStreakDays + 1;
-    final int highest = newStreak > pet.highestStreakDays ? newStreak : pet.highestStreakDays;
+    final int highest =
+        newStreak > pet.highestStreakDays ? newStreak : pet.highestStreakDays;
 
-    final query = _db.update(_db.petStatus)..where((tbl) => tbl.id.equals(pet.id));
+    final query = _db.update(_db.petStatus)
+      ..where((tbl) => tbl.id.equals(pet.id));
     await query.write(
       PetStatusCompanion(
         currentStreakDays: Value(newStreak),
@@ -127,18 +202,23 @@ class PetDao {
             ),
           );
 
-      // 2. Deserializar items desbloqueados
-      final List<dynamic> unlocked = jsonDecode(pet.unlockedItemsJson) as List<dynamic>;
-      if (!unlocked.contains(itemId)) {
+      // 2. Deserializar items desbloqueados (solo añadir permanentes, no consumibles)
+      final List<String> unlocked =
+          (jsonDecode(pet.unlockedItemsJson) as List<dynamic>)
+              .map((e) => e.toString())
+              .toList();
+      if (!isConsumable && !unlocked.contains(itemId)) {
         unlocked.add(itemId);
       }
 
       // 3. Actualizar PetStatus
-      final query = _db.update(_db.petStatus)..where((tbl) => tbl.id.equals(pet.id));
+      final query = _db.update(_db.petStatus)
+        ..where((tbl) => tbl.id.equals(pet.id));
       await query.write(
         PetStatusCompanion(
           coinsBalance: Value(pet.coinsBalance - cost),
-          streakShieldsAvailable: Value(pet.streakShieldsAvailable + shieldsToAdd),
+          streakShieldsAvailable:
+              Value(pet.streakShieldsAvailable + shieldsToAdd),
           unlockedItemsJson: Value(jsonEncode(unlocked)),
         ),
       );
@@ -155,7 +235,8 @@ class PetDao {
     final PetStatusData? pet = await getPetStatus();
     if (pet == null) return;
 
-    final query = _db.update(_db.petStatus)..where((tbl) => tbl.id.equals(pet.id));
+    final query = _db.update(_db.petStatus)
+      ..where((tbl) => tbl.id.equals(pet.id));
     await query.write(
       PetStatusCompanion(
         petName: Value(clean),
@@ -163,16 +244,42 @@ class PetDao {
     );
   }
 
-  /// Equipa un sombrero o fondo para la mascota.
-  Future<void> equipItem({String? hatId, String? bgId}) async {
+  /// Guarda el último saludo contextual generado para Nibi.
+  Future<void> saveAiGreeting(String greeting) async {
+    final clean = greeting.trim();
+    if (clean.isEmpty) return;
+
     final PetStatusData? pet = await getPetStatus();
     if (pet == null) return;
 
-    final query = _db.update(_db.petStatus)..where((tbl) => tbl.id.equals(pet.id));
+    final query = _db.update(_db.petStatus)
+      ..where((tbl) => tbl.id.equals(pet.id));
     await query.write(
       PetStatusCompanion(
-        equippedHatId: Value(hatId),
-        equippedBackgroundId: Value(bgId ?? pet.equippedBackgroundId),
+        lastAiGreeting: Value(clean),
+        lastGreetingAt: Value(DateTime.now()),
+      ),
+    );
+  }
+
+  /// Equipa o desequipa un sombrero y/o fondo sin sobrescribir la ranura no indicada.
+  Future<void> equipItem({
+    Object? hatId = _unset,
+    Object? bgId = _unset,
+  }) async {
+    final PetStatusData? pet = await getPetStatus();
+    if (pet == null) return;
+
+    final query = _db.update(_db.petStatus)
+      ..where((tbl) => tbl.id.equals(pet.id));
+    await query.write(
+      PetStatusCompanion(
+        equippedHatId: identical(hatId, _unset)
+            ? const Value.absent()
+            : Value(hatId as String?),
+        equippedBackgroundId: identical(bgId, _unset)
+            ? const Value.absent()
+            : Value((bgId as String?) ?? 'bg_default_room'),
       ),
     );
   }

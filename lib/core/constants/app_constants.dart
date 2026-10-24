@@ -35,6 +35,7 @@ abstract final class AppConstants {
   static const int maxDailyMealLogCoins = 30;
   static const int coinsWaterGoal = 15;
   static const int coinsFastDone = 20;
+  static const int coinsWorkoutDone = 20;
   static const int coinsJournalEntry = 10;
 
   // Costo tienda

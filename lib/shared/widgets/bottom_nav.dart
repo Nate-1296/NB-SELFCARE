@@ -1,6 +1,9 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/database/app_database.dart';
+import '../../core/database/daos/pet_dao.dart';
 import '../theme/sc_colors.dart';
 import '../theme/sc_theme.dart';
 import 'app_icons.dart';
@@ -19,12 +22,12 @@ class NavDestinationData {
 
 const List<NavDestinationData> kNavDestinations = <NavDestinationData>[
   NavDestinationData(
-    label: 'Hoy',
+    label: 'Inicio',
     icon: AppIcons.hoy,
     activeIcon: AppIcons.hoyFilled,
   ),
   NavDestinationData(
-    label: 'Comer',
+    label: 'Comida',
     icon: AppIcons.comer,
     activeIcon: AppIcons.comerFilled,
   ),
@@ -34,7 +37,7 @@ const List<NavDestinationData> kNavDestinations = <NavDestinationData>[
     activeIcon: AppIcons.cuerpoFilled,
   ),
   NavDestinationData(
-    label: 'Nibi',
+    label: 'Mascota',
     icon: AppIcons.nibi,
     activeIcon: AppIcons.nibiFilled,
   ),
@@ -46,7 +49,7 @@ const List<NavDestinationData> kNavDestinations = <NavDestinationData>[
 ];
 
 /// Barra inferior de navegación con efecto blur (o sólida en E-Ink NXTPAPER).
-class BottomNav extends StatelessWidget {
+class BottomNav extends ConsumerWidget {
   const BottomNav({
     super.key,
     required this.currentIndex,
@@ -57,8 +60,34 @@ class BottomNav extends StatelessWidget {
   final ValueChanged<int> onTap;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final ScColors c = context.sc;
+    final AsyncValue<PetStatusData?> petStatusAsync =
+        ref.watch(petStatusStreamProvider);
+    final String? rawPetName = petStatusAsync.value?.petName.trim();
+
+    // Si el nombre es conciso (hasta 7 caracteres), lo mostramos en el dock;
+    // si es largo o vacío, usamos 'Mascota' para asegurar que nunca se desborde ni se corte.
+    final String petLabel;
+    if (rawPetName != null &&
+        rawPetName.isNotEmpty &&
+        rawPetName.length <= 7) {
+      petLabel = rawPetName;
+    } else {
+      petLabel = 'Mascota';
+    }
+
+    final List<NavDestinationData> destinations = <NavDestinationData>[
+      kNavDestinations[0],
+      kNavDestinations[1],
+      kNavDestinations[2],
+      NavDestinationData(
+        label: petLabel,
+        icon: AppIcons.nibi,
+        activeIcon: AppIcons.nibiFilled,
+      ),
+      kNavDestinations[4],
+    ];
 
     final Widget barContent = Container(
       decoration: BoxDecoration(
@@ -71,10 +100,10 @@ class BottomNav extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(4, 6, 4, 4),
           child: Row(
             children: <Widget>[
-              for (int i = 0; i < kNavDestinations.length; i++)
+              for (int i = 0; i < destinations.length; i++)
                 Expanded(
                   child: _NavItem(
-                    data: kNavDestinations[i],
+                    data: destinations[i],
                     active: i == currentIndex,
                     onTap: () => onTap(i),
                   ),
@@ -116,6 +145,8 @@ class _NavItem extends StatelessWidget {
 
     return InkWell(
       onTap: onTap,
+      splashColor: c.isFlat ? Colors.transparent : null,
+      highlightColor: c.isFlat ? Colors.transparent : null,
       borderRadius: BorderRadius.circular(16),
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 4),
@@ -124,17 +155,26 @@ class _NavItem extends StatelessWidget {
           children: <Widget>[
             Icon(
               active ? data.activeIcon : data.icon,
-              size: 23,
+              size: 22,
               color: color,
             ),
             const SizedBox(height: 3),
-            Text(
-              data.label,
-              style: TextStyle(
-                fontFamily: ScFonts.ui,
-                fontSize: 11.0,
-                fontWeight: active ? FontWeight.w800 : FontWeight.w600,
-                color: color,
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                data.label,
+                maxLines: 1,
+                softWrap: false,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontFamily: ScFonts.ui,
+                  fontSize: 11.0,
+                  // Peso estático consistente para evitar que la fuente se expanda o tiemble al enfocar
+                  fontWeight: FontWeight.w700,
+                  color: color,
+                  height: 1.15,
+                ),
               ),
             ),
           ],

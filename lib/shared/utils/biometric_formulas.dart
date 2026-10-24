@@ -55,6 +55,127 @@ abstract final class BiometricFormulas {
     return double.parse((weightKg / (heightM * heightM)).toStringAsFixed(2));
   }
 
+  /// Deriva las 13 métricas corporales. Si se suministra [impedanceOhms],
+  /// utiliza las fórmulas empíricas BIA de Xiaomi. Si es nulo, emplea el
+  /// modelo antropométrico estándar (fórmula de Deurenberg y balances fisiológicos).
+  static DerivedBiometrics deriveMetrics({
+    required double weightKg,
+    required double heightCm,
+    required double ageYears,
+    required bool isMale,
+    int? impedanceOhms,
+  }) {
+    if (impedanceOhms != null && impedanceOhms >= 100 && impedanceOhms <= 3000) {
+      return deriveAllMetrics(
+        weightKg: weightKg,
+        heightCm: heightCm,
+        ageYears: ageYears,
+        isMale: isMale,
+        impedanceOhms: impedanceOhms,
+      );
+    }
+    return deriveAllMetricsEstimated(
+      weightKg: weightKg,
+      heightCm: heightCm,
+      ageYears: ageYears,
+      isMale: isMale,
+    );
+  }
+
+  /// Modelo antropométrico de estimación (Deurenberg) para cuando no hay bioimpedancia disponible.
+  static DerivedBiometrics deriveAllMetricsEstimated({
+    required double weightKg,
+    required double heightCm,
+    required double ageYears,
+    required bool isMale,
+  }) {
+    final double bmi = calculateBmi(weightKg: weightKg, heightCm: heightCm);
+
+    // Ecuación Deurenberg: % Grasa = 1.20*BMI + 0.23*Edad - 10.8*(1 si hombre, 0 si mujer) - 5.4
+    final double deurenbergFat =
+        (1.20 * bmi) + (0.23 * ageYears) - (10.8 * (isMale ? 1.0 : 0.0)) - 5.4;
+    final double bodyFatPercentage = _clampDouble(deurenbergFat, 5.0, 65.0);
+
+    // Masa Ósea estimada: ~4.5% hombre, ~4.0% mujer del peso corporal
+    final double boneFraction = isMale ? 0.045 : 0.040;
+    final double boneMassKg = _clampDouble(weightKg * boneFraction, 1.0, 5.2);
+
+    // Masa Muscular estimada
+    final double rawMuscle =
+        weightKg - (weightKg * (bodyFatPercentage / 100.0)) - boneMassKg;
+    final double muscleMassKg = double.parse(
+      (rawMuscle > 0 ? rawMuscle : weightKg * 0.5).toStringAsFixed(2),
+    );
+
+    // Agua Corporal estimada (~72% de la masa magra)
+    final double waterRaw = (100.0 - bodyFatPercentage) * 0.72;
+    final double waterPercentage = _clampDouble(waterRaw, 35.0, 75.0);
+
+    // Proteína Corporal estimada
+    final double rawProtein =
+        (muscleMassKg / weightKg) * 100.0 - (waterPercentage * 0.52);
+    final double proteinPercentage = _clampDouble(rawProtein, 10.0, 26.0);
+
+    // Grasa Visceral
+    final int visceralFatIndex = _calculateVisceralFat(
+      weightKg: weightKg,
+      heightCm: heightCm,
+      ageYears: ageYears,
+      isMale: isMale,
+    );
+
+    // Masa Libre de Grasa y BMR
+    final double leanBodyMassKg = double.parse(
+      (weightKg * (1.0 - (bodyFatPercentage / 100.0))).toStringAsFixed(1),
+    );
+    final int basalMetabolicRateKcal =
+        calculateKatchMcArdleBmr(leanBodyMassKg: leanBodyMassKg);
+
+    // Edad Metabólica
+    final int metabolicAgeYears = _calculateMetabolicAge(
+      bmr: basalMetabolicRateKcal,
+      ageYears: ageYears,
+      isMale: isMale,
+      weightKg: weightKg,
+      heightCm: heightCm,
+    );
+
+    // Puntaje Corporal
+    final int bodyScore = _calculateBodyScore(
+      bmi: bmi,
+      bodyFatPercentage: bodyFatPercentage,
+      visceralFat: visceralFatIndex,
+      waterPercentage: waterPercentage,
+      muscleMassKg: muscleMassKg,
+      weightKg: weightKg,
+      isMale: isMale,
+    );
+
+    // Somatotipo
+    final String bodyType = _determineSomatotype(
+      bodyFatPercentage: bodyFatPercentage,
+      muscleMassKg: muscleMassKg,
+      weightKg: weightKg,
+      isMale: isMale,
+    );
+
+    return DerivedBiometrics(
+      weightKg: weightKg,
+      bmi: bmi,
+      bodyFatPercentage: double.parse(bodyFatPercentage.toStringAsFixed(1)),
+      muscleMassKg: muscleMassKg,
+      waterPercentage: double.parse(waterPercentage.toStringAsFixed(1)),
+      visceralFatIndex: visceralFatIndex,
+      boneMassKg: double.parse(boneMassKg.toStringAsFixed(2)),
+      proteinPercentage: double.parse(proteinPercentage.toStringAsFixed(1)),
+      basalMetabolicRateKcal: basalMetabolicRateKcal,
+      metabolicAgeYears: metabolicAgeYears,
+      leanBodyMassKg: leanBodyMassKg,
+      bodyScore: bodyScore,
+      bodyType: bodyType,
+    );
+  }
+
   /// Deriva las 13 métricas corporales completas a partir de la lectura BIA.
   static DerivedBiometrics deriveAllMetrics({
     required double weightKg,

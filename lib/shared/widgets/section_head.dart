@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../theme/sc_colors.dart';
 import '../theme/sc_theme.dart';
-import '../util/responsive.dart';
+import '../utils/responsive.dart';
 
 /// Encabezado de sección con título y acción secundaria opcional.
 class SectionHead extends StatelessWidget {
@@ -13,6 +13,7 @@ class SectionHead extends StatelessWidget {
     this.onAction,
     this.big = false,
     this.subtitle,
+    this.padding = const EdgeInsets.fromLTRB(20, 20, 20, 10),
   });
 
   final String title;
@@ -20,6 +21,7 @@ class SectionHead extends StatelessWidget {
   final String? actionLabel;
   final VoidCallback? onAction;
   final bool big;
+  final EdgeInsetsGeometry padding;
 
   @override
   Widget build(BuildContext context) {
@@ -27,7 +29,7 @@ class SectionHead extends StatelessWidget {
     final double size = (big ? 22.0 : 19.0) * context.uiScale;
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 20, 20, 10),
+      padding: padding,
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.end,
         children: <Widget>[

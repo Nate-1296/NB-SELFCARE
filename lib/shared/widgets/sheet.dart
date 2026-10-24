@@ -14,12 +14,17 @@ Future<T?> mostrarHojaMenu<T>(
   return showModalBottomSheet<T>(
     context: context,
     backgroundColor: c.bg2,
+    elevation: 0,
     showDragHandle: true,
     isScrollControlled: true,
     useRootNavigator: true,
     isDismissible: isDismissible,
-    shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+    shape: RoundedRectangleBorder(
+      borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+      side: BorderSide(
+        color: c.isFlat ? c.line2 : c.line,
+        width: c.isFlat ? 1.5 : 1.0,
+      ),
     ),
     constraints: BoxConstraints(
       maxHeight: MediaQuery.sizeOf(context).height * 0.90,
@@ -34,4 +39,3 @@ Future<T?> mostrarHojaMenu<T>(
     ),
   );
 }
-

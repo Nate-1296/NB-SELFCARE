@@ -27,6 +27,22 @@ class WorkoutDao {
     return (_db.delete(_db.workoutBlocks)..where((tbl) => tbl.id.equals(id))).go();
   }
 
+  /// Restaura un bloque de entrenamiento eliminado (flujo Deshacer).
+  Future<int> restoreWorkout(WorkoutBlock block) {
+    return _db.into(_db.workoutBlocks).insert(
+          WorkoutBlocksCompanion.insert(
+            dateKey: block.dateKey,
+            performedAt: Value(block.performedAt),
+            category: block.category,
+            durationMinutes: block.durationMinutes,
+            rpeIntensity: block.rpeIntensity,
+            appliedMet: block.appliedMet,
+            userWeightAtTimeKg: block.userWeightAtTimeKg,
+            netCaloriesBurned: block.netCaloriesBurned,
+          ),
+        );
+  }
+
   /// Emite la suma total de calorías netas quemadas en el día por entrenamientos.
   Stream<int> watchNetCaloriesForDate(String dateKey) {
     final query = _db.selectOnly(_db.workoutBlocks)

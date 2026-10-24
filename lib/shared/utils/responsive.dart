@@ -10,14 +10,6 @@ Bp breakpointFor(double width) {
   return Bp.compact;
 }
 
-/// Número de columnas para rejillas de métricas y tarjetas según el ancho.
-int gridColumns(double width) {
-  if (width >= 1200) return 4;
-  if (width >= 800) return 3;
-  if (width >= 540) return 2;
-  return 1;
-}
-
 /// Factor de escala tipográfica para títulos y tarjetas.
 double uiScaleFor(double width) {
   switch (breakpointFor(width)) {
@@ -36,10 +28,6 @@ extension ResponsiveContextX on BuildContext {
   double get screenHeight => MediaQuery.sizeOf(this).height;
   Bp get bp => breakpointFor(screenWidth);
   bool get isWide => bp != Bp.compact;
-  int get gridCols => gridColumns(screenWidth);
   double get uiScale => uiScaleFor(screenWidth);
-
-  /// Factor para escalar tarjetas y círculos de salud.
-  double get cardScale => isWide ? 1.15 : 1.0;
 }
 

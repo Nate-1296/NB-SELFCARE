@@ -1,10 +1,14 @@
 import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/database/app_database.dart';
 import '../../../core/database/daos/pet_dao.dart';
+import '../../../shared/theme/sc_colors.dart';
+import '../../../shared/theme/sc_theme.dart';
 import '../../../shared/utils/date_time_extensions.dart';
+import '../../../shared/widgets/app_icons.dart';
 import '../../../shared/widgets/health_card.dart';
 
 /// Modal de la Tienda de Recompensas y Personalización de Nibi.
@@ -12,11 +16,18 @@ class ShopModal extends ConsumerWidget {
   const ShopModal({super.key});
 
   static Future<void> show(BuildContext context) {
+    final ScColors c = context.sc;
     return showModalBottomSheet<void>(
       context: context,
+      backgroundColor: c.bg2,
+      elevation: 0,
       isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      shape: RoundedRectangleBorder(
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        side: BorderSide(
+          color: c.isFlat ? c.line2 : c.line,
+          width: c.isFlat ? 1.5 : 1.0,
+        ),
       ),
       builder: (_) => const ShopModal(),
     );
@@ -24,8 +35,10 @@ class ShopModal extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final ScColors c = context.sc;
     final ThemeData theme = Theme.of(context);
-    final AsyncValue<PetStatusData?> petAsync = ref.watch(petStatusStreamProvider);
+    final AsyncValue<PetStatusData?> petAsync =
+        ref.watch(petStatusStreamProvider);
     final petDao = ref.watch(petDaoProvider);
 
     return petAsync.when(
@@ -38,8 +51,10 @@ class ShopModal extends ConsumerWidget {
         }
 
         final int coins = pet.coinsBalance;
-        final List<dynamic> unlocked =
-            jsonDecode(pet.unlockedItemsJson) as List<dynamic>;
+        final List<String> unlocked =
+            (jsonDecode(pet.unlockedItemsJson) as List<dynamic>)
+                .map((e) => e.toString())
+                .toList();
 
         return Padding(
           padding: EdgeInsets.only(
@@ -49,124 +64,76 @@ class ShopModal extends ConsumerWidget {
             bottom: MediaQuery.of(context).viewInsets.bottom + 24.0,
           ),
           child: SizedBox(
-            height: MediaQuery.of(context).size.height * 0.75,
+            height: MediaQuery.of(context).size.height * 0.78,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Encabezado
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Row(
                       children: [
-                        const Icon(Icons.storefront_rounded, color: Colors.amber, size: 28),
+                        Icon(AppIcons.tienda, color: c.warning, size: 26),
                         const SizedBox(width: 8.0),
                         Text(
                           'Tienda de Recompensas',
                           style: theme.textTheme.titleMedium?.copyWith(
+                            fontFamily: ScFonts.display,
                             fontWeight: FontWeight.bold,
+                            color: c.text,
                           ),
                         ),
                       ],
                     ),
                     Row(
                       children: [
-                        const Icon(Icons.monetization_on, color: Colors.amber, size: 20),
+                        Icon(AppIcons.moneda, color: c.warning, size: 20),
                         const SizedBox(width: 4.0),
                         Text(
                           '$coins',
-                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                          style: TextStyle(
+                            fontFamily: ScFonts.display,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                            color: c.text,
+                          ),
                         ),
                         const SizedBox(width: 8.0),
                         IconButton(
-                          icon: const Icon(Icons.close),
+                          icon: Icon(AppIcons.close, color: c.text2),
                           onPressed: () => Navigator.of(context).pop(),
                         ),
                       ],
                     ),
                   ],
                 ),
-                const SizedBox(height: 8.0),
+                const SizedBox(height: 6.0),
                 Text(
-                  'Gasta tus monedas ganadas con hábitos positivos. Cero compras con dinero real.',
-                  style: theme.textTheme.bodySmall,
+                  'Canjea tus monedas ganadas con hábitos reales. 100% libre de micropagos.',
+                  style: TextStyle(fontSize: 12.5, color: c.text2),
                 ),
                 const SizedBox(height: 16.0),
-
-                // Lista de Artículos
                 Expanded(
                   child: ListView(
                     children: [
-                      // Categoría Cuidados y Alimentos
+                      // 1. Escudos de Racha
                       Text(
-                        'Alimentos y Cuidados para tu Compañero',
-                        style: theme.textTheme.labelMedium?.copyWith(
+                        'Escudos de Racha (Protección sin culpa)',
+                        style: TextStyle(
                           fontWeight: FontWeight.bold,
-                          color: Colors.green,
-                        ),
-                      ),
-                      const SizedBox(height: 8.0),
-                      _ShopItemTile(
-                        title: 'Manzana Crujiente 🍎',
-                        description: 'Un delicioso snack saludable que alegra a tu mascota.',
-                        cost: 10,
-                        currentCoins: coins,
-                        icon: Icons.apple_rounded,
-                        iconColor: Colors.redAccent,
-                        onBuy: () async {
-                          final ok = await petDao.buyShopItem(
-                            itemId: 'snack_apple',
-                            cost: 10,
-                            dateKey: DateTime.now().dateKey,
-                            isConsumable: true,
-                          );
-                          if (context.mounted && ok) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('¡Le diste una rica manzana a tu mascota! 🍎✨')),
-                            );
-                          }
-                        },
-                      ),
-                      const SizedBox(height: 8.0),
-                      _ShopItemTile(
-                        title: 'Agua de Manantial 💧',
-                        description: 'Hidratación pura para compartir hábitos saludables.',
-                        cost: 10,
-                        currentCoins: coins,
-                        icon: Icons.water_drop_rounded,
-                        iconColor: Colors.blueAccent,
-                        onBuy: () async {
-                          final ok = await petDao.buyShopItem(
-                            itemId: 'item_water',
-                            cost: 10,
-                            dateKey: DateTime.now().dateKey,
-                            isConsumable: true,
-                          );
-                          if (context.mounted && ok) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('¡Tu compañero bebió agua fresca con alegría! 💧')),
-                            );
-                          }
-                        },
-                      ),
-                      const SizedBox(height: 16.0),
-
-                      // Categoría Escudos
-                      Text(
-                        'Escudos de Racha (Protección para vacaciones)',
-                        style: theme.textTheme.labelMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: Colors.blueAccent,
+                          fontSize: 12.5,
+                          color: c.water,
                         ),
                       ),
                       const SizedBox(height: 8.0),
                       _ShopItemTile(
                         title: 'Escudo Diario de Racha',
-                        description: 'Protege tu racha si olvidas registrarte 1 día.',
+                        description:
+                            'Protege tu racha automáticamente si descansas 1 día.',
                         cost: 25,
                         currentCoins: coins,
-                        icon: Icons.shield,
-                        iconColor: Colors.blueAccent,
+                        icon: AppIcons.escudo,
+                        iconColor: c.water,
                         onBuy: () async {
                           final ok = await petDao.buyShopItem(
                             itemId: 'shield_daily',
@@ -177,19 +144,50 @@ class ShopModal extends ConsumerWidget {
                           );
                           if (context.mounted && ok) {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('¡Escudo de Racha adquirido (+1)!')),
+                              const SnackBar(
+                                content:
+                                    Text('¡Escudo de Racha adquirido (+1)!'),
+                              ),
                             );
                           }
                         },
                       ),
-                      const SizedBox(height: 16.0),
+                      const SizedBox(height: 8.0),
+                      _ShopItemTile(
+                        title: 'Pack Fin de Semana (3 Escudos)',
+                        description:
+                            'Viaja o desconecta todo un fin de semana con serenidad.',
+                        cost: 65,
+                        currentCoins: coins,
+                        icon: AppIcons.shield,
+                        iconColor: c.accent,
+                        onBuy: () async {
+                          final ok = await petDao.buyShopItem(
+                            itemId: 'shield_weekend',
+                            cost: 65,
+                            dateKey: DateTime.now().dateKey,
+                            isConsumable: true,
+                            shieldsToAdd: 3,
+                          );
+                          if (context.mounted && ok) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                    '¡3 Escudos de Racha añadidos a tu reserva!'),
+                              ),
+                            );
+                          }
+                        },
+                      ),
+                      const SizedBox(height: 18.0),
 
-                      // Categoría Accesorios de Nibi
+                      // 2. Sombreros y Accesorios
                       Text(
-                        'Accesorios y Sombreros',
-                        style: theme.textTheme.labelMedium?.copyWith(
+                        'Sombreros de Nibi',
+                        style: TextStyle(
                           fontWeight: FontWeight.bold,
-                          color: Colors.deepOrange,
+                          fontSize: 12.5,
+                          color: c.calories,
                         ),
                       ),
                       const SizedBox(height: 8.0),
@@ -206,13 +204,16 @@ class ShopModal extends ConsumerWidget {
                             cost: 30,
                             dateKey: DateTime.now().dateKey,
                           );
-                          if (!context.mounted) return;
                           if (ok) {
                             await petDao.equipItem(hatId: 'hat_chef');
-                            if (!context.mounted) return;
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('¡Gorro de Chef comprado y equipado!')),
-                            );
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text(
+                                      '¡Gorro de Chef comprado y equipado!'),
+                                ),
+                              );
+                            }
                           }
                         },
                         onEquip: () => petDao.equipItem(hatId: 'hat_chef'),
@@ -232,13 +233,16 @@ class ShopModal extends ConsumerWidget {
                             cost: 35,
                             dateKey: DateTime.now().dateKey,
                           );
-                          if (!context.mounted) return;
                           if (ok) {
                             await petDao.equipItem(hatId: 'hat_headband');
-                            if (!context.mounted) return;
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('¡Vincha de Entrenamiento comprada y equipada!')),
-                            );
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text(
+                                      '¡Vincha de Entrenamiento comprada y equipada!'),
+                                ),
+                              );
+                            }
                           }
                         },
                         onEquip: () => petDao.equipItem(hatId: 'hat_headband'),
@@ -258,13 +262,16 @@ class ShopModal extends ConsumerWidget {
                             cost: 45,
                             dateKey: DateTime.now().dateKey,
                           );
-                          if (!context.mounted) return;
                           if (ok) {
                             await petDao.equipItem(hatId: 'hat_zen_halo');
-                            if (!context.mounted) return;
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('¡Halo Zen Dorado comprado y equipado!')),
-                            );
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text(
+                                      '¡Halo Zen Dorado comprado y equipado!'),
+                                ),
+                              );
+                            }
                           }
                         },
                         onEquip: () => petDao.equipItem(hatId: 'hat_zen_halo'),
@@ -284,17 +291,137 @@ class ShopModal extends ConsumerWidget {
                             cost: 60,
                             dateKey: DateTime.now().dateKey,
                           );
-                          if (!context.mounted) return;
                           if (ok) {
                             await petDao.equipItem(hatId: 'hat_crown');
-                            if (!context.mounted) return;
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('¡Corona Real comprada y equipada!')),
-                            );
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content:
+                                      Text('¡Corona Real comprada y equipada!'),
+                                ),
+                              );
+                            }
                           }
                         },
                         onEquip: () => petDao.equipItem(hatId: 'hat_crown'),
                         onUnequip: () => petDao.equipItem(hatId: null),
+                      ),
+                      const SizedBox(height: 18.0),
+
+                      // 3. Ambientes del Santuario
+                      Text(
+                        'Ambientes del Santuario',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12.5,
+                          color: c.fasting,
+                        ),
+                      ),
+                      const SizedBox(height: 8.0),
+                      _AccessoryTile(
+                        id: 'bg_zen_garden',
+                        title: 'Jardín Zen de Bambú 🎋',
+                        cost: 40,
+                        currentCoins: coins,
+                        isUnlocked: unlocked.contains('bg_zen_garden'),
+                        isEquipped: pet.equippedBackgroundId == 'bg_zen_garden',
+                        onBuy: () async {
+                          final ok = await petDao.buyShopItem(
+                            itemId: 'bg_zen_garden',
+                            cost: 40,
+                            dateKey: DateTime.now().dateKey,
+                          );
+                          if (ok) {
+                            await petDao.equipItem(bgId: 'bg_zen_garden');
+                          }
+                        },
+                        onEquip: () => petDao.equipItem(bgId: 'bg_zen_garden'),
+                        onUnequip: () =>
+                            petDao.equipItem(bgId: 'bg_default_room'),
+                      ),
+                      const SizedBox(height: 8.0),
+                      _AccessoryTile(
+                        id: 'bg_mountain_dawn',
+                        title: 'Alba Andina Dorada 🏔️',
+                        cost: 50,
+                        currentCoins: coins,
+                        isUnlocked: unlocked.contains('bg_mountain_dawn'),
+                        isEquipped:
+                            pet.equippedBackgroundId == 'bg_mountain_dawn',
+                        onBuy: () async {
+                          final ok = await petDao.buyShopItem(
+                            itemId: 'bg_mountain_dawn',
+                            cost: 50,
+                            dateKey: DateTime.now().dateKey,
+                          );
+                          if (ok) {
+                            await petDao.equipItem(bgId: 'bg_mountain_dawn');
+                          }
+                        },
+                        onEquip: () =>
+                            petDao.equipItem(bgId: 'bg_mountain_dawn'),
+                        onUnequip: () =>
+                            petDao.equipItem(bgId: 'bg_default_room'),
+                      ),
+                      const SizedBox(height: 8.0),
+                      _AccessoryTile(
+                        id: 'bg_starry_dojo',
+                        title: 'Dojo Estelar Nocturno 🌌',
+                        cost: 55,
+                        currentCoins: coins,
+                        isUnlocked: unlocked.contains('bg_starry_dojo'),
+                        isEquipped:
+                            pet.equippedBackgroundId == 'bg_starry_dojo',
+                        onBuy: () async {
+                          final ok = await petDao.buyShopItem(
+                            itemId: 'bg_starry_dojo',
+                            cost: 55,
+                            dateKey: DateTime.now().dateKey,
+                          );
+                          if (ok) {
+                            await petDao.equipItem(bgId: 'bg_starry_dojo');
+                          }
+                        },
+                        onEquip: () => petDao.equipItem(bgId: 'bg_starry_dojo'),
+                        onUnequip: () =>
+                            petDao.equipItem(bgId: 'bg_default_room'),
+                      ),
+                      const SizedBox(height: 18.0),
+
+                      // 4. Snacks saludables simbólicos
+                      Text(
+                        'Mimos Simbólicos',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12.5,
+                          color: c.steps,
+                        ),
+                      ),
+                      const SizedBox(height: 8.0),
+                      _ShopItemTile(
+                        title: 'Manzana Crujiente 🍎',
+                        description:
+                            'Un premio simbólico para celebrar tus buenos hábitos.',
+                        cost: 10,
+                        currentCoins: coins,
+                        icon: Icons.apple_rounded,
+                        iconColor: c.calories,
+                        onBuy: () async {
+                          final ok = await petDao.buyShopItem(
+                            itemId: 'snack_apple',
+                            cost: 10,
+                            dateKey: DateTime.now().dateKey,
+                            isConsumable: true,
+                          );
+                          if (context.mounted && ok) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                    '¡Le diste una manzana crujiente a tu compañero! 🍎✨'),
+                              ),
+                            );
+                          }
+                        },
                       ),
                     ],
                   ),
@@ -331,6 +458,7 @@ class _ShopItemTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final ScColors c = context.sc;
     final bool canAfford = currentCoins >= cost;
 
     return HealthCard(
@@ -338,15 +466,25 @@ class _ShopItemTile extends StatelessWidget {
       padding: const EdgeInsets.all(12.0),
       child: Row(
         children: [
-          Icon(icon, color: iconColor, size: 32),
+          Icon(icon, color: iconColor, size: 30),
           const SizedBox(width: 12.0),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                    color: c.text,
+                  ),
+                ),
                 const SizedBox(height: 2.0),
-                Text(description, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                Text(
+                  description,
+                  style: TextStyle(fontSize: 12, color: c.text2),
+                ),
               ],
             ),
           ),
@@ -356,7 +494,7 @@ class _ShopItemTile extends StatelessWidget {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(Icons.monetization_on, size: 16, color: Colors.amber),
+                Icon(AppIcons.moneda, size: 16, color: c.warning),
                 const SizedBox(width: 4.0),
                 Text('$cost'),
               ],
@@ -393,19 +531,31 @@ class _AccessoryTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final ScColors c = context.sc;
     return HealthCard(
       margin: EdgeInsets.zero,
       padding: const EdgeInsets.all(12.0),
       child: Row(
         children: [
           Icon(
-            isEquipped ? Icons.check_circle : (isUnlocked ? Icons.lock_open : Icons.lock_outline),
-            color: isEquipped ? Colors.teal : (isUnlocked ? Colors.blue : Colors.grey),
-            size: 28,
+            isEquipped
+                ? Icons.check_circle
+                : (isUnlocked ? Icons.lock_open : Icons.lock_outline),
+            color: isEquipped
+                ? c.accent
+                : (isUnlocked ? c.water : c.text3),
+            size: 26,
           ),
           const SizedBox(width: 12.0),
           Expanded(
-            child: Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+            child: Text(
+              title,
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 14,
+                color: c.text,
+              ),
+            ),
           ),
           if (!isUnlocked)
             FilledButton.tonal(
@@ -413,7 +563,7 @@ class _AccessoryTile extends StatelessWidget {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(Icons.monetization_on, size: 16, color: Colors.amber),
+                  Icon(AppIcons.moneda, size: 16, color: c.warning),
                   const SizedBox(width: 4.0),
                   Text('$cost'),
                 ],

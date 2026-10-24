@@ -3,20 +3,56 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../app_database.dart';
 
-/// DAO especializado en la configuración de recordatorios y alarmas exactas.
+/// DAO especializado en la configuración de recordatorios locales y rutinas diarias.
 class RemindersDao {
   RemindersDao(this._db);
 
   final AppDatabase _db;
 
-  /// Emite la lista completa de recordatorios configurados.
+  /// Emite la lista completa de recordatorios configurados ordenados por hora.
   Stream<List<Reminder>> watchAllReminders() {
-    return (_db.select(_db.reminders)..orderBy([(tbl) => OrderingTerm.asc(tbl.timeOfDayMinutes)])).watch();
+    return (_db.select(_db.reminders)
+          ..orderBy([(tbl) => OrderingTerm.asc(tbl.timeOfDayMinutes)]))
+        .watch();
   }
 
   /// Obtiene los recordatorios habilitados para programación con SCHEDULE_EXACT_ALARM.
   Future<List<Reminder>> getEnabledReminders() {
-    return (_db.select(_db.reminders)..where((tbl) => tbl.isEnabled.equals(true))).get();
+    return (_db.select(_db.reminders)
+          ..where((tbl) => tbl.isEnabled.equals(true)))
+        .get();
+  }
+
+  /// Inserta los 4 recordatorios canónicos del santuario si la tabla está vacía.
+  Future<void> seedDefaultRemindersIfEmpty() async {
+    final existing = await (_db.select(_db.reminders)..limit(1)).get();
+    if (existing.isNotEmpty) return;
+
+    await _db.batch((b) {
+      b.insertAll(_db.reminders, [
+        RemindersCompanion.insert(
+          reminderType: 'morning_weigh_in',
+          timeOfDayMinutes: 7 * 60 + 30, // 07:30
+          isEnabled: const Value(true),
+        ),
+        RemindersCompanion.insert(
+          reminderType: 'hydration',
+          timeOfDayMinutes: 11 * 60, // 11:00
+          intervalMinutes: const Value(120),
+          isEnabled: const Value(true),
+        ),
+        RemindersCompanion.insert(
+          reminderType: 'fasting_close',
+          timeOfDayMinutes: 20 * 60, // 20:00
+          isEnabled: const Value(false),
+        ),
+        RemindersCompanion.insert(
+          reminderType: 'journal',
+          timeOfDayMinutes: 21 * 60 + 30, // 21:30
+          isEnabled: const Value(true),
+        ),
+      ]);
+    });
   }
 
   /// Inserta o actualiza un recordatorio.
@@ -29,10 +65,24 @@ class RemindersDao {
     final query = _db.update(_db.reminders)..where((tbl) => tbl.id.equals(id));
     await query.write(RemindersCompanion(isEnabled: Value(isEnabled)));
   }
+
+  /// Actualiza la hora del día (en minutos desde medianoche) de un recordatorio.
+  Future<void> updateReminderTime(int id, int timeOfDayMinutes) async {
+    final query = _db.update(_db.reminders)..where((tbl) => tbl.id.equals(id));
+    await query.write(
+      RemindersCompanion(timeOfDayMinutes: Value(timeOfDayMinutes.clamp(0, 1439))),
+    );
+  }
 }
 
 /// Provider de Riverpod para inyectar RemindersDao.
 final remindersDaoProvider = Provider<RemindersDao>((ref) {
   final AppDatabase db = ref.watch(appDatabaseProvider);
   return RemindersDao(db);
+});
+
+/// StreamProvider reactivo con los recordatorios configurados.
+final allRemindersStreamProvider =
+    StreamProvider.autoDispose<List<Reminder>>((ref) {
+  return ref.watch(remindersDaoProvider).watchAllReminders();
 });
