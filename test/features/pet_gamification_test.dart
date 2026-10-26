@@ -200,6 +200,10 @@ void main() {
         expect(totalWater, hasLength(1));
         expect(totalWater.first.volumeMl, equals(250));
 
+        // Esperar a que la SnackBar de agua desaparezca para que no bloquee los taps inferiores
+        await tester.pump(const Duration(seconds: 4));
+        await tester.pumpAndSettle();
+
         // Entrar a modo edición usando el único botón al final de la página ("Editar tarjetas de Hoy")
         final editBottomBtn = find.text('Editar tarjetas de Hoy');
         await tester.scrollUntilVisible(
@@ -207,13 +211,18 @@ void main() {
           350,
           scrollable: find.byType(Scrollable).first,
         );
-        await tester.pump();
-      await tester.pump(const Duration(milliseconds: 200));
+        await tester.ensureVisible(editBottomBtn);
+        await tester.pumpAndSettle();
         await tester.tap(editBottomBtn);
-        await tester.pump();
-      await tester.pump(const Duration(milliseconds: 200));
+        await tester.pumpAndSettle();
 
-        expect(find.text('Guardar diseño de Hoy'), findsOneWidget);
+        final saveBtn = find.text('Guardar diseño de Hoy');
+        await tester.scrollUntilVisible(
+          saveBtn,
+          350,
+          scrollable: find.byType(Scrollable).first,
+        );
+        expect(saveBtn, findsOneWidget);
 
         // Volver arriba para ocultar Hidratación y verificar que pasa a la bandeja de ocultas
         final hideHydration = find.byTooltip('Ocultar (Hidratación)');

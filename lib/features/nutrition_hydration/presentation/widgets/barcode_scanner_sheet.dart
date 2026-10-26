@@ -3,9 +3,11 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
 import '../../../../core/database/app_database.dart';
+import '../../../../core/services/nutrition_label_ocr_service.dart';
 import '../../../../core/services/open_food_facts_service.dart';
 import '../../../../shared/theme/sc_colors.dart';
 import '../../../../shared/theme/sc_theme.dart';
@@ -156,6 +158,48 @@ class _BarcodeScannerSheetState extends ConsumerState<BarcodeScannerSheet> {
           targetDateKey: widget.targetDateKey,
         ),
       );
+    }
+  }
+
+  Future<void> _scanTableWithOcr() async {
+    await _scannerController.stop();
+    try {
+      final ImagePicker picker = ImagePicker();
+      final XFile? photo = await picker.pickImage(
+        source: ImageSource.camera,
+        imageQuality: 92,
+      );
+      if (photo == null) {
+        await _scannerController.start();
+        return;
+      }
+
+      if (!mounted) return;
+      final OcrNutritionData data =
+          await ref.read(nutritionLabelOcrServiceProvider).processImage(photo);
+
+      if (!mounted) return;
+      Navigator.of(context).pop();
+      final FoodItem? created = await showModalBottomSheet<FoodItem>(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+        builder: (_) => CustomFoodSheet(initialOcrData: data),
+      );
+      if (created != null && mounted) {
+        await showModalBottomSheet<bool>(
+          context: context,
+          isScrollControlled: true,
+          backgroundColor: Colors.transparent,
+          builder: (_) => FoodDetailSheet(
+            food: created,
+            initialMealType: widget.initialMealType,
+            targetDateKey: widget.targetDateKey,
+          ),
+        );
+      }
+    } catch (_) {
+      if (mounted) await _scannerController.start();
     }
   }
 
@@ -390,6 +434,36 @@ class _BarcodeScannerSheetState extends ConsumerState<BarcodeScannerSheet> {
                           ),
                         ),
                       ],
+                    ),
+                    const SizedBox(height: 10),
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton.icon(
+                        onPressed: _isResolving ? null : _scanTableWithOcr,
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 11),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                          side: BorderSide(
+                            color: c.isFlat ? c.line2 : c.accent,
+                          ),
+                        ),
+                        icon: Icon(
+                          Icons.document_scanner_rounded,
+                          size: 18,
+                          color: c.accent,
+                        ),
+                        label: Text(
+                          'Escanear Tabla Nutricional (OCR)',
+                          style: TextStyle(
+                            fontFamily: ScFonts.ui,
+                            fontSize: 12.5,
+                            fontWeight: FontWeight.w700,
+                            color: c.text,
+                          ),
+                        ),
+                      ),
                     ),
                   ],
                 ),

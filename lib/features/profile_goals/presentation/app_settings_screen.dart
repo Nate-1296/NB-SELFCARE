@@ -446,7 +446,138 @@ class _AppSettingsScreenState extends ConsumerState<AppSettingsScreen>
           const SizedBox(height: 24),
 
           // ==========================================
-          // 3. Permisos del Sistema
+          // 3. Módulos y Enfoque de Autocuidado
+          // ==========================================
+          const SectionHead(
+            title: 'Módulos y Enfoque',
+            subtitle: 'Adapta los pilares visibles a tus necesidades reales',
+            padding: EdgeInsets.symmetric(vertical: 4),
+          ),
+          const SizedBox(height: 8),
+          HealthCard(
+            margin: EdgeInsets.zero,
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              children: <Widget>[
+                // Ayuno Intermitente
+                Row(
+                  children: <Widget>[
+                    Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: c.isFlat ? c.bg3 : c.soft,
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(
+                          color: c.isFlat ? c.line2 : c.accent.withValues(alpha: 0.3),
+                        ),
+                      ),
+                      child: Icon(AppIcons.fasting, color: c.accent, size: 22),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: <Widget>[
+                          Text(
+                            'Ayuno Intermitente',
+                            style: TextStyle(
+                              fontFamily: ScFonts.ui,
+                              fontSize: 13.5,
+                              fontWeight: FontWeight.w700,
+                              color: c.text,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            (profile?.isFastingEnabled ?? true)
+                                ? 'Cronómetro y fases celulares activos'
+                                : 'Módulo replegado para simplificar la UI',
+                            style: TextStyle(
+                              fontFamily: ScFonts.ui,
+                              fontSize: 11.5,
+                              color: c.text2,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Switch(
+                      value: profile?.isFastingEnabled ?? true,
+                      onChanged: (bool val) async {
+                        unawaited(HapticFeedback.selectionClick());
+                        await ref.read(userProfileDaoProvider).updateFastingEnabled(val);
+                      },
+                    ),
+                  ],
+                ),
+
+                // Salud Femenina (ÚNICAMENTE visible si el sexo biológico es femenino)
+                if (profile?.biologicalSex == 'female') ...[
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    child: Divider(height: 1, color: c.line),
+                  ),
+                  Row(
+                    children: <Widget>[
+                      Container(
+                        width: 44,
+                        height: 44,
+                        decoration: BoxDecoration(
+                          color: c.isFlat ? c.bg3 : c.soft,
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(
+                            color: c.isFlat ? c.line2 : c.accent.withValues(alpha: 0.3),
+                          ),
+                        ),
+                        child: Icon(Icons.female_rounded, color: c.accent, size: 24),
+                      ),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: <Widget>[
+                            Text(
+                              'Salud Femenina y Ciclo Menstrual',
+                              style: TextStyle(
+                                fontFamily: ScFonts.ui,
+                                fontSize: 13.5,
+                                fontWeight: FontWeight.w700,
+                                color: c.text,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              (profile?.isCycleTrackingEnabled ?? false)
+                                  ? 'Sincronización hormonal con TDEE y báscula'
+                                  : 'Desactivado',
+                              style: TextStyle(
+                                fontFamily: ScFonts.ui,
+                                fontSize: 11.5,
+                                color: c.text2,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Switch(
+                        value: profile?.isCycleTrackingEnabled ?? false,
+                        onChanged: (bool val) async {
+                          unawaited(HapticFeedback.selectionClick());
+                          await ref.read(userProfileDaoProvider).updateCycleTrackingEnabled(val);
+                        },
+                      ),
+                    ],
+                  ),
+                ],
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 24),
+
+          // ==========================================
+          // 4. Permisos del Sistema
           // ==========================================
           SectionHead(
             title: 'Permisos del Sistema',

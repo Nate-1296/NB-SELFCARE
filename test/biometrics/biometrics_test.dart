@@ -138,6 +138,13 @@ void main() {
         dailySleepGoalHours: 7.5,
         themeMode: 'samsung_dark',
         isLocalAiEnabled: false,
+        isCycleTrackingEnabled: false,
+        isFastingEnabled: true,
+        isManualMacroMode: false,
+        activeDietArchetype: 'flexible',
+        activeDietPhase: 'deficit',
+        calorieCyclingScheduleJson: '{}',
+        caffeineBedtimeCutoffHours: 8.0,
         createdAt: DateTime(2026, 1, 1),
       );
 

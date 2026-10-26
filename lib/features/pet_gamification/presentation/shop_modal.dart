@@ -118,7 +118,7 @@ class ShopModal extends ConsumerWidget {
                     children: [
                       // 1. Escudos de Racha
                       Text(
-                        'Escudos de Racha (Protección sin culpa)',
+                        'Escudos de Racha (Protección y descanso)',
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 12.5,

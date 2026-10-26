@@ -32,6 +32,15 @@ part 'app_database.g.dart';
     Reminders,
     TdeeCalibrations,
     HealthSyncCheckpoints,
+    Recipes,
+    RecipeIngredients,
+    SupplementsTracker,
+    SupplementLogs,
+    FemaleCycleLogs,
+    DigestiveLogs,
+    CaffeineLogs,
+    ProtocolPlans,
+    MilestoneGoals,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -42,7 +51,7 @@ class AppDatabase extends _$AppDatabase {
   final bool _autoSeed;
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
 
   static QueryExecutor _openConnection() {
     return driftDatabase(
@@ -118,6 +127,62 @@ class AppDatabase extends _$AppDatabase {
           await customStatement(
             "CREATE UNIQUE INDEX idx_coin_ledger_daily_unique ON coin_ledger(date_key, action_type) WHERE action_type != 'shop_buy';",
           );
+          await customStatement(
+            'CREATE INDEX idx_recipes_name ON recipes(name);',
+          );
+          await customStatement(
+            'CREATE INDEX idx_supplement_logs_date ON supplement_logs(date_key);',
+          );
+          await customStatement(
+            'CREATE INDEX idx_digestive_logs_date ON digestive_logs(date_key);',
+          );
+          await customStatement(
+            'CREATE INDEX idx_caffeine_logs_date ON caffeine_logs(date_key);',
+          );
+        },
+        onUpgrade: (Migrator m, int from, int to) async {
+          if (from < 2) {
+            // 1. Nuevas columnas en UserProfiles
+            await m.addColumn(userProfiles, userProfiles.isCycleTrackingEnabled);
+            await m.addColumn(userProfiles, userProfiles.isFastingEnabled);
+            await m.addColumn(userProfiles, userProfiles.isManualMacroMode);
+            await m.addColumn(userProfiles, userProfiles.manualKcalTarget);
+            await m.addColumn(userProfiles, userProfiles.manualProteinG);
+            await m.addColumn(userProfiles, userProfiles.manualCarbsG);
+            await m.addColumn(userProfiles, userProfiles.manualFatG);
+            await m.addColumn(userProfiles, userProfiles.activeDietArchetype);
+            await m.addColumn(userProfiles, userProfiles.activeDietPhase);
+            await m.addColumn(userProfiles, userProfiles.calorieCyclingScheduleJson);
+            await m.addColumn(userProfiles, userProfiles.caffeineBedtimeCutoffHours);
+
+            // 2. Columna NOVA en FoodItems
+            await m.addColumn(foodItems, foodItems.novaGroup);
+
+            // 3. Crear las 7 tablas nuevas
+            await m.createTable(recipes);
+            await m.createTable(recipeIngredients);
+            await m.createTable(supplementsTracker);
+            await m.createTable(supplementLogs);
+            await m.createTable(femaleCycleLogs);
+            await m.createTable(digestiveLogs);
+            await m.createTable(caffeineLogs);
+            await m.createTable(protocolPlans);
+            await m.createTable(milestoneGoals);
+
+            // 4. Nuevos índices
+            await customStatement(
+              'CREATE INDEX IF NOT EXISTS idx_recipes_name ON recipes(name);',
+            );
+            await customStatement(
+              'CREATE INDEX IF NOT EXISTS idx_supplement_logs_date ON supplement_logs(date_key);',
+            );
+            await customStatement(
+              'CREATE INDEX IF NOT EXISTS idx_digestive_logs_date ON digestive_logs(date_key);',
+            );
+            await customStatement(
+              'CREATE INDEX IF NOT EXISTS idx_caffeine_logs_date ON caffeine_logs(date_key);',
+            );
+          }
         },
       );
 

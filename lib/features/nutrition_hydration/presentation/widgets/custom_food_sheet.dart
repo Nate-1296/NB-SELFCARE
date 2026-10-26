@@ -4,9 +4,11 @@ import 'package:drift/drift.dart' as drift;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../../../../core/database/app_database.dart';
 import '../../../../core/database/daos/food_dao.dart';
+import '../../../../core/services/nutrition_label_ocr_service.dart';
 import '../../../../shared/theme/sc_colors.dart';
 import '../../../../shared/theme/sc_theme.dart';
 import '../../../../shared/widgets/app_icons.dart';
@@ -17,10 +19,12 @@ class CustomFoodSheet extends ConsumerStatefulWidget {
     super.key,
     this.initialBarcode,
     this.initialName,
+    this.initialOcrData,
   });
 
   final String? initialBarcode;
   final String? initialName;
+  final OcrNutritionData? initialOcrData;
 
   @override
   ConsumerState<CustomFoodSheet> createState() => _CustomFoodSheetState();
@@ -32,24 +36,18 @@ class _CustomFoodSheetState extends ConsumerState<CustomFoodSheet> {
   late final TextEditingController _nameController;
   final TextEditingController _brandController = TextEditingController();
   late final TextEditingController _barcodeController;
-  final TextEditingController _servingGramsController =
-      TextEditingController(text: '100');
+  late final TextEditingController _servingGramsController;
   final TextEditingController _servingLabelController =
       TextEditingController(text: '100g');
 
-  final TextEditingController _kcalController = TextEditingController();
-  final TextEditingController _proteinController =
-      TextEditingController(text: '0');
-  final TextEditingController _carbsController =
-      TextEditingController(text: '0');
-  final TextEditingController _fatController = TextEditingController(text: '0');
-  final TextEditingController _fiberController =
-      TextEditingController(text: '0');
-  final TextEditingController _sugarController =
-      TextEditingController(text: '0');
+  late final TextEditingController _kcalController;
+  late final TextEditingController _proteinController;
+  late final TextEditingController _carbsController;
+  late final TextEditingController _fatController;
+  late final TextEditingController _fiberController;
+  late final TextEditingController _sugarController;
 
-  final TextEditingController _sodiumController =
-      TextEditingController(text: '0');
+  late final TextEditingController _sodiumController;
   final TextEditingController _potassiumController =
       TextEditingController(text: '0');
   final TextEditingController _magnesiumController =
@@ -58,13 +56,45 @@ class _CustomFoodSheetState extends ConsumerState<CustomFoodSheet> {
   String? _selectedNutriScore;
   bool _showAdvanced = false;
   bool _isSaving = false;
+  bool _isScanningOcr = false;
 
   @override
   void initState() {
     super.initState();
+    final OcrNutritionData? ocr = widget.initialOcrData;
     _nameController = TextEditingController(text: widget.initialName ?? '');
     _barcodeController =
         TextEditingController(text: widget.initialBarcode ?? '');
+    _servingGramsController = TextEditingController(
+      text: ocr?.servingGrams != null
+          ? ocr!.servingGrams!.toStringAsFixed(0)
+          : '100',
+    );
+
+    _kcalController = TextEditingController(
+      text: ocr?.kcal != null ? ocr!.kcal!.toStringAsFixed(0) : '',
+    );
+    _proteinController = TextEditingController(
+      text: ocr?.proteinG != null ? ocr!.proteinG!.toStringAsFixed(1) : '0',
+    );
+    _carbsController = TextEditingController(
+      text: ocr?.carbsG != null ? ocr!.carbsG!.toStringAsFixed(1) : '0',
+    );
+    _fatController = TextEditingController(
+      text: ocr?.fatG != null ? ocr!.fatG!.toStringAsFixed(1) : '0',
+    );
+    _fiberController = TextEditingController(
+      text: ocr?.fiberG != null ? ocr!.fiberG!.toStringAsFixed(1) : '0',
+    );
+    _sugarController = TextEditingController(
+      text: ocr?.sugarG != null ? ocr!.sugarG!.toStringAsFixed(1) : '0',
+    );
+    _sodiumController = TextEditingController(
+      text: ocr?.sodiumMg != null ? ocr!.sodiumMg!.toStringAsFixed(0) : '0',
+    );
+    if (ocr?.sodiumMg != null && ocr!.sodiumMg! > 0) {
+      _showAdvanced = true;
+    }
 
     for (final TextEditingController ctrl in <TextEditingController>[
       _kcalController,
@@ -73,6 +103,84 @@ class _CustomFoodSheetState extends ConsumerState<CustomFoodSheet> {
       _fatController,
     ]) {
       ctrl.addListener(_onMacroChanged);
+    }
+  }
+
+  Future<void> _scanNutritionLabel() async {
+    if (_isScanningOcr) return;
+    setState(() => _isScanningOcr = true);
+    unawaited(HapticFeedback.lightImpact());
+
+    try {
+      final ImagePicker picker = ImagePicker();
+      final XFile? photo = await picker.pickImage(
+        source: ImageSource.camera,
+        imageQuality: 92,
+      );
+      if (photo == null) return;
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Analizando tabla nutricional con OCR local... 🔍'),
+        ),
+      );
+
+      final OcrNutritionData data =
+          await ref.read(nutritionLabelOcrServiceProvider).processImage(photo);
+
+      if (!mounted) return;
+      if (data.hasAnyData) {
+        if (data.kcal != null) {
+          _kcalController.text = data.kcal!.toStringAsFixed(0);
+        }
+        if (data.proteinG != null) {
+          _proteinController.text = data.proteinG!.toStringAsFixed(1);
+        }
+        if (data.carbsG != null) {
+          _carbsController.text = data.carbsG!.toStringAsFixed(1);
+        }
+        if (data.fatG != null) {
+          _fatController.text = data.fatG!.toStringAsFixed(1);
+        }
+        if (data.fiberG != null) {
+          _fiberController.text = data.fiberG!.toStringAsFixed(1);
+        }
+        if (data.sugarG != null) {
+          _sugarController.text = data.sugarG!.toStringAsFixed(1);
+        }
+        if (data.sodiumMg != null) {
+          _sodiumController.text = data.sodiumMg!.toStringAsFixed(0);
+          _showAdvanced = true;
+        }
+        if (data.servingGrams != null) {
+          _servingGramsController.text = data.servingGrams!.toStringAsFixed(0);
+        }
+        setState(() {});
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('¡Macronutrientes detectados y rellenados! 🎯'),
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'No se detectaron valores claros. Intenta con mejor iluminación o encuadre.',
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error al escanear: $e')),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isScanningOcr = false);
+      }
     }
   }
 
@@ -275,6 +383,45 @@ class _CustomFoodSheetState extends ConsumerState<CustomFoodSheet> {
                       icon: Icon(AppIcons.close, color: c.text2),
                     ),
                   ],
+                ),
+
+                const SizedBox(height: 14),
+
+                // Botón OCR de Escaneo con Cámara
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: _isScanningOcr ? null : _scanNutritionLabel,
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      side: BorderSide(color: c.isFlat ? c.line2 : c.accent),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                    ),
+                    icon: _isScanningOcr
+                        ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : Icon(
+                            Icons.document_scanner_rounded,
+                            size: 18,
+                            color: c.accent,
+                          ),
+                    label: Text(
+                      _isScanningOcr
+                          ? 'Analizando tabla con OCR...'
+                          : 'Escanear Tabla Nutricional con Cámara (OCR)',
+                      style: TextStyle(
+                        fontFamily: ScFonts.ui,
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w700,
+                        color: c.text,
+                      ),
+                    ),
+                  ),
                 ),
 
                 const SizedBox(height: 16),

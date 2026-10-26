@@ -30,6 +30,8 @@ import '../../../shared/widgets/top_bar.dart';
 import '../domain/hoy_widget_config.dart';
 import 'widgets/hoy_bento_cards.dart';
 import 'widgets/hoy_journal_4x4_widget.dart';
+import 'widgets/readiness_card.dart';
+import 'widgets/sunday_check_in_sheet.dart';
 
 /// Pestaña "Hoy": Tablero modular tipo Bento inspirado en Samsung Health / Apple Health.
 ///
@@ -716,7 +718,70 @@ class _HoyScreenState extends ConsumerState<HoyScreen> {
                                     pageIcon: Icons.flare_rounded,
                                     large: true,
                                     onProfile: () => context.go('/perfil'),
+                                    trailing: IconButton(
+                                      icon: const Icon(Icons.calendar_month_rounded),
+                                      tooltip: 'Mi Protocolo Semanal',
+                                      onPressed: () {
+                                        unawaited(HapticFeedback.lightImpact());
+                                        unawaited(context.push('/protocolo'));
+                                      },
+                                    ),
                                   ),
+
+                                  // Banner Ceremonial Dominical de Nibi
+                                  if (today.weekday == DateTime.sunday)
+                                    Padding(
+                                      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 4),
+                                      child: InkWell(
+                                        onTap: () {
+                                          unawaited(HapticFeedback.selectionClick());
+                                          unawaited(SundayCheckInSheet.show(context));
+                                        },
+                                        borderRadius: BorderRadius.circular(16),
+                                        child: Container(
+                                          padding: const EdgeInsets.all(12),
+                                          decoration: BoxDecoration(
+                                            color: c.isFlat ? c.bg3 : c.soft,
+                                            borderRadius: BorderRadius.circular(16),
+                                            border: Border.all(
+                                              color: c.isFlat ? c.line2 : c.accent.withValues(alpha: 0.35),
+                                              width: c.isFlat ? 1.5 : 1.2,
+                                            ),
+                                          ),
+                                          child: Row(
+                                            children: <Widget>[
+                                              const Text('✨', style: TextStyle(fontSize: 22)),
+                                              const SizedBox(width: 10),
+                                              Expanded(
+                                                child: Column(
+                                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                                  children: <Widget>[
+                                                    Text(
+                                                      'Ceremonia Dominical de Nibi',
+                                                      style: TextStyle(
+                                                        fontFamily: ScFonts.display,
+                                                        fontSize: 13.5,
+                                                        fontWeight: FontWeight.bold,
+                                                        color: c.text,
+                                                      ),
+                                                    ),
+                                                    Text(
+                                                      'Revisa tu semana, calibra tu protocolo y gana +15 monedas',
+                                                      style: TextStyle(
+                                                        fontFamily: ScFonts.ui,
+                                                        fontSize: 11.5,
+                                                        color: c.text2,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                              Icon(Icons.chevron_right_rounded, color: c.accent),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                    ),
 
                                   // Pulso diario sutil cuando no está en modo edición
                                   if (!_isCustomizing)
@@ -740,6 +805,15 @@ class _HoyScreenState extends ConsumerState<HoyScreen> {
                                     ),
 
                                   const SizedBox(height: 4),
+
+                                  // Tarjeta de Disposición y Cronobiología de Cafeína
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 18,
+                                      vertical: 6,
+                                    ),
+                                    child: ReadinessCard(dateKey: dateKey),
+                                  ),
 
                                   // Cuadrícula Bento adaptable (2×2, 4×2 y único 4×4 de Diario)
                                   ...bentoRows,

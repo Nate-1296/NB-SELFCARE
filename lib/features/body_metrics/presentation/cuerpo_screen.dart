@@ -9,8 +9,10 @@ import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/database/app_database.dart';
 import '../../../core/database/daos/body_measurements_dao.dart';
+import '../../../core/database/daos/female_cycle_dao.dart';
 import '../../../core/database/daos/food_dao.dart';
 import '../../../core/database/daos/health_sync_dao.dart';
+import '../../../core/database/daos/supplement_dao.dart';
 import '../../../core/database/daos/user_profile_dao.dart';
 import '../../../core/database/daos/workout_dao.dart';
 import '../../../core/hardware/body_scale_driver.dart';
@@ -26,6 +28,7 @@ import '../../../shared/widgets/health_card.dart';
 import '../../../shared/widgets/section_head.dart';
 import '../../../shared/widgets/top_bar.dart';
 import 'widgets/body_sheets.dart';
+import 'widgets/mini_milestones_card.dart';
 import 'widgets/quick_rpe_workout_sheet.dart';
 import 'widgets/weight_trend_chart_card.dart';
 
@@ -286,6 +289,26 @@ class _CuerpoScreenState extends ConsumerState<CuerpoScreen> {
           '+${(currentWater - latest.waterPercentage!).toStringAsFixed(1)}% agua corporal BIA',
         );
       }
+
+      if (!isMale && profile.isCycleTrackingEnabled) {
+        final CyclePhaseInfo phaseInfo =
+            await ref.read(femaleCycleDaoProvider).calculateCurrentPhase(now);
+        if (phaseInfo.phase == FemaleCyclePhase.luteal) {
+          reasons.add(
+            'fase lútea (retención fisiológica por progesterona y aldosterona)',
+          );
+        }
+      }
+
+      final bool hasRetentionSupplement = await ref
+          .read(supplementDaoProvider)
+          .hasActiveWaterRetentionSupplement(todayKey);
+      if (hasRetentionSupplement) {
+        reasons.add(
+          'hidratación celular por creatina (+1 a +2 kg en agua intracelular)',
+        );
+      }
+
       spikeExplanation = reasons.isNotEmpty
           ? 'Variación hídrica temporal (${reasons.join(", ")}), no tejido graso.'
           : 'Variación temporal de agua y glucógeno muscular, no es aumento de grasa.';
@@ -797,6 +820,13 @@ class _CuerpoScreenState extends ConsumerState<CuerpoScreen> {
                       ],
                     ],
                   ),
+                ),
+
+                // Mini-Hitos Psicológicos (Happy Scale 1.5 kg)
+                MiniMilestonesCard(
+                  currentWeightKg: latest?.trendWeightKg ?? latest?.weightKg ?? profile.targetWeightKg,
+                  targetWeightKg: profile.targetWeightKg,
+                  weeklyGoalRateKg: profile.weeklyGoalRateKg,
                 ),
 
                 // 2. Estación de Pesaje Xiaomi Mi Scale 2 BLE & Entradas Corporales

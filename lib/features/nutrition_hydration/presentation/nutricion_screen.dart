@@ -22,14 +22,17 @@ import '../../../shared/utils/daily_targets_calculator.dart';
 import '../../../shared/utils/date_time_extensions.dart';
 import '../../../shared/widgets/app_icons.dart';
 import '../../../shared/widgets/health_card.dart';
+import '../../../shared/widgets/science_on_demand_sheet.dart';
 import '../../../shared/widgets/sheet.dart';
 import '../../../shared/widgets/top_bar.dart';
 import 'widgets/barcode_scanner_sheet.dart';
 import 'widgets/custom_food_sheet.dart';
+import 'widgets/diet_archetype_sheets.dart';
 import 'widgets/food_detail_sheet.dart';
 import 'widgets/food_search_modal.dart';
 import 'widgets/meal_slot_selector.dart';
 import 'widgets/nutrition_sheets.dart';
+import 'widgets/recipe_builder_sheet.dart';
 
 /// Pestaña "Comer": centro integral de nutrición, hidratación, electrolitos y combos.
 ///
@@ -121,6 +124,17 @@ class _NutricionScreenState extends ConsumerState<NutricionScreen> {
           dateKey: dateKey,
           initialMealType: initialMealType,
         ),
+      ),
+    );
+  }
+
+  void _openRecipesSheet(String dateKey, String initialMealType) {
+    unawaited(HapticFeedback.selectionClick());
+    unawaited(
+      SavedRecipesSheet.show(
+        context,
+        targetDateKey: dateKey,
+        initialMealType: initialMealType,
       ),
     );
   }
@@ -387,7 +401,7 @@ class _NutricionScreenState extends ConsumerState<NutricionScreen> {
                   onSelectDate: (DateTime d) => _selectDate(d, today),
                 ),
 
-                // 3. Centro Inteligente de Entrada (Búsqueda + EAN + 2×2 Herramientas)
+                // 3. Centro Inteligente de Entrada (Búsqueda + EAN + Herramientas)
                 _SmartEntryHubCard(
                   fastingDao: fastingDao,
                   onOpenSearch: () => _openFoodSearch(dateKey, suggestedMeal),
@@ -396,8 +410,16 @@ class _NutricionScreenState extends ConsumerState<NutricionScreen> {
                   onOpenAiDictation: () =>
                       _openAiDictation(dateKey, suggestedMeal),
                   onOpenCombos: () => _openCombosSheet(dateKey, suggestedMeal),
+                  onOpenRecipes: () =>
+                      _openRecipesSheet(dateKey, suggestedMeal),
                   onOpenCustomFood: () =>
                       _openCustomFoodAndLog(dateKey, suggestedMeal),
+                  onOpenSmartMenu: () => SmartMealMenuSheet.show(
+                    context,
+                    targetDateKey: dateKey,
+                  ),
+                  onOpenDietArchetype: () =>
+                      DietArchetypePickerSheet.show(context),
                   onOpenFasting: () {
                     unawaited(HapticFeedback.selectionClick());
                     unawaited(context.push('/ayuno'));
@@ -455,6 +477,28 @@ class _NutricionScreenState extends ConsumerState<NutricionScreen> {
                           acc + item.log.totalMagnesiumMg,
                     );
 
+                    final double nova4Kcal = logsWithItems
+                        .where(
+                          (FoodLogWithItem item) =>
+                              item.foodItem?.novaGroup == 4,
+                        )
+                        .fold<double>(
+                          0.0,
+                          (double acc, FoodLogWithItem item) =>
+                              acc + item.log.totalKcal,
+                        );
+                    final double novaFreshKcal = logsWithItems
+                        .where(
+                          (FoodLogWithItem item) =>
+                              item.foodItem?.novaGroup != null &&
+                              item.foodItem!.novaGroup! <= 3,
+                        )
+                        .fold<double>(
+                          0.0,
+                          (double acc, FoodLogWithItem item) =>
+                              acc + item.log.totalKcal,
+                        );
+
                     final double netCarbs =
                         (totalC - totalFiber).clamp(0.0, 9999.0);
 
@@ -488,6 +532,18 @@ class _NutricionScreenState extends ConsumerState<NutricionScreen> {
                           totalFiber: totalFiber,
                           totalF: totalF,
                           targetF: targetFat,
+                          onOpenOracle: () => NutrientOracleSheet.show(
+                            context,
+                            remainingKcal:
+                                (targetKcal - totalKcal).clamp(0.0, 9999.0),
+                            remainingProteinG:
+                                (targetProtein - totalP).clamp(0.0, 999.0),
+                            remainingCarbsG:
+                                (targetCarbs - totalC).clamp(0.0, 999.0),
+                            remainingFatG:
+                                (targetFat - totalF).clamp(0.0, 999.0),
+                            targetDateKey: dateKey,
+                          ),
                         ),
 
                         // 4B. Tarjeta 2×2 de Electrolitos y Fibra (cero cortes)
@@ -501,6 +557,20 @@ class _NutricionScreenState extends ConsumerState<NutricionScreen> {
                           fiberG: totalFiber,
                           targetFiberG: targetFiber,
                         ),
+
+                        // 4C. Banco Semanal de Calorías y Distribución Diaria
+                        CalorieBankCard(
+                          today: activeDate,
+                          baseDailyKcal: targetKcal,
+                        ),
+
+                        // 4D. Calidad de Alimentos y Grado de Procesamiento NOVA
+                        if (totalKcal > 0)
+                          _NovaQualityCard(
+                            totalKcal: totalKcal,
+                            nova4Kcal: nova4Kcal,
+                            novaFreshKcal: novaFreshKcal,
+                          ),
 
                         // 4C. Encabezado de Bloques de Comida
                         Padding(
@@ -802,7 +872,7 @@ class _WeekNavigatorStrip extends StatelessWidget {
   }
 }
 
-/// Centro de entrada rápida sin textos truncados: barra de búsqueda + cámara + cuadrícula 2×2.
+/// Centro de entrada rápida sin textos truncados: barra de búsqueda + cámara + herramientas.
 class _SmartEntryHubCard extends StatelessWidget {
   const _SmartEntryHubCard({
     required this.fastingDao,
@@ -810,8 +880,11 @@ class _SmartEntryHubCard extends StatelessWidget {
     required this.onOpenBarcode,
     required this.onOpenAiDictation,
     required this.onOpenCombos,
+    required this.onOpenRecipes,
     required this.onOpenCustomFood,
     required this.onOpenFasting,
+    this.onOpenSmartMenu,
+    this.onOpenDietArchetype,
   });
 
   final FastingDao fastingDao;
@@ -819,8 +892,11 @@ class _SmartEntryHubCard extends StatelessWidget {
   final VoidCallback onOpenBarcode;
   final VoidCallback onOpenAiDictation;
   final VoidCallback onOpenCombos;
+  final VoidCallback onOpenRecipes;
   final VoidCallback onOpenCustomFood;
   final VoidCallback onOpenFasting;
+  final VoidCallback? onOpenSmartMenu;
+  final VoidCallback? onOpenDietArchetype;
 
   @override
   Widget build(BuildContext context) {
@@ -907,7 +983,7 @@ class _SmartEntryHubCard extends StatelessWidget {
 
           const SizedBox(height: 10),
 
-          // Fila 1: Herramientas duales (Dictado IA + Mis Combos)
+          // Fila 1: Herramientas de registro inteligente (Dictado IA + Mis Combos + Mis Recetas)
           IntrinsicHeight(
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -917,7 +993,7 @@ class _SmartEntryHubCard extends StatelessWidget {
                     icon: AppIcons.ai,
                     iconColor: c.accent,
                     title: 'Dictado IA',
-                    subtitle: 'Voz o texto libre',
+                    subtitle: 'Voz o texto',
                     onTap: onOpenAiDictation,
                   ),
                 ),
@@ -927,8 +1003,18 @@ class _SmartEntryHubCard extends StatelessWidget {
                     icon: AppIcons.combos,
                     iconColor: c.carbs,
                     title: 'Mis Combos',
-                    subtitle: 'Escala 0.25x–3x',
+                    subtitle: 'Escala 0.25x-3x',
                     onTap: onOpenCombos,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: _EntryToolTile(
+                    icon: Icons.soup_kitchen_rounded,
+                    iconColor: c.fat,
+                    title: 'Recetas',
+                    subtitle: 'Batch cooking',
+                    onTap: onOpenRecipes,
                   ),
                 ),
               ],
@@ -936,7 +1022,41 @@ class _SmartEntryHubCard extends StatelessWidget {
           ),
           const SizedBox(height: 8),
 
-          // Fila 2: Ayuno expandido en ancho completo
+          // Fila 2: Planificación Inteligente (Menú Sugerido + Dieta & Calorie Cycling)
+          if (onOpenSmartMenu != null || onOpenDietArchetype != null) ...<Widget>[
+            IntrinsicHeight(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: <Widget>[
+                  if (onOpenSmartMenu != null)
+                    Expanded(
+                      child: _EntryToolTile(
+                        icon: Icons.auto_awesome_rounded,
+                        iconColor: c.isFlat ? c.text : c.accent,
+                        title: 'Menú Sugerido',
+                        subtitle: 'Porciones en g',
+                        onTap: onOpenSmartMenu!,
+                      ),
+                    ),
+                  if (onOpenSmartMenu != null && onOpenDietArchetype != null)
+                    const SizedBox(width: 8),
+                  if (onOpenDietArchetype != null)
+                    Expanded(
+                      child: _EntryToolTile(
+                        icon: Icons.restaurant_menu_rounded,
+                        iconColor: c.isFlat ? c.text : c.carbs,
+                        title: 'Arquetipo Dieta',
+                        subtitle: 'Calorie Cycling',
+                        onTap: onOpenDietArchetype!,
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 8),
+          ],
+
+          // Fila 3: Ayuno expandido en ancho completo
           StreamBuilder<FastingSession?>(
             stream: fastingDao.watchActiveSession(),
             builder: (
@@ -1121,6 +1241,7 @@ class _EnergyAndMacrosCard extends StatelessWidget {
     required this.totalFiber,
     required this.totalF,
     required this.targetF,
+    this.onOpenOracle,
   });
 
   final double totalKcal;
@@ -1134,6 +1255,7 @@ class _EnergyAndMacrosCard extends StatelessWidget {
   final double totalFiber;
   final double totalF;
   final double targetF;
+  final VoidCallback? onOpenOracle;
 
   @override
   Widget build(BuildContext context) {
@@ -1327,6 +1449,32 @@ class _EnergyAndMacrosCard extends StatelessWidget {
                 : 'Faltan ${(targetF - totalF).round()} g',
             barColor: c.isFlat ? c.text : c.fat,
           ),
+          if (onOpenOracle != null) ...<Widget>[
+            const SizedBox(height: 14),
+            OutlinedButton.icon(
+              onPressed: onOpenOracle,
+              icon: Icon(Icons.auto_awesome_rounded, size: 16, color: c.accent),
+              label: Text(
+                '¿Qué comer para cerrar mis macros?',
+                style: TextStyle(
+                  fontFamily: ScFonts.ui,
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w700,
+                  color: c.text,
+                ),
+              ),
+              style: OutlinedButton.styleFrom(
+                minimumSize: const Size.fromHeight(40),
+                side: BorderSide(
+                  color: c.isFlat ? c.line2 : c.accent.withValues(alpha: 0.35),
+                  width: 1.2,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
+          ],
         ],
       ),
     );
@@ -1418,7 +1566,103 @@ class _MacroWideRow extends StatelessWidget {
   }
 }
 
-/// Tarjeta Bento 2×2 para el Triángulo de Electrolitos y Fibra (cero compresión en 4 columnas).
+void _showSodiumScience(BuildContext context) {
+  unawaited(
+    ScienceOnDemandSheet.show(
+      context,
+      const ScienceSpec(
+        title: 'Sodio (Na) y Retención Hídrica',
+        badgeLabel: 'Electrolito Extracelular • UL: 2,300 mg/día',
+        icon: AppIcons.bolt,
+        quickTake:
+            'El sodio regula el volumen sanguíneo, la presión osmótica y la transmisión neuromuscular.',
+        howItWorks:
+            'Consumir más de 2,300 mg de sodio al día estimula la vasopresina (ADH) y retiene agua extracelular. Cada gramo extra de sal retiene hasta 200 ml de agua, generando subidas de +1 a +2 kg en báscula que no corresponden a ganancia de grasa.',
+        formula: 'UL Sodio = 2,300 mg/día (≈ 5.75 g de sal común)',
+        scientificReferences: <String>[
+          'World Health Organization (WHO). Guideline: Sodium intake for adults and children.',
+          'He, F. J. & MacGregor, G. A. (2002). Effect of modest salt reduction on blood pressure.',
+        ],
+        actionableAdvice:
+            'Si tu peso sube tras una comida salada, no hagas recortes drásticos de calorías. Aumenta agua y potasio para restaurar el balance.',
+      ),
+    ),
+  );
+}
+
+void _showPotassiumScience(BuildContext context) {
+  unawaited(
+    ScienceOnDemandSheet.show(
+      context,
+      const ScienceSpec(
+        title: 'Potasio (K) y Balance Celular',
+        badgeLabel: 'Electrolito Intracelular • Meta: 3,500 - 4,700 mg',
+        icon: AppIcons.bolt,
+        quickTake:
+            'El potasio contrarresta los efectos del sodio, relaja los vasos sanguíneos y facilita la síntesis de glucógeno.',
+        howItWorks:
+            'La bomba Na+/K+ ATPasa requiere una relación K:Na superior a 2:1. En alimentos naturales no hay techo tóxico para riñones sanos; en suplementos concentrados el límite seguro es 4,700 mg.',
+        formula: 'Relación K:Na Óptima ≥ 2.0 : 1',
+        scientificReferences: <String>[
+          'NASEM. Dietary Reference Intakes for Sodium and Potassium.',
+          'Whelton, P. K. et al. (1997). Effects of oral potassium on blood pressure.',
+        ],
+        actionableAdvice:
+            'Prioriza frutas, verduras, aguacates y patatas. El potasio alimentario acelera la excreción del exceso de sodio.',
+      ),
+    ),
+  );
+}
+
+void _showMagnesiumScience(BuildContext context) {
+  unawaited(
+    ScienceOnDemandSheet.show(
+      context,
+      const ScienceSpec(
+        title: 'Magnesio (Mg) y Tolerancia Suplementaria',
+        badgeLabel: 'Cofactor Enzimático • UL Suplementario: 350 mg',
+        icon: AppIcons.bolt,
+        quickTake:
+            'Esencial para producción de ATP, síntesis proteica, contracción muscular y calidad del sueño.',
+        howItWorks:
+            'El magnesio dietético no tiene toxicidad, pero suplementos farmacológicos (óxido, citrato) tienen un Límite Tolerable (UL) de 350 mg/día por su efecto osmótico, que puede provocar diarrea si se excede.',
+        formula: 'UL Suplementario = 350 mg/día de magnesio elemental',
+        scientificReferences: <String>[
+          'Institute of Medicine (US). Dietary Reference Intakes for Magnesium.',
+          'Nielsen, F. H. (2010). Magnesium, inflammation, and obesity in humans.',
+        ],
+        actionableAdvice:
+            'Toma suplementos de magnesio (bisglicinato o citrato) con la cena para favorecer la relajación del sistema nervioso.',
+      ),
+    ),
+  );
+}
+
+void _showFiberScience(BuildContext context) {
+  unawaited(
+    ScienceOnDemandSheet.show(
+      context,
+      const ScienceSpec(
+        title: 'Fibra Dietética y Microbiota',
+        badgeLabel: 'Salud Intestinal y Saciedad • Meta: 25 - 38 g/día',
+        icon: Icons.grain_rounded,
+        quickTake:
+            'La fibra dietética modula la absorción de glucosa, mejora la saciedad y nutre la microbiota con ácidos grasos de cadena corta.',
+        howItWorks:
+            'La fibra soluble retrasa el vaciamiento gástrico prolongando la saciedad, mientras que la insoluble acelera el tránsito colónico. Las bacterias fermentan la fibra generando butirato y propionato.',
+        formula: 'Meta Diaria: 14 g de fibra por cada 1,000 kcal consumidas',
+        scientificReferences: <String>[
+          'Dahl, W. J. & Stewart, M. L. (2015). Health Implications of Dietary Fiber.',
+          'Sonnenburg, E. D. & Sonnenburg, J. L. (2014). Starving our microbial self.',
+        ],
+        actionableAdvice:
+            'Aumenta la fibra de manera progresiva acompañada siempre de abundante agua para una digestión óptima.',
+      ),
+    ),
+  );
+}
+
+/// Tarjeta Bento 2×2 para el Triángulo de Electrolitos y Fibra con límites UL y pedagogía.
 class _ElectrolytesBentoCard extends StatelessWidget {
   const _ElectrolytesBentoCard({
     required this.sodiumMg,
@@ -1444,6 +1688,9 @@ class _ElectrolytesBentoCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final ScColors c = context.sc;
     final bool highSodium = sodiumMg > targetSodiumMg * 1.15;
+    final bool ulSodium = sodiumMg > 2300;
+    final bool ulPotassium = potassiumMg > 4700;
+    final bool ulMagnesium = magnesiumMg > 350;
 
     return HealthCard(
       child: Column(
@@ -1465,7 +1712,28 @@ class _ElectrolytesBentoCard extends StatelessWidget {
                   ),
                 ),
               ),
-              if (highSodium)
+              if (ulSodium)
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: c.bg3,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                      color: c.isFlat ? c.line2 : c.fasting,
+                    ),
+                  ),
+                  child: Text(
+                    'UL Sodio (>2300mg)',
+                    style: TextStyle(
+                      fontFamily: ScFonts.ui,
+                      fontSize: 10.5,
+                      fontWeight: FontWeight.w700,
+                      color: c.isFlat ? c.text : c.fasting,
+                    ),
+                  ),
+                )
+              else if (highSodium)
                 Container(
                   padding:
                       const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
@@ -1499,7 +1767,11 @@ class _ElectrolytesBentoCard extends StatelessWidget {
                   ratio: (sodiumMg / targetSodiumMg).clamp(0.0, 1.0),
                   color: c.isFlat
                       ? c.text
-                      : (highSodium ? c.warning : c.water),
+                      : (ulSodium
+                          ? c.fasting
+                          : (highSodium ? c.warning : c.water)),
+                  badgeLabel: ulSodium ? 'Techo UL' : null,
+                  onTap: () => _showSodiumScience(context),
                 ),
               ),
               const SizedBox(width: 10),
@@ -1509,7 +1781,11 @@ class _ElectrolytesBentoCard extends StatelessWidget {
                   currentText: '${potassiumMg.round()} mg',
                   targetText: 'Meta ${targetPotassiumMg.round()} mg',
                   ratio: (potassiumMg / targetPotassiumMg).clamp(0.0, 1.0),
-                  color: c.isFlat ? c.text : c.steps,
+                  color: c.isFlat
+                      ? c.text
+                      : (ulPotassium ? c.warning : c.steps),
+                  badgeLabel: ulPotassium ? 'Techo Supl.' : null,
+                  onTap: () => _showPotassiumScience(context),
                 ),
               ),
             ],
@@ -1523,7 +1799,11 @@ class _ElectrolytesBentoCard extends StatelessWidget {
                   currentText: '${magnesiumMg.round()} mg',
                   targetText: 'Meta ${targetMagnesiumMg.round()} mg',
                   ratio: (magnesiumMg / targetMagnesiumMg).clamp(0.0, 1.0),
-                  color: c.isFlat ? c.text : c.fasting,
+                  color: c.isFlat
+                      ? c.text
+                      : (ulMagnesium ? c.warning : c.fasting),
+                  badgeLabel: ulMagnesium ? 'Techo Supl.' : null,
+                  onTap: () => _showMagnesiumScience(context),
                 ),
               ),
               const SizedBox(width: 10),
@@ -1534,6 +1814,7 @@ class _ElectrolytesBentoCard extends StatelessWidget {
                   targetText: 'Meta ${targetFiberG.round()} g',
                   ratio: (fiberG / targetFiberG).clamp(0.0, 1.0),
                   color: c.isFlat ? c.text : c.accent,
+                  onTap: () => _showFiberScience(context),
                 ),
               ),
             ],
@@ -1551,6 +1832,8 @@ class _MicroCell extends StatelessWidget {
     required this.targetText,
     required this.ratio,
     required this.color,
+    this.badgeLabel,
+    this.onTap,
   });
 
   final String title;
@@ -1558,11 +1841,13 @@ class _MicroCell extends StatelessWidget {
   final String targetText;
   final double ratio;
   final Color color;
+  final String? badgeLabel;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
     final ScColors c = context.sc;
-    return Container(
+    final Widget cellContent = Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: c.bg3,
@@ -1575,15 +1860,46 @@ class _MicroCell extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          Text(
-            title,
-            softWrap: true,
-            style: TextStyle(
-              fontFamily: ScFonts.ui,
-              fontSize: 12,
-              fontWeight: FontWeight.w700,
-              color: c.text2,
-            ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: <Widget>[
+              Expanded(
+                child: Text(
+                  title,
+                  softWrap: true,
+                  style: TextStyle(
+                    fontFamily: ScFonts.ui,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: c.text2,
+                  ),
+                ),
+              ),
+              if (badgeLabel != null)
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                  decoration: BoxDecoration(
+                    color: c.fasting.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text(
+                    badgeLabel!,
+                    style: TextStyle(
+                      fontFamily: ScFonts.ui,
+                      fontSize: 9.5,
+                      fontWeight: FontWeight.w800,
+                      color: c.isFlat ? c.text : c.fasting,
+                    ),
+                  ),
+                )
+              else if (onTap != null)
+                Icon(
+                  Icons.info_outline_rounded,
+                  size: 13,
+                  color: c.text3,
+                ),
+            ],
           ),
           const SizedBox(height: 4),
           Text(
@@ -1617,6 +1933,19 @@ class _MicroCell extends StatelessWidget {
         ],
       ),
     );
+
+    if (onTap != null) {
+      return Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(15),
+          onTap: onTap,
+          child: cellContent,
+        ),
+      );
+    }
+
+    return cellContent;
   }
 }
 
@@ -2126,6 +2455,141 @@ class _HydrationSectionCard extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+/// Tarjeta de Calidad de Alimentos según la clasificación NOVA (1 a 4).
+class _NovaQualityCard extends StatelessWidget {
+  const _NovaQualityCard({
+    required this.totalKcal,
+    required this.nova4Kcal,
+    required this.novaFreshKcal,
+  });
+
+  final double totalKcal;
+  final double nova4Kcal;
+  final double novaFreshKcal;
+
+  @override
+  Widget build(BuildContext context) {
+    final ScColors c = context.sc;
+    final int nova4Pct =
+        totalKcal > 0 ? ((nova4Kcal / totalKcal) * 100).round() : 0;
+    final int freshPct = (100 - nova4Pct).clamp(0, 100);
+
+    return HealthCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Row(
+            children: <Widget>[
+              Icon(Icons.eco_rounded, size: 19, color: c.protein),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'Calidad Alimentaria (NOVA)',
+                  softWrap: true,
+                  style: TextStyle(
+                    fontFamily: ScFonts.display,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w800,
+                    color: c.text,
+                  ),
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: c.isFlat ? c.line2 : c.soft,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  '$freshPct% Comida Real',
+                  style: TextStyle(
+                    fontFamily: ScFonts.ui,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    color: c.isFlat ? c.text : c.protein,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(6),
+            child: LinearProgressIndicator(
+              value: freshPct / 100.0,
+              minHeight: 7,
+              backgroundColor:
+                  c.isFlat ? c.line2 : c.warning.withValues(alpha: 0.3),
+              valueColor: AlwaysStoppedAnimation<Color>(
+                c.isFlat ? c.text : c.protein,
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: <Widget>[
+              Expanded(
+                child: Text(
+                  'NOVA 1–3: ${novaFreshKcal.round()} kcal',
+                  style: TextStyle(
+                    fontFamily: ScFonts.ui,
+                    fontSize: 11.5,
+                    color: c.text2,
+                  ),
+                ),
+              ),
+              Text(
+                'NOVA 4: ${nova4Kcal.round()} kcal ($nova4Pct%)',
+                style: TextStyle(
+                  fontFamily: ScFonts.ui,
+                  fontSize: 11.5,
+                  fontWeight: FontWeight.w600,
+                  color:
+                      nova4Pct > 25 ? (c.isFlat ? c.text : c.warning) : c.text2,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          InkWell(
+            borderRadius: BorderRadius.circular(8),
+            onTap: () {
+              unawaited(
+                ScienceOnDemandSheet.show(
+                  context,
+                  ScienceSpec.novaClassification(),
+                ),
+              );
+            },
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  Icon(Icons.info_outline_rounded, size: 14, color: c.accent),
+                  const SizedBox(width: 4),
+                  Flexible(
+                    child: Text(
+                      '¿Cómo funciona la clasificación NOVA?',
+                      style: TextStyle(
+                        fontFamily: ScFonts.ui,
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w600,
+                        color: c.accent,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

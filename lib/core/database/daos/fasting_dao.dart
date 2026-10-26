@@ -125,6 +125,15 @@ class FastingDao {
           ..limit(limit))
         .watch();
   }
+
+  /// Obtiene las sesiones históricas completadas recientes en una sola llamada.
+  Future<List<FastingSession>> getRecentSessions({int limit = 30}) {
+    return (_db.select(_db.fastingSessions)
+          ..where((tbl) => tbl.actualEndedAt.isNotNull())
+          ..orderBy([(tbl) => OrderingTerm.desc(tbl.actualEndedAt)])
+          ..limit(limit))
+        .get();
+  }
 }
 
 /// Provider de Riverpod para inyectar FastingDao.

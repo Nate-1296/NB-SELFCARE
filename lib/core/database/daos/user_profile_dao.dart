@@ -62,6 +62,65 @@ class UserProfileDao {
       ),
     );
   }
+
+  /// Configura el modo de macronutrientes manual (prescripción médica o deportiva).
+  Future<void> updateManualMacroMode({
+    required bool isManual,
+    int? manualKcal,
+    int? manualProteinG,
+    int? manualCarbsG,
+    int? manualFatG,
+  }) async {
+    final UserProfile? current = await getProfile();
+    if (current == null) return;
+
+    final query = _db.update(_db.userProfiles)..where((tbl) => tbl.id.equals(current.id));
+    await query.write(
+      UserProfilesCompanion(
+        isManualMacroMode: Value(isManual),
+        manualKcalTarget: Value(manualKcal),
+        manualProteinG: Value(manualProteinG),
+        manualCarbsG: Value(manualCarbsG),
+        manualFatG: Value(manualFatG),
+      ),
+    );
+  }
+
+  /// Actualiza el arquetipo de dieta activo (ej. 'mediterranean', 'keto', 'flexible').
+  Future<void> updateDietArchetype(String archetype) async {
+    final UserProfile? current = await getProfile();
+    if (current == null) return;
+
+    final query = _db.update(_db.userProfiles)..where((tbl) => tbl.id.equals(current.id));
+    await query.write(UserProfilesCompanion(activeDietArchetype: Value(archetype)));
+  }
+
+  /// Actualiza la fase de dieta activa ('deficit', 'maintenance', 'diet_break', 'reverse_diet').
+  Future<void> updateDietPhase(String phase) async {
+    final UserProfile? current = await getProfile();
+    if (current == null) return;
+
+    final query = _db.update(_db.userProfiles)..where((tbl) => tbl.id.equals(current.id));
+    await query.write(UserProfilesCompanion(activeDietPhase: Value(phase)));
+  }
+
+  /// Configura la activación del seguimiento del ciclo menstrual femenino.
+  Future<void> updateCycleTrackingEnabled(bool enabled) async {
+    final UserProfile? current = await getProfile();
+    if (current == null) return;
+
+    final query = _db.update(_db.userProfiles)..where((tbl) => tbl.id.equals(current.id));
+    await query.write(UserProfilesCompanion(isCycleTrackingEnabled: Value(enabled)));
+  }
+
+  /// Configura la activación del módulo de ayuno intermitente.
+  Future<void> updateFastingEnabled(bool enabled) async {
+    final UserProfile? current = await getProfile();
+    if (current == null) return;
+
+    final query = _db.update(_db.userProfiles)..where((tbl) => tbl.id.equals(current.id));
+    await query.write(UserProfilesCompanion(isFastingEnabled: Value(enabled)));
+  }
 }
 
 /// Provider de Riverpod para inyectar UserProfileDao.

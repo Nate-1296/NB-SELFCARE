@@ -10,6 +10,7 @@ import '../../features/pet_gamification/presentation/nibi_screen.dart';
 import '../../features/profile_goals/presentation/app_settings_screen.dart';
 import '../../features/profile_goals/presentation/onboarding_screen.dart';
 import '../../features/profile_goals/presentation/perfil_yo_screen.dart';
+import '../../features/protocol/presentation/protocol_planner_screen.dart';
 import '../../features/today/presentation/hoy_screen.dart';
 import '../../shared/theme/sc_colors.dart';
 import '../database/app_database.dart';
@@ -194,6 +195,13 @@ final Provider<GoRouter> appRouterProvider = Provider<GoRouter>((Ref ref) {
         path: '/ajustes',
         pageBuilder: (BuildContext context, GoRouterState state) =>
             const MaterialPage(child: AppSettingsScreen()),
+      ),
+
+      GoRoute(
+        parentNavigatorKey: rootNavigatorKey,
+        path: '/protocolo',
+        pageBuilder: (BuildContext context, GoRouterState state) =>
+            const MaterialPage(child: ProtocolPlannerScreen()),
       ),
     ],
   );

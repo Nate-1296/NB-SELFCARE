@@ -351,6 +351,14 @@ class FoodDao {
         .watch();
   }
 
+  /// Obtiene de forma asíncrona todas las comidas registradas para una fecha dada.
+  Future<List<FoodLog>> getLogsForDate(String dateKey) {
+    return (_db.select(_db.foodLogs)
+          ..where((tbl) => tbl.dateKey.equals(dateKey))
+          ..orderBy([(tbl) => OrderingTerm.asc(tbl.loggedAt)]))
+        .get();
+  }
+
   /// Emite en vivo todas las comidas registradas para una fecha dada junto con su alimento mediante JOIN.
   Stream<List<FoodLogWithItem>> watchLogsWithItemForDate(String dateKey) {
     final query = _db.select(_db.foodLogs).join([

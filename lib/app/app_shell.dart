@@ -5,6 +5,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../core/database/app_database.dart';
+import '../core/database/daos/user_profile_dao.dart';
 import '../core/router/app_router.dart';
 import '../shared/theme/sc_colors.dart';
 import '../shared/widgets/bottom_nav.dart';
@@ -147,6 +149,8 @@ class _AppShellState extends ConsumerState<AppShell>
   Widget build(BuildContext context) {
     final ScColors c = context.sc;
     final bool isOnHoy = widget.navigationShell.currentIndex == 0;
+    final UserProfile? profile = ref.watch(userProfileStreamProvider).value;
+    final bool isFastingActive = profile?.isFastingEnabled ?? true;
 
     return PopScope<Object?>(
       canPop: false,
@@ -157,7 +161,7 @@ class _AppShellState extends ConsumerState<AppShell>
         bottomNavigationBar: Column(
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
-            if (!isOnHoy) const FastingBar(),
+            if (!isOnHoy && isFastingActive) const FastingBar(),
             BottomNav(
               currentIndex: widget.navigationShell.currentIndex,
               onTap: _onTap,

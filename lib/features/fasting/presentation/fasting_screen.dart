@@ -7,12 +7,14 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/database/app_database.dart';
 import '../../../core/database/daos/fasting_dao.dart';
+import '../../../core/services/fasting_dosage_advisor.dart';
 import '../../../shared/theme/sc_colors.dart';
 import '../../../shared/theme/sc_theme.dart';
 import '../../../shared/widgets/app_icons.dart';
 import '../../../shared/widgets/chip_pill.dart';
 import '../../../shared/widgets/health_card.dart';
 import '../../../shared/widgets/top_bar.dart';
+import 'widgets/fast_break_sheet.dart';
 
 /// Subpágina de Ayuno Intermitente, Fases Metabólicas, Ajuste de Inicio e Historial.
 class FastingScreen extends ConsumerStatefulWidget {
@@ -508,12 +510,92 @@ class _FastingScreenState extends ConsumerState<FastingScreen> {
                                     );
 
                                     if (confirm == true) {
+                                      final double actualHours =
+                                          DateTime.now()
+                                                  .difference(session.startedAt)
+                                                  .inMinutes /
+                                              60.0;
                                       await fastingDao.endFast(
                                         sessionId: session.id,
                                         notes: 'Sesión registrada.',
                                       );
+                                      if (!context.mounted) return;
+                                      if (actualHours >= 16.0) {
+                                        unawaited(FastBreakSheet.show(
+                                          context,
+                                          actualHours: actualHours,
+                                        ));
+                                      }
                                     }
                                   } else {
+                                    final List<FastingSession> recent =
+                                        await fastingDao
+                                            .getRecentSessions(limit: 10);
+                                    final FastingSafetyVerdict verdict =
+                                        FastingDosageAdvisor
+                                            .evaluateProtocolSafety(
+                                      proposedTargetHours: _targetHours,
+                                      recentSessions: recent,
+                                    );
+
+                                    if (!verdict.isSafe) {
+                                      if (!context.mounted) return;
+                                      final bool? proceed =
+                                          await showDialog<bool>(
+                                        context: context,
+                                        builder: (BuildContext dCtx) =>
+                                            AlertDialog(
+                                          title: Text(
+                                            verdict.warningTitle ??
+                                                'Aviso de Seguridad',
+                                            style: const TextStyle(
+                                              fontFamily: ScFonts.display,
+                                              fontWeight: FontWeight.w800,
+                                            ),
+                                          ),
+                                          content: Text(
+                                            verdict.warningBody ?? '',
+                                            style: const TextStyle(
+                                              fontFamily: ScFonts.ui,
+                                              height: 1.35,
+                                            ),
+                                          ),
+                                          actions: <Widget>[
+                                            if (verdict
+                                                    .recommendedAlternativeHours !=
+                                                null)
+                                              FilledButton(
+                                                onPressed: () {
+                                                  setState(() {
+                                                    _targetHours = verdict
+                                                        .recommendedAlternativeHours!;
+                                                    _selectedProtocol =
+                                                        '$_targetHours:${24 - _targetHours}';
+                                                  });
+                                                  Navigator.of(dCtx).pop(true);
+                                                },
+                                                child: Text(
+                                                  'Ajustar a ${verdict.recommendedAlternativeHours}h (Recomendado)',
+                                                ),
+                                              ),
+                                            TextButton(
+                                              onPressed: () =>
+                                                  Navigator.of(dCtx).pop(true),
+                                              child: const Text(
+                                                'Continuar de todos modos',
+                                              ),
+                                            ),
+                                            TextButton(
+                                              onPressed: () =>
+                                                  Navigator.of(dCtx).pop(false),
+                                              child: const Text('Cancelar'),
+                                            ),
+                                          ],
+                                        ),
+                                      );
+                                      if (proceed != true) return;
+                                    }
+
                                     final String protoLabel =
                                         _selectedProtocol == 'Personalizado'
                                             ? '${_targetHours}h'

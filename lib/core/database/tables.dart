@@ -27,6 +27,20 @@ class UserProfiles extends Table {
   TextColumn get themeMode => text().withDefault(const Constant('material_you'))(); // 'material_you' | 'nxtpaper_eink'
   TextColumn get localAiModelPath => text().nullable()();
   BoolColumn get isLocalAiEnabled => boolean().withDefault(const Constant(false))();
+
+  // Modos contextuales, objetivos y personalización avanzada
+  BoolColumn get isCycleTrackingEnabled => boolean().withDefault(const Constant(false))();
+  BoolColumn get isFastingEnabled => boolean().withDefault(const Constant(true))();
+  BoolColumn get isManualMacroMode => boolean().withDefault(const Constant(false))();
+  IntColumn get manualKcalTarget => integer().nullable()();
+  IntColumn get manualProteinG => integer().nullable()();
+  IntColumn get manualCarbsG => integer().nullable()();
+  IntColumn get manualFatG => integer().nullable()();
+  TextColumn get activeDietArchetype => text().withDefault(const Constant('flexible'))(); // 'flexible', 'mediterranean', 'keto', 'high_protein', 'plant_based', 'balanced'
+  TextColumn get activeDietPhase => text().withDefault(const Constant('deficit'))(); // 'deficit', 'maintenance', 'diet_break', 'reverse_diet'
+  TextColumn get calorieCyclingScheduleJson => text().withDefault(const Constant('{}'))(); // JSON con metas por día de la semana
+  RealColumn get caffeineBedtimeCutoffHours => real().withDefault(const Constant(8.0))(); // Horas antes de dormir para corte de cafeína
+
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
 }
 
@@ -105,6 +119,7 @@ class FoodItems extends Table {
   TextColumn get brand => text().nullable()();
   TextColumn get source => text()(); // 'usda_seed' | 'open_food_facts' | 'user_custom' | 'ai_fallback'
   TextColumn get nutriScore => text().nullable()(); // 'A'..'E'
+  IntColumn get novaGroup => integer().nullable()(); // 1 a 4 (Clasificación NOVA de ultraprocesados)
   RealColumn get defaultServingGrams => real().withDefault(const Constant(100.0))();
   TextColumn get servingLabel => text().withDefault(const Constant('100g'))();
 
@@ -270,4 +285,105 @@ class HealthSyncCheckpoints extends Table {
   DateTimeColumn get lastSyncTimestamp => dateTime()();
   IntColumn get lastReadCount => integer().withDefault(const Constant(0))();
   IntColumn get lastWriteCount => integer().withDefault(const Constant(0))();
+}
+
+// 15. RECETAS CASERAS MULTIRACIÓN (BATCH COOKING & MEAL PREP)
+class Recipes extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  TextColumn get name => text()();
+  TextColumn get description => text().nullable()();
+  TextColumn get defaultMealType => text().withDefault(const Constant('lunch'))(); // 'breakfast', 'lunch', 'dinner', 'snack'
+  IntColumn get totalYieldServings => integer().withDefault(const Constant(1))();
+  RealColumn get cookedTotalWeightGrams => real().nullable()(); // Peso total cocinado opcional
+
+  // Valores consolidados calculados por ración (1 serving)
+  RealColumn get kcalPerServing => real()();
+  RealColumn get proteinPerServing => real()();
+  RealColumn get carbsPerServing => real()();
+  RealColumn get fatPerServing => real()();
+  RealColumn get fiberPerServing => real().withDefault(const Constant(0.0))();
+  RealColumn get sodiumMgPerServing => real().withDefault(const Constant(0.0))();
+  RealColumn get potassiumMgPerServing => real().withDefault(const Constant(0.0))();
+  RealColumn get magnesiumMgPerServing => real().withDefault(const Constant(0.0))();
+
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+  DateTimeColumn get lastUsedAt => dateTime().nullable()();
+}
+
+class RecipeIngredients extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  IntColumn get recipeId => integer().references(Recipes, #id, onDelete: KeyAction.cascade)();
+  IntColumn get foodItemId => integer().references(FoodItems, #id)();
+  RealColumn get rawGrams => real()(); // Gramos de ingrediente crudo para la preparación total
+}
+
+// 16. SEGUIMIENTO DE SUPLEMENTACIÓN Y MEDICACIÓN
+class SupplementsTracker extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  TextColumn get name => text()(); // ej. 'Creatina Monohidrato', 'Magnesio', 'Vitamina D3'
+  TextColumn get dosage => text()(); // ej. '5g', '400mg', '2000 UI'
+  IntColumn get targetTimeOfDayMinutes => integer().nullable()(); // Minutos desde medianoche
+  BoolColumn get affectsWaterRetention => boolean().withDefault(const Constant(false))(); // ej. Creatina -> retención intramuscular
+  BoolColumn get isEnabled => boolean().withDefault(const Constant(true))();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+}
+
+class SupplementLogs extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  TextColumn get dateKey => text()(); // 'YYYY-MM-DD'
+  IntColumn get supplementId => integer().references(SupplementsTracker, #id, onDelete: KeyAction.cascade)();
+  DateTimeColumn get takenAt => dateTime().withDefault(currentDateAndTime)();
+  BoolColumn get wasTaken => boolean().withDefault(const Constant(true))();
+}
+
+// 17. SALUD HORMONAL Y CICLO MENSTRUAL FEMENINO
+class FemaleCycleLogs extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  DateTimeColumn get cycleStartDate => dateTime()(); // Fecha de inicio del sangrado
+  DateTimeColumn get cycleEndDate => dateTime().nullable()();
+  IntColumn get cycleLengthDays => integer().withDefault(const Constant(28))(); // Duración promedio del ciclo
+  TextColumn get flowIntensity => text().nullable()(); // 'light', 'medium', 'heavy'
+  TextColumn get symptomsJson => text().withDefault(const Constant('[]'))(); // 'cramps', 'bloating', 'headache', 'mood_swings'
+  TextColumn get notes => text().nullable()();
+}
+
+// 18. SALUD INTESTINAL Y ESCALA DE BRISTOL
+class DigestiveLogs extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  TextColumn get dateKey => text()(); // 'YYYY-MM-DD'
+  DateTimeColumn get loggedAt => dateTime().withDefault(currentDateAndTime)();
+  IntColumn get bristolType => integer()(); // 1 a 7 (Escala de Heces de Bristol)
+  IntColumn get discomfortLevel => integer().withDefault(const Constant(1))(); // 1 (ninguno) a 5 (severo)
+  TextColumn get symptomsJson => text().withDefault(const Constant('[]'))(); // 'bloating', 'gas', 'acid_reflux', 'cramps'
+  TextColumn get notes => text().nullable()();
+}
+
+// 19. REGISTRO FARMACOCINÉTICO DE CAFEÍNA
+class CaffeineLogs extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  TextColumn get dateKey => text()(); // 'YYYY-MM-DD'
+  DateTimeColumn get loggedAt => dateTime().withDefault(currentDateAndTime)();
+  TextColumn get sourceName => text()(); // 'espresso', 'filtro', 'energy_drink', 'pre_workout', 'tea'
+  RealColumn get caffeineMg => real()(); // Miligramos de cafeína
+}
+
+// 20. PLANIFICADOR SEMANAL DE PROTOCOLO INTEGRAL
+class ProtocolPlans extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  TextColumn get planName => text().withDefault(const Constant('Mi Protocolo Semanal'))();
+  TextColumn get fastingDaysBitmask => text().withDefault(const Constant('{"1":16,"2":16,"3":16,"4":16,"5":16,"6":0,"7":0}'))(); // Día semana -> horas ayuno
+  TextColumn get workoutSlotsJson => text().withDefault(const Constant('[]'))(); // Slots de entrenamiento planeados
+  TextColumn get dietArchetype => text().withDefault(const Constant('flexible'))();
+  BoolColumn get isCurrentActive => boolean().withDefault(const Constant(true))();
+  DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
+}
+
+// 21. MINI-HITOS PSICOLÓGICOS DE PESO (HAPPY SCALE)
+class MilestoneGoals extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  IntColumn get milestoneOrder => integer()(); // 1, 2, 3...
+  RealColumn get targetWeightKg => real()();
+  BoolColumn get isCompleted => boolean().withDefault(const Constant(false))();
+  DateTimeColumn get completedAt => dateTime().nullable()();
+  DateTimeColumn get estimatedCompletionDate => dateTime().nullable()();
 }

@@ -39,6 +39,12 @@ class HealthSyncDao {
         .watchSingleOrNull();
   }
 
+  /// Obtiene de forma asíncrona el resumen diario consolidado para una fecha dada.
+  Future<DailySummary?> getSummaryForDate(String dateKey) {
+    return (_db.select(_db.dailySummaries)..where((tbl) => tbl.dateKey.equals(dateKey)))
+        .getSingleOrNull();
+  }
+
   /// Inserta o actualiza el resumen diario proveniente de Health Connect o recálculos.
   Future<void> upsertDailySummary(DailySummariesCompanion companion) async {
     await _db.into(_db.dailySummaries).insertOnConflictUpdate(companion);

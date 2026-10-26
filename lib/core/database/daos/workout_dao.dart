@@ -17,6 +17,14 @@ class WorkoutDao {
         .watch();
   }
 
+  /// Obtiene de forma asíncrona los entrenamientos registrados para una fecha dada.
+  Future<List<WorkoutBlock>> getWorkoutsForDate(String dateKey) {
+    return (_db.select(_db.workoutBlocks)
+          ..where((tbl) => tbl.dateKey.equals(dateKey))
+          ..orderBy([(tbl) => OrderingTerm.desc(tbl.performedAt)]))
+        .get();
+  }
+
   /// Inserta un nuevo bloque de entrenamiento RPE en 5 segundos.
   Future<int> insertWorkout(WorkoutBlocksCompanion companion) {
     return _db.into(_db.workoutBlocks).insert(companion);

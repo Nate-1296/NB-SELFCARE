@@ -25,7 +25,7 @@ import 'widgets/animated_nibi_view.dart';
 ///
 /// Características principales:
 /// 1. Dragón 100% ilustrado y reactivo a los hábitos de vida saludable.
-/// 2. Positividad radical: Nibi no enferma ni muere; acompaña en primera persona.
+/// 2. Positividad radical: Nibi siempre está sano y lleno de energía; acompaña en primera persona.
 /// 3. Escenario inmersivo con hábitats desbloqueables y compatibilidad total con Modo Papel NXTPAPER.
 /// 4. Cuidados interactivos directos que transforman la forma del dragón de inmediato.
 /// 5. Armario de accesorios, selección de hábitats y tienda integrada.

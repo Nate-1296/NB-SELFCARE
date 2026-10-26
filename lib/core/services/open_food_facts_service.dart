@@ -6,11 +6,12 @@ import 'package:http/http.dart' as http;
 import '../database/app_database.dart';
 import '../database/daos/food_dao.dart';
 
-/// Servicio de resolución de códigos de barras (EAN-13, UPC) mediante Open Food Facts
+/// Servicio de resolución de alimentos mediante Open Food Facts
 /// con política inquebrantable de persistencia inmediata en SQLite local (FTS5).
 ///
-/// Cumple estrictamente `AGENTS.md` §1.1: la única llamada HTTP permitida en toda la app
-/// es la resolución puntual de un código de barras no cacheado.
+/// Cumple estrictamente `AGENTS.md` §1.1: las llamadas HTTP son exclusivas a la API
+/// pública de Open Food Facts para códigos de barras no cacheados o búsqueda de catálogo,
+/// persistiendo todo resultado de forma inmediata en SQLite local.
 class OpenFoodFactsService {
   OpenFoodFactsService(this._foodDao, {http.Client? httpClient})
       : _client = httpClient ?? http.Client(),
@@ -36,15 +37,35 @@ class OpenFoodFactsService {
       return cached;
     }
 
+    // Si es UPC-A de 12 dígitos, verificar si existe con 0 inicial (EAN-13)
+    if (cleanBarcode.length == 12) {
+      final FoodItem? cachedEan13 =
+          await _foodDao.getByBarcode('0$cleanBarcode');
+      if (cachedEan13 != null) return cachedEan13;
+    }
+
     // 2. Consulta puntual a Open Food Facts API v2
+    FoodItem? item = await _fetchProductByBarcode(cleanBarcode);
+    if (item != null) return item;
+
+    // Intento con normalización EAN-13 (0 al frente) si tiene 12 dígitos
+    if (cleanBarcode.length == 12) {
+      item = await _fetchProductByBarcode('0$cleanBarcode');
+      if (item != null) return item;
+    }
+
+    return null;
+  }
+
+  Future<FoodItem?> _fetchProductByBarcode(String barcode) async {
     try {
-      final uri = Uri.parse(
-        'https://world.openfoodfacts.org/api/v2/product/$cleanBarcode.json',
+      final Uri uri = Uri.parse(
+        'https://world.openfoodfacts.org/api/v2/product/$barcode.json',
       );
 
-      final response = await _client.get(
+      final http.Response response = await _client.get(
         uri,
-        headers: {'User-Agent': _userAgent},
+        headers: <String, String>{'User-Agent': _userAgent},
       ).timeout(const Duration(seconds: 4));
 
       if (response.statusCode != 200) return null;
@@ -59,25 +80,95 @@ class OpenFoodFactsService {
 
       final Map<String, dynamic> product =
           json['product'] as Map<String, dynamic>;
+      return await _parseAndPersistProduct(product, explicitBarcode: barcode);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Busca productos en Open Food Facts por texto cuando la búsqueda local FTS5
+  /// no arroja resultados suficientes. Cada resultado válido es cacheado en SQLite.
+  Future<List<FoodItem>> searchProducts(
+    String query, {
+    int page = 1,
+    int pageSize = 20,
+  }) async {
+    final String cleanQuery = query.trim();
+    if (cleanQuery.isEmpty) return <FoodItem>[];
+
+    try {
+      final Uri uri = Uri.parse(
+        'https://world.openfoodfacts.org/cgi/search.pl?search_terms=${Uri.encodeComponent(cleanQuery)}&search_simple=1&action=process&json=1&page_size=$pageSize&page=$page',
+      );
+
+      final http.Response response = await _client.get(
+        uri,
+        headers: <String, String>{'User-Agent': _userAgent},
+      ).timeout(const Duration(seconds: 5));
+
+      if (response.statusCode != 200) return <FoodItem>[];
+
+      final Map<String, dynamic> json =
+          jsonDecode(response.body) as Map<String, dynamic>;
+      final List<dynamic>? rawProducts = json['products'] as List<dynamic>?;
+      if (rawProducts == null || rawProducts.isEmpty) return <FoodItem>[];
+
+      final List<FoodItem> results = <FoodItem>[];
+
+      for (final dynamic rawProd in rawProducts) {
+        if (rawProd is! Map<String, dynamic>) continue;
+        final FoodItem? item = await _parseAndPersistProduct(rawProd);
+        if (item != null) {
+          results.add(item);
+        }
+      }
+
+      return results;
+    } catch (_) {
+      return <FoodItem>[];
+    }
+  }
+
+  /// Normaliza y almacena en SQLite local un producto devuelto por Open Food Facts.
+  Future<FoodItem?> _parseAndPersistProduct(
+    Map<String, dynamic> product, {
+    String? explicitBarcode,
+  }) async {
+    try {
+      final String? rawCode = explicitBarcode ??
+          _nonEmptyOrNull(product['code'] as String?);
+
+      // Si tiene código de barras y ya está en base de datos local, devolverlo
+      if (rawCode != null) {
+        final FoodItem? existing = await _foodDao.getByBarcode(rawCode);
+        if (existing != null) return existing;
+      }
+
       final Map<String, dynamic> nutriments =
-          (product['nutriments'] as Map<String, dynamic>?) ?? {};
+          (product['nutriments'] as Map<String, dynamic>?) ??
+              <String, dynamic>{};
 
       // Extracción de metadatos básicos
-      final String name = _nonEmptyOrNull(product['product_name_es'] as String?) ??
+      final String name = _nonEmptyOrNull(
+            product['product_name_es'] as String?,
+          ) ??
           _nonEmptyOrNull(product['product_name'] as String?) ??
           _nonEmptyOrNull(product['generic_name'] as String?) ??
-          'Producto $cleanBarcode';
+          (rawCode != null ? 'Producto $rawCode' : 'Alimento');
 
       final String? brand = _nonEmptyOrNull(product['brands'] as String?);
-      final String? nutriScore =
-          _nonEmptyOrNull(product['nutriscore_grade'] as String?)?.toUpperCase();
+      final String? nutriScore = _nonEmptyOrNull(
+        product['nutriscore_grade'] as String?,
+      )?.toUpperCase();
+      final int? novaGroup = _extractNovaGroup(product);
 
       // Normalización a 100g
       final double kcal = _extractNum(nutriments, 'energy-kcal_100g') ??
           ((_extractNum(nutriments, 'energy_100g') ?? 0.0) / 4.184);
 
       final double protein = _extractNum(nutriments, 'proteins_100g') ?? 0.0;
-      final double carbs = _extractNum(nutriments, 'carbohydrates_100g') ?? 0.0;
+      final double carbs =
+          _extractNum(nutriments, 'carbohydrates_100g') ?? 0.0;
       final double fat = _extractNum(nutriments, 'fat_100g') ?? 0.0;
       final double? fiber = _extractNum(nutriments, 'fiber_100g');
       final double? sugars = _extractNum(nutriments, 'sugars_100g');
@@ -116,12 +207,13 @@ class OpenFoodFactsService {
         gramsThreshold: 5.0,
       );
 
-      final companion = FoodItemsCompanion(
-        barcode: drift.Value(cleanBarcode),
+      final FoodItemsCompanion companion = FoodItemsCompanion(
+        barcode: drift.Value(rawCode),
         name: drift.Value(name),
         brand: drift.Value(brand),
         source: const drift.Value('open_food_facts'),
         nutriScore: drift.Value(nutriScore),
+        novaGroup: drift.Value(novaGroup),
         defaultServingGrams: const drift.Value(100.0),
         servingLabel: const drift.Value('100g'),
         kcalPer100g: drift.Value(double.parse(kcal.toStringAsFixed(1))),
@@ -141,12 +233,22 @@ class OpenFoodFactsService {
         vitaminB12UgPer100g: const drift.Value(0.0),
       );
 
-      // Persistir inmediatamente en SQLite
+      // Persistir inmediatamente en SQLite local (dispara triggers FTS5)
       final int id = await _foodDao.insertFood(companion);
       return await _foodDao.getById(id);
     } catch (_) {
       return null;
     }
+  }
+
+  int? _extractNovaGroup(Map<String, dynamic> product) {
+    final dynamic g = product['nova_group'] ?? product['nova_groups'];
+    if (g is num) return g.toInt().clamp(1, 4);
+    if (g is String) {
+      final int? parsed = int.tryParse(g);
+      if (parsed != null) return parsed.clamp(1, 4);
+    }
+    return null;
   }
 
   /// Cierra el cliente HTTP subyacente cuando el proveedor se destruye.
@@ -158,11 +260,14 @@ class OpenFoodFactsService {
 
   String? _nonEmptyOrNull(String? raw) {
     if (raw == null) return null;
-    final trimmed = raw.trim();
+    final String trimmed = raw.trim();
     return trimmed.isEmpty ? null : trimmed;
   }
 
-  double? _normalizeGramsToMg(double? value, {required double gramsThreshold}) {
+  double? _normalizeGramsToMg(
+    double? value, {
+    required double gramsThreshold,
+  }) {
     if (value == null) return null;
     if (value > 0 && value < gramsThreshold) {
       return double.parse((value * 1000.0).toStringAsFixed(1));
@@ -180,8 +285,8 @@ class OpenFoodFactsService {
 
 /// Provider de Riverpod para inyectar OpenFoodFactsService.
 final openFoodFactsServiceProvider = Provider<OpenFoodFactsService>((ref) {
-  final foodDao = ref.watch(foodDaoProvider);
-  final service = OpenFoodFactsService(foodDao);
+  final FoodDao foodDao = ref.watch(foodDaoProvider);
+  final OpenFoodFactsService service = OpenFoodFactsService(foodDao);
   ref.onDispose(service.dispose);
   return service;
 });

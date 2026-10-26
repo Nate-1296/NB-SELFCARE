@@ -8,6 +8,7 @@ import '../../../../core/constants/app_constants.dart';
 import '../../../../core/database/app_database.dart';
 import '../../../../core/database/daos/food_dao.dart';
 import '../../../../core/database/daos/pet_dao.dart';
+import '../../../../core/services/open_food_facts_service.dart';
 import '../../../../shared/theme/sc_colors.dart';
 import '../../../../shared/theme/sc_theme.dart';
 import '../../../../shared/widgets/app_icons.dart';
@@ -45,6 +46,7 @@ class _FoodSearchModalState extends ConsumerState<FoodSearchModal> {
   _CatalogFilter _filter = _CatalogFilter.all;
   String? _quickAddedNotice;
   Timer? _noticeTimer;
+  bool _isSearchingOff = false;
 
   @override
   void initState() {
@@ -92,6 +94,57 @@ class _FoodSearchModalState extends ConsumerState<FoodSearchModal> {
     } catch (_) {
       if (!mounted) return;
       setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _searchOpenFoodFacts() async {
+    final String q = _searchController.text.trim();
+    if (q.isEmpty || _isSearchingOff) return;
+
+    setState(() => _isSearchingOff = true);
+    unawaited(HapticFeedback.lightImpact());
+
+    try {
+      final List<FoodItem> offItems =
+          await ref.read(openFoodFactsServiceProvider).searchProducts(q);
+      if (!mounted) return;
+
+      if (offItems.isNotEmpty) {
+        final Set<int> existingIds = _results.map((FoodItem e) => e.id).toSet();
+        final List<FoodItem> combined = <FoodItem>[..._results];
+        for (final FoodItem item in offItems) {
+          if (!existingIds.contains(item.id)) {
+            combined.add(item);
+            existingIds.add(item.id);
+          }
+        }
+        setState(() {
+          _results = combined;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              '¡Se encontraron e importaron ${offItems.length} productos de Open Food Facts! 🌐',
+            ),
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('No se hallaron resultados en Open Food Facts.'),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error al consultar Open Food Facts: $e')),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isSearchingOff = false);
+      }
     }
   }
 
@@ -462,6 +515,8 @@ class _FoodSearchModalState extends ConsumerState<FoodSearchModal> {
                   : _results.isEmpty
                       ? _EmptySearchState(
                           query: _searchController.text.trim(),
+                          isSearchingOff: _isSearchingOff,
+                          onSearchOff: _searchOpenFoodFacts,
                           onCreateCustom: () => unawaited(
                             _openCustomFoodCreator(
                               _searchController.text.trim(),
@@ -470,10 +525,19 @@ class _FoodSearchModalState extends ConsumerState<FoodSearchModal> {
                         )
                       : ListView.separated(
                           padding: const EdgeInsets.fromLTRB(18, 4, 18, 28),
-                          itemCount: _results.length,
+                          itemCount: _searchController.text.trim().isNotEmpty
+                              ? _results.length + 1
+                              : _results.length,
                           separatorBuilder: (_, _) =>
                               const SizedBox(height: 8),
                           itemBuilder: (BuildContext context, int index) {
+                            if (index == _results.length) {
+                              return _SearchMoreOnOpenFoodFactsTile(
+                                query: _searchController.text.trim(),
+                                isSearching: _isSearchingOff,
+                                onSearch: _searchOpenFoodFacts,
+                              );
+                            }
                             final FoodItem item = _results[index];
                             return _FoodSearchItemCard(
                               food: item,
@@ -637,10 +701,14 @@ class _EmptySearchState extends StatelessWidget {
   const _EmptySearchState({
     required this.query,
     required this.onCreateCustom,
+    this.onSearchOff,
+    this.isSearchingOff = false,
   });
 
   final String query;
   final VoidCallback onCreateCustom;
+  final VoidCallback? onSearchOff;
+  final bool isSearchingOff;
 
   @override
   Widget build(BuildContext context) {
@@ -656,7 +724,7 @@ class _EmptySearchState extends StatelessWidget {
             Text(
               query.isEmpty
                   ? 'Aún no hay alimentos en este filtro'
-                  : 'No encontramos "$query" en tu catálogo',
+                  : 'No encontramos "$query" en tu catálogo local',
               textAlign: TextAlign.center,
               softWrap: true,
               style: TextStyle(
@@ -668,7 +736,9 @@ class _EmptySearchState extends StatelessWidget {
             ),
             const SizedBox(height: 6),
             Text(
-              'Puedes crearlo en segundos y quedará disponible offline para siempre.',
+              query.isNotEmpty
+                  ? 'Puedes buscarlo en Open Food Facts (catálogo mundial de millones de alimentos) o crearlo a mano.'
+                  : 'Puedes crearlo en segundos y quedará disponible offline para siempre.',
               textAlign: TextAlign.center,
               softWrap: true,
               style: TextStyle(
@@ -678,13 +748,130 @@ class _EmptySearchState extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 16),
-            FilledButton.icon(
-              onPressed: onCreateCustom,
-              icon: const Icon(AppIcons.add),
-              label: const Text('Crear alimento propio'),
+            if (query.isNotEmpty && onSearchOff != null) ...<Widget>[
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton.tonalIcon(
+                  onPressed: isSearchingOff ? null : onSearchOff,
+                  style: FilledButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
+                  icon: isSearchingOff
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.travel_explore_rounded, size: 18),
+                  label: Text(
+                    isSearchingOff
+                        ? 'Consultando Open Food Facts...'
+                        : 'Buscar en Open Food Facts',
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
+            ],
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: onCreateCustom,
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                ),
+                icon: const Icon(AppIcons.add, size: 18),
+                label: const Text('Crear alimento propio'),
+              ),
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _SearchMoreOnOpenFoodFactsTile extends StatelessWidget {
+  const _SearchMoreOnOpenFoodFactsTile({
+    required this.query,
+    required this.isSearching,
+    required this.onSearch,
+  });
+
+  final String query;
+  final bool isSearching;
+  final VoidCallback onSearch;
+
+  @override
+  Widget build(BuildContext context) {
+    final ScColors c = context.sc;
+    return Container(
+      margin: const EdgeInsets.only(top: 8),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: c.bg3,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: c.isFlat ? c.line2 : c.line,
+          width: c.isFlat ? 1.3 : 1.0,
+        ),
+      ),
+      child: Row(
+        children: <Widget>[
+          Icon(
+            Icons.travel_explore_rounded,
+            color: c.accent,
+            size: 24,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Text(
+                  '¿No está lo que buscas?',
+                  style: TextStyle(
+                    fontFamily: ScFonts.display,
+                    fontSize: 13.5,
+                    fontWeight: FontWeight.bold,
+                    color: c.text,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  'Buscar "$query" en el catálogo Open Food Facts',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontFamily: ScFonts.ui,
+                    fontSize: 11.5,
+                    color: c.text2,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          FilledButton.tonal(
+            onPressed: isSearching ? null : onSearch,
+            style: FilledButton.styleFrom(
+              visualDensity: VisualDensity.compact,
+            ),
+            child: isSearching
+                ? const SizedBox(
+                    width: 14,
+                    height: 14,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Text('Buscar'),
+          ),
+        ],
       ),
     );
   }

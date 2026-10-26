@@ -37,6 +37,15 @@ class BodyMeasurementsDao {
         .map((list) => list.reversed.toList());
   }
 
+  /// Obtiene la lista de mediciones recientes para cálculos clínicos y reportes.
+  Future<List<BodyMeasurement>> getRecentMeasurements({int limit = 30}) async {
+    final list = await (_db.select(_db.bodyMeasurements)
+          ..orderBy([(tbl) => OrderingTerm.desc(tbl.measuredAt)])
+          ..limit(limit))
+        .get();
+    return list.reversed.toList();
+  }
+
   /// Guarda una nueva medición (desde báscula BLE, Health Connect o manual)
   /// y otorga la recompensa diaria de +15 monedas en el libro mayor.
   Future<int> insertMeasurement(BodyMeasurementsCompanion companion) async {

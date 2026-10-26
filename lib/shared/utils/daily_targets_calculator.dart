@@ -84,15 +84,40 @@ abstract final class DailyTargetsCalculator {
   }
 
   /// Calcula la meta efectiva del día integrando TDEE adaptativo, ritmo semanal
-  /// (déficit/mantenimiento/superávit) y gasto neto de ejercicio (RPE/METs).
+  /// (déficit/mantenimiento/superávit), fases de dieta y gasto neto de ejercicio (RPE/METs).
+  /// Si el usuario activó [isManualMacroMode], se respetan sus valores médicos o personalizados.
   static DailyMacroTargets compute({
     required UserProfile profile,
     double? currentWeightKg,
     int netWorkoutKcal = 0,
+    int lutealCaloricSurgeKcal = 0,
   }) {
     final double ageYears = BiometricFormulas.calculateDynamicAge(profile.birthDate);
     final bool isMale = profile.biologicalSex == 'male';
     final double refWeight = currentWeightKg ?? profile.targetWeightKg;
+
+    // 1. Caso Especial: Modo Manual / Prescripción Médica o Deportiva
+    if (profile.isManualMacroMode && profile.manualKcalTarget != null) {
+      final int manualKcal = profile.manualKcalTarget!;
+      final double manualProtein = (profile.manualProteinG ?? (profile.targetWeightKg * 2.0)).toDouble();
+      final double manualCarbs = (profile.manualCarbsG ?? 150).toDouble();
+      final double manualFat = (profile.manualFatG ?? 50).toDouble();
+      final double fiberG = ((manualKcal / 1000.0) * 14.0).clamp(20.0, 45.0);
+
+      return DailyMacroTargets(
+        baseTdeeKcal: manualKcal,
+        goalAdjustmentKcal: 0,
+        netWorkoutKcal: netWorkoutKcal,
+        effectiveCalorieTargetKcal: manualKcal + netWorkoutKcal,
+        proteinTargetG: manualProtein,
+        carbsTargetG: manualCarbs,
+        fatTargetG: manualFat,
+        fiberTargetG: double.parse(fiberG.toStringAsFixed(0)),
+        sodiumTargetMg: 2300.0,
+        potassiumTargetMg: 3500.0,
+        magnesiumTargetMg: isMale ? 420.0 : 320.0,
+      );
+    }
 
     final double minSafeBmr = ((10.0 * refWeight) +
             (6.25 * profile.heightCm) -
@@ -101,10 +126,22 @@ abstract final class DailyTargetsCalculator {
         .clamp(1100.0, 2600.0);
 
     final int baseTdee = profile.currentAdaptiveTdeeKcal;
-    final int goalAdjustment =
-        ((profile.weeklyGoalRateKg * AppConstants.kcalPerKgBodyFat) / 7.0).round();
 
-    final int rawTarget = baseTdee + goalAdjustment + netWorkoutKcal;
+    // 2. Ajuste según Fase de Dieta activa
+    final int goalAdjustment;
+    if (profile.activeDietPhase == 'maintenance' || profile.activeDietPhase == 'diet_break') {
+      // Normocalórica para consolidación o descanso metabólico
+      goalAdjustment = 0;
+    } else if (profile.activeDietPhase == 'reverse_diet') {
+      // Salida guiada de déficit: ligero paso intermedio hacia normocalórica
+      goalAdjustment = -100;
+    } else {
+      // Déficit o superávit programado estándar
+      goalAdjustment =
+          ((profile.weeklyGoalRateKg * AppConstants.kcalPerKgBodyFat) / 7.0).round();
+    }
+
+    final int rawTarget = baseTdee + goalAdjustment + netWorkoutKcal + lutealCaloricSurgeKcal;
     final int effectiveKcal = math.max(minSafeBmr.round(), rawTarget);
 
     // Proteína prioritaria para preservar masa muscular (2.0 g por kg peso objetivo)
