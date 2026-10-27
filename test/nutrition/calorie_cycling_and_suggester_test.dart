@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nb_selfcare/core/database/app_database.dart';
+import 'package:nb_selfcare/core/domain/enums.dart';
 import 'package:nb_selfcare/core/services/calorie_cycling_service.dart';
 import 'package:nb_selfcare/core/services/smart_meal_suggester.dart';
 
@@ -99,12 +100,12 @@ void main() {
         expect(arch.proteinPct + arch.carbsPct + arch.fatPct, 100.0);
       }
 
-      final DietArchetypeInfo keto = DietArchetypeInfo.getById('keto');
+      final DietArchetypeInfo keto = DietArchetypeInfo.getById(DietArchetype.keto);
       expect(keto.carbsPct, 5.0);
       expect(keto.fatPct, 70.0);
       expect(keto.proteinPct, 25.0);
 
-      final DietArchetypeInfo med = DietArchetypeInfo.getById('mediterranean');
+      final DietArchetypeInfo med = DietArchetypeInfo.getById(DietArchetype.mediterranean);
       expect(med.carbsPct, 50.0);
       expect(med.fatPct, 30.0);
       expect(med.proteinPct, 20.0);
@@ -115,7 +116,7 @@ void main() {
         const FoodItem(
           id: 1,
           name: 'Pechuga de pollo a la plancha',
-          source: 'test',
+          source: FoodSource.userCustom,
           defaultServingGrams: 150.0,
           servingLabel: 'Porción',
           kcalPer100g: 165.0,
@@ -139,7 +140,7 @@ void main() {
         const FoodItem(
           id: 2,
           name: 'Arroz blanco cocido',
-          source: 'test',
+          source: FoodSource.userCustom,
           defaultServingGrams: 150.0,
           servingLabel: 'Taza',
           kcalPer100g: 130.0,

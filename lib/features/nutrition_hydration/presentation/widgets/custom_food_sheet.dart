@@ -6,12 +6,16 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 
+import '../../../../core/clock/clock.dart';
 import '../../../../core/database/app_database.dart';
-import '../../../../core/database/daos/food_dao.dart';
+import '../../../../core/domain/enums.dart';
+import '../../../../core/l10n/l10n.dart';
 import '../../../../core/services/nutrition_label_ocr_service.dart';
 import '../../../../shared/theme/sc_colors.dart';
 import '../../../../shared/theme/sc_theme.dart';
 import '../../../../shared/widgets/app_icons.dart';
+import '../../application/food_catalog_service.dart';
+import 'custom_food_extras.dart';
 
 /// Subpágina guiada para crear alimentos propios o productos locales sin código en caché.
 class CustomFoodSheet extends ConsumerStatefulWidget {
@@ -121,8 +125,8 @@ class _CustomFoodSheetState extends ConsumerState<CustomFoodSheet> {
 
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Analizando tabla nutricional con OCR local... 🔍'),
+        SnackBar(
+          content: Text(context.l10n.foodAnalizandoTablaNutricionalConOcr),
         ),
       );
 
@@ -158,15 +162,15 @@ class _CustomFoodSheetState extends ConsumerState<CustomFoodSheet> {
         }
         setState(() {});
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('¡Macronutrientes detectados y rellenados! 🎯'),
+          SnackBar(
+            content: Text(context.l10n.foodMacronutrientesDetectadosYRellenados),
           ),
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
+          SnackBar(
             content: Text(
-              'No se detectaron valores claros. Intenta con mejor iluminación o encuadre.',
+              context.l10n.foodNoSeDetectaronValoresClaros,
             ),
           ),
         );
@@ -174,7 +178,7 @@ class _CustomFoodSheetState extends ConsumerState<CustomFoodSheet> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error al escanear: $e')),
+          SnackBar(content: Text(context.l10n.foodErrorAlEscanear((e).toString()))),
         );
       }
     } finally {
@@ -238,8 +242,6 @@ class _CustomFoodSheetState extends ConsumerState<CustomFoodSheet> {
     unawaited(HapticFeedback.mediumImpact());
 
     try {
-      final FoodDao foodDao = ref.read(foodDaoProvider);
-
       final String name = _nameController.text.trim();
       final String brand = _brandController.text.trim();
       final String barcode = _barcodeController.text.trim();
@@ -273,7 +275,7 @@ class _CustomFoodSheetState extends ConsumerState<CustomFoodSheet> {
             brand.isEmpty ? const drift.Value.absent() : drift.Value(brand),
         barcode:
             barcode.isEmpty ? const drift.Value.absent() : drift.Value(barcode),
-        source: const drift.Value('user_custom'),
+        source: const drift.Value(FoodSource.userCustom),
         nutriScore: _selectedNutriScore == null
             ? const drift.Value.absent()
             : drift.Value(_selectedNutriScore),
@@ -289,11 +291,10 @@ class _CustomFoodSheetState extends ConsumerState<CustomFoodSheet> {
         potassiumMgPer100g: drift.Value(potassium),
         magnesiumMgPer100g: drift.Value(magnesium),
         isFavorite: const drift.Value(true),
-        lastUsedAt: drift.Value(DateTime.now()),
+        lastUsedAt: drift.Value(ref.read(clockProvider).now()),
       );
 
-      final int newId = await foodDao.insertFood(companion);
-      final FoodItem? created = await foodDao.getById(newId);
+      final FoodItem? created = await ref.read(foodCatalogServiceProvider).createFood(companion);
 
       if (!mounted) return;
       Navigator.of(context).pop(created);
@@ -301,7 +302,7 @@ class _CustomFoodSheetState extends ConsumerState<CustomFoodSheet> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('No se pudo guardar el alimento: $e'),
+          content: Text(context.l10n.foodNoSePudoGuardarEl((e).toString())),
         ),
       );
     } finally {
@@ -355,7 +356,7 @@ class _CustomFoodSheetState extends ConsumerState<CustomFoodSheet> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: <Widget>[
                           Text(
-                            'Crear alimento propio',
+                            context.l10n.foodCrearAlimentoPropio,
                             softWrap: true,
                             style: TextStyle(
                               fontFamily: ScFonts.display,
@@ -366,7 +367,7 @@ class _CustomFoodSheetState extends ConsumerState<CustomFoodSheet> {
                           ),
                           const SizedBox(height: 2),
                           Text(
-                            'Se guarda como favorito en tu catálogo offline',
+                            context.l10n.foodSeGuardaComoFavoritoEn,
                             softWrap: true,
                             style: TextStyle(
                               fontFamily: ScFonts.ui,
@@ -378,7 +379,7 @@ class _CustomFoodSheetState extends ConsumerState<CustomFoodSheet> {
                       ),
                     ),
                     IconButton(
-                      tooltip: 'Cerrar',
+                      tooltip: context.l10n.commonClose,
                       onPressed: () => Navigator.of(context).pop(),
                       icon: Icon(AppIcons.close, color: c.text2),
                     ),
@@ -412,8 +413,7 @@ class _CustomFoodSheetState extends ConsumerState<CustomFoodSheet> {
                           ),
                     label: Text(
                       _isScanningOcr
-                          ? 'Analizando tabla con OCR...'
-                          : 'Escanear Tabla Nutricional con Cámara (OCR)',
+                          ? context.l10n.foodAnalizandoTablaConOcr: context.l10n.foodEscanearTablaNutricionalConCamara,
                       style: TextStyle(
                         fontFamily: ScFonts.ui,
                         fontSize: 12.5,
@@ -450,7 +450,7 @@ class _CustomFoodSheetState extends ConsumerState<CustomFoodSheet> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: <Widget>[
                             Text(
-                              '${_effectiveKcal.round()} kcal / 100 g',
+                              context.l10n.foodKcal100G(_effectiveKcal.round().toString()),
                               softWrap: true,
                               style: TextStyle(
                                 fontFamily: ScFonts.display,
@@ -460,7 +460,7 @@ class _CustomFoodSheetState extends ConsumerState<CustomFoodSheet> {
                               ),
                             ),
                             Text(
-                              'P ${_liveProtein.toStringAsFixed(0)}g · C ${_liveCarbs.toStringAsFixed(0)}g · G ${_liveFat.toStringAsFixed(0)}g',
+                              context.l10n.foodPGCGG(_liveProtein.toStringAsFixed(0).toString(), _liveCarbs.toStringAsFixed(0).toString(), _liveFat.toStringAsFixed(0).toString()),
                               softWrap: true,
                               style: TextStyle(
                                 fontFamily: ScFonts.ui,
@@ -478,7 +478,7 @@ class _CustomFoodSheetState extends ConsumerState<CustomFoodSheet> {
                             visualDensity: VisualDensity.compact,
                           ),
                           child: Text(
-                            'Auto ${_formula449Kcal.round()} kcal',
+                            context.l10n.foodAutoKcal(_formula449Kcal.round().toString()),
                             style: TextStyle(
                               fontFamily: ScFonts.ui,
                               fontSize: 12,
@@ -498,8 +498,8 @@ class _CustomFoodSheetState extends ConsumerState<CustomFoodSheet> {
                   controller: _nameController,
                   textCapitalization: TextCapitalization.sentences,
                   decoration: InputDecoration(
-                    labelText: 'Nombre del alimento o receta *',
-                    hintText: 'Ej. Arepa de maíz asada',
+                    labelText: context.l10n.foodNombreDelAlimentoOReceta,
+                    hintText: context.l10n.foodEjArepaDeMaizAsada,
                     filled: true,
                     fillColor: c.bg3,
                     border: OutlineInputBorder(
@@ -508,7 +508,7 @@ class _CustomFoodSheetState extends ConsumerState<CustomFoodSheet> {
                   ),
                   validator: (String? val) {
                     if (val == null || val.trim().isEmpty) {
-                      return 'Escribe un nombre descriptivo';
+                      return context.l10n.foodEscribeUnNombreDescriptivo;
                     }
                     return null;
                   },
@@ -521,8 +521,8 @@ class _CustomFoodSheetState extends ConsumerState<CustomFoodSheet> {
                         controller: _brandController,
                         textCapitalization: TextCapitalization.words,
                         decoration: InputDecoration(
-                          labelText: 'Marca (opcional)',
-                          hintText: 'Ej. Casero',
+                          labelText: context.l10n.foodMarcaOpcional,
+                          hintText: context.l10n.foodEjCasero,
                           filled: true,
                           fillColor: c.bg3,
                           border: OutlineInputBorder(
@@ -533,9 +533,9 @@ class _CustomFoodSheetState extends ConsumerState<CustomFoodSheet> {
                     ),
                     const SizedBox(width: 10),
                     Expanded(
-                      child: _NumericInputField(
+                      child: CustomFoodNumberField(
                         controller: _servingGramsController,
-                        label: 'Porción base (g)',
+                        label: context.l10n.foodPorcionBaseG,
                       ),
                     ),
                   ],
@@ -547,8 +547,8 @@ class _CustomFoodSheetState extends ConsumerState<CustomFoodSheet> {
                       child: TextFormField(
                         controller: _servingLabelController,
                         decoration: InputDecoration(
-                          labelText: 'Etiqueta de porción',
-                          hintText: 'Ej. 1 unidad, 1 taza',
+                          labelText: context.l10n.foodEtiquetaDePorcion,
+                          hintText: context.l10n.foodEj1Unidad1Taza,
                           filled: true,
                           fillColor: c.bg3,
                           border: OutlineInputBorder(
@@ -565,7 +565,7 @@ class _CustomFoodSheetState extends ConsumerState<CustomFoodSheet> {
                           controller: _barcodeController,
                           keyboardType: TextInputType.number,
                           decoration: InputDecoration(
-                            labelText: 'Código EAN',
+                            labelText: context.l10n.foodCodigoEan,
                             filled: true,
                             fillColor: c.bg3,
                             border: OutlineInputBorder(
@@ -582,7 +582,7 @@ class _CustomFoodSheetState extends ConsumerState<CustomFoodSheet> {
 
                 // 2. Macronutrientes por 100g (cuadrícula 2×2 sin etiquetas cortadas)
                 Text(
-                  'Valores por cada 100 g',
+                  context.l10n.foodValoresPorCada100G,
                   style: TextStyle(
                     fontFamily: ScFonts.display,
                     fontSize: 15,
@@ -592,7 +592,7 @@ class _CustomFoodSheetState extends ConsumerState<CustomFoodSheet> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'Si dejas calorías vacío, se calcula automáticamente con 4-4-9.',
+                  context.l10n.foodSiDejasCaloriasVacioSe,
                   softWrap: true,
                   style: TextStyle(
                     fontFamily: ScFonts.ui,
@@ -604,9 +604,9 @@ class _CustomFoodSheetState extends ConsumerState<CustomFoodSheet> {
                 Row(
                   children: <Widget>[
                     Expanded(
-                      child: _NumericInputField(
+                      child: CustomFoodNumberField(
                         controller: _kcalController,
-                        label: 'Calorías (kcal)',
+                        label: context.l10n.foodCaloriasKcal,
                         hint: _formula449Kcal > 0
                             ? '${_formula449Kcal.round()}'
                             : '0',
@@ -614,9 +614,9 @@ class _CustomFoodSheetState extends ConsumerState<CustomFoodSheet> {
                     ),
                     const SizedBox(width: 10),
                     Expanded(
-                      child: _NumericInputField(
+                      child: CustomFoodNumberField(
                         controller: _proteinController,
-                        label: 'Proteína (g)',
+                        label: context.l10n.foodProteinaG,
                       ),
                     ),
                   ],
@@ -625,16 +625,16 @@ class _CustomFoodSheetState extends ConsumerState<CustomFoodSheet> {
                 Row(
                   children: <Widget>[
                     Expanded(
-                      child: _NumericInputField(
+                      child: CustomFoodNumberField(
                         controller: _carbsController,
-                        label: 'Carbohidratos (g)',
+                        label: context.l10n.foodCarbohidratosG,
                       ),
                     ),
                     const SizedBox(width: 10),
                     Expanded(
-                      child: _NumericInputField(
+                      child: CustomFoodNumberField(
                         controller: _fatController,
-                        label: 'Grasas (g)',
+                        label: context.l10n.foodGrasasG,
                       ),
                     ),
                   ],
@@ -643,16 +643,16 @@ class _CustomFoodSheetState extends ConsumerState<CustomFoodSheet> {
                 Row(
                   children: <Widget>[
                     Expanded(
-                      child: _NumericInputField(
+                      child: CustomFoodNumberField(
                         controller: _fiberController,
-                        label: 'Fibra (g)',
+                        label: context.l10n.foodFibraG,
                       ),
                     ),
                     const SizedBox(width: 10),
                     Expanded(
-                      child: _NumericInputField(
+                      child: CustomFoodNumberField(
                         controller: _sugarController,
-                        label: 'Azúcares (g)',
+                        label: context.l10n.foodAzucaresG,
                       ),
                     ),
                   ],
@@ -660,127 +660,17 @@ class _CustomFoodSheetState extends ConsumerState<CustomFoodSheet> {
 
                 const SizedBox(height: 14),
 
-                // 3. Sección expandible: Electrolitos, Código de Barras y Nutri-Score
-                InkWell(
-                  borderRadius: BorderRadius.circular(14),
-                  onTap: () {
-                    unawaited(HapticFeedback.selectionClick());
-                    setState(() => _showAdvanced = !_showAdvanced);
-                  },
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 14,
-                      vertical: 12,
-                    ),
-                    decoration: BoxDecoration(
-                      color: c.bg3,
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(
-                        color: c.isFlat ? c.line2 : c.line,
-                      ),
-                    ),
-                    child: Row(
-                      children: <Widget>[
-                        Icon(AppIcons.bolt, size: 18, color: c.accent),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            'Electrolitos, EAN y Nutri-Score (opcional)',
-                            softWrap: true,
-                            style: TextStyle(
-                              fontFamily: ScFonts.ui,
-                              fontSize: 13,
-                              fontWeight: FontWeight.w700,
-                              color: c.text,
-                            ),
-                          ),
-                        ),
-                        Icon(
-                          _showAdvanced
-                              ? Icons.keyboard_arrow_up_rounded
-                              : Icons.keyboard_arrow_down_rounded,
-                          color: c.text2,
-                        ),
-                      ],
-                    ),
-                  ),
+                // 3. Minerales, código de barras y Nutri-Score (opcional)
+                CustomFoodExtras(
+                  sodiumController: _sodiumController,
+                  potassiumController: _potassiumController,
+                  magnesiumController: _magnesiumController,
+                  barcodeController: _barcodeController,
+                  nutriScore: _selectedNutriScore,
+                  onNutriScore: (String? grade) => setState(() => _selectedNutriScore = grade),
+                  expanded: _showAdvanced,
+                  onToggle: () => setState(() => _showAdvanced = !_showAdvanced),
                 ),
-
-                if (_showAdvanced) ...<Widget>[
-                  const SizedBox(height: 12),
-                  Row(
-                    children: <Widget>[
-                      Expanded(
-                        child: _NumericInputField(
-                          controller: _sodiumController,
-                          label: 'Sodio (mg / 100g)',
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: _NumericInputField(
-                          controller: _potassiumController,
-                          label: 'Potasio (mg / 100g)',
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 10),
-                  Row(
-                    children: <Widget>[
-                      Expanded(
-                        child: _NumericInputField(
-                          controller: _magnesiumController,
-                          label: 'Magnesio (mg / 100g)',
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: TextFormField(
-                          controller: _barcodeController,
-                          keyboardType: TextInputType.number,
-                          decoration: InputDecoration(
-                            labelText: 'Código EAN (opcional)',
-                            filled: true,
-                            fillColor: c.bg3,
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(14),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    'Nutri-Score (si aparece en el envase)',
-                    style: TextStyle(
-                      fontFamily: ScFonts.ui,
-                      fontSize: 12.5,
-                      fontWeight: FontWeight.w700,
-                      color: c.text2,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: const <String>['A', 'B', 'C', 'D', 'E']
-                        .map((String grade) {
-                      final bool active = _selectedNutriScore == grade;
-                      return ChoiceChip(
-                        label: Text('Grado $grade'),
-                        selected: active,
-                        onSelected: (bool v) {
-                          unawaited(HapticFeedback.selectionClick());
-                          setState(() {
-                            _selectedNutriScore = v ? grade : null;
-                          });
-                        },
-                      );
-                    }).toList(),
-                  ),
-                ],
 
                 const SizedBox(height: 22),
 
@@ -809,8 +699,7 @@ class _CustomFoodSheetState extends ConsumerState<CustomFoodSheet> {
                         : const Icon(AppIcons.check),
                     label: Text(
                       _isSaving
-                          ? 'Guardando alimento...'
-                          : 'Guardar en mi catálogo',
+                          ? context.l10n.foodGuardandoAlimento: context.l10n.foodGuardarEnMiCatalogo,
                       style: const TextStyle(
                         fontFamily: ScFonts.display,
                         fontSize: 15.5,
@@ -822,40 +711,6 @@ class _CustomFoodSheetState extends ConsumerState<CustomFoodSheet> {
               ],
             ),
           ),
-        ),
-      ),
-    );
-  }
-}
-
-class _NumericInputField extends StatelessWidget {
-  const _NumericInputField({
-    required this.controller,
-    required this.label,
-    this.hint,
-  });
-
-  final TextEditingController controller;
-  final String label;
-  final String? hint;
-
-  @override
-  Widget build(BuildContext context) {
-    final ScColors c = context.sc;
-    return TextFormField(
-      controller: controller,
-      keyboardType: const TextInputType.numberWithOptions(decimal: true),
-      decoration: InputDecoration(
-        labelText: label,
-        hintText: hint,
-        filled: true,
-        fillColor: c.bg3,
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: 12,
-          vertical: 13,
-        ),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
         ),
       ),
     );

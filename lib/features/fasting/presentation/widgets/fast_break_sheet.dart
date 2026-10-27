@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+import '../../../../core/l10n/l10n.dart';
 import '../../../../core/services/fasting_dosage_advisor.dart';
 import '../../../../shared/theme/sc_colors.dart';
 import '../../../../shared/theme/sc_theme.dart';
@@ -39,7 +41,7 @@ class FastBreakSheet extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: c.isFlat ? c.line2 : c.accent.withValues(alpha: 0.15),
+                    color: c.isFlat ? c.bg3 : c.accent.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Icon(
@@ -54,7 +56,7 @@ class FastBreakSheet extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: <Widget>[
                       Text(
-                        'Ruptura Segura de Ayuno',
+                        context.l10n.fastingRupturaSeguraDeAyuno,
                         style: TextStyle(
                           fontFamily: ScFonts.display,
                           fontSize: 17,
@@ -63,7 +65,7 @@ class FastBreakSheet extends StatelessWidget {
                         ),
                       ),
                       Text(
-                        'Completaste ${actualHours.toStringAsFixed(1)} horas de ayuno metabólico',
+                        context.l10n.fastingCompletasteHorasDeAyunoMetabolico(actualHours.toStringAsFixed(1).toString()),
                         style: TextStyle(
                           fontFamily: ScFonts.ui,
                           fontSize: 12,
@@ -98,7 +100,7 @@ class FastBreakSheet extends StatelessWidget {
                   const SizedBox(width: 10),
                   Expanded(
                     child: Text(
-                      'Tras un reposo digestivo prolongado, tu microbiota y enzimas estomacales necesitan una activación gradual para evitar picos abruptos de glucosa o pesadez.',
+                      context.l10n.fastingTrasUnReposoDigestivoProlongado,
                       style: TextStyle(
                         fontFamily: ScFonts.ui,
                         fontSize: 12.5,
@@ -123,7 +125,7 @@ class FastBreakSheet extends StatelessWidget {
               width: double.infinity,
               child: FilledButton(
                 onPressed: () => Navigator.of(context).pop(),
-                child: const Text('Entendido, ¡a disfrutar con salud!'),
+                child: Text(context.l10n.fastingEntendidoADisfrutarConSalud),
               ),
             ),
           ],
@@ -190,7 +192,7 @@ class _StageCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
-                  color: c.isFlat ? c.line2 : c.soft,
+                  color: c.isFlat ? c.bg3 : c.soft,
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(

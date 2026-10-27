@@ -8,6 +8,8 @@ import 'package:nb_selfcare/core/database/app_database.dart';
 import 'package:nb_selfcare/core/database/daos/body_measurements_dao.dart';
 import 'package:nb_selfcare/core/database/daos/pet_dao.dart';
 import 'package:nb_selfcare/core/database/daos/user_profile_dao.dart';
+import 'package:nb_selfcare/core/domain/enums.dart';
+import 'package:nb_selfcare/core/l10n/l10n.dart';
 import 'package:nb_selfcare/features/body_metrics/presentation/cuerpo_screen.dart';
 import 'package:nb_selfcare/shared/theme/sc_theme.dart';
 import 'package:nb_selfcare/shared/utils/date_time_extensions.dart';
@@ -24,7 +26,7 @@ void main() {
       UserProfilesCompanion(
         name: const drift.Value('Nathan'),
         birthDate: drift.Value(DateTime(1998, 5, 20)),
-        biologicalSex: const drift.Value('male'),
+        biologicalSex: const drift.Value(BiologicalSex.male),
         heightCm: const drift.Value(178.0),
         targetWeightKg: const drift.Value(72.0),
         weeklyGoalRateKg: const drift.Value(-0.5),
@@ -59,6 +61,9 @@ void main() {
           appDatabaseProvider.overrideWithValue(db),
         ],
         child: MaterialApp(
+          locale: const Locale('es'),
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
           theme: ScTheme.build('samsung_dark'),
           home: const CuerpoScreen(),
         ),
@@ -68,7 +73,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byType(CuerpoScreen), findsOneWidget);
-    expect(find.text('Composición Corporal'), findsOneWidget);
+    expect(find.text('Composición corporal'), findsOneWidget);
 
     // Abrir diálogo de pesaje manual
     final manualWeighBtn = find.text('Manual');
@@ -76,7 +81,7 @@ void main() {
     await tester.tap(manualWeighBtn);
     await tester.pumpAndSettle();
 
-    expect(find.text('Pesaje Manual'), findsOneWidget);
+    expect(find.text('Pesaje manual'), findsOneWidget);
 
     // Guardar pesaje de 70.0 kg
     final saveBtn = find.text('Guardar');
@@ -84,7 +89,7 @@ void main() {
     await tester.pumpAndSettle();
 
     // Verificar que la medición se guardó en Drift con derivación de 13 métricas
-    final measurements = await BodyMeasurementsDao(db, PetDao(db)).getLatestMeasurement();
+    final measurements = await BodyMeasurementsDao(db).getLatestMeasurement();
     expect(measurements, isNotNull);
     expect(measurements!.weightKg, equals(70.0));
     expect(measurements.bmi, greaterThan(20.0));
@@ -117,7 +122,7 @@ void main() {
     await tester.pumpAndSettle();
 
     // En HoyScreen tocar el botón embebido Entreno 5s de la tarjeta de Entrenamiento
-    final entrenarBtn = find.text('Entreno 5s');
+    final entrenarBtn = find.text('Registrar');
     await tester.scrollUntilVisible(
       entrenarBtn,
       250,
@@ -128,10 +133,10 @@ void main() {
     await tester.tap(entrenarBtn);
     await tester.pumpAndSettle();
 
-    expect(find.text('Entrenamiento en 5 Segundos'), findsOneWidget);
+    expect(find.text('Registrar entrenamiento'), findsWidgets);
 
     // Guardar entrenamiento de 45 min
-    final submitBtn = find.text('Registrar en 5 segundos');
+    final submitBtn = find.text('Guardar');
     await tester.tap(submitBtn);
     await tester.pumpAndSettle();
 
@@ -153,7 +158,7 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
 
     // Insertar serie de 3 pesajes para trazar la línea
-    final dao = BodyMeasurementsDao(db, PetDao(db));
+    final dao = BodyMeasurementsDao(db);
     final now = DateTime.now();
 
     for (int i = 3; i >= 1; i--) {
@@ -161,7 +166,7 @@ void main() {
         BodyMeasurementsCompanion.insert(
           measuredAt: drift.Value(now.subtract(Duration(days: i))),
           dateKey: now.subtract(Duration(days: i)).dateKey,
-          source: 'mi_scale_2_ble',
+          source: MeasurementSource.miScale2Ble,
           weightKg: 73.0 - (i * 0.5),
           trendWeightKg: 73.0 - (i * 0.4),
           bmi: 23.0,
@@ -178,6 +183,9 @@ void main() {
           appDatabaseProvider.overrideWithValue(db),
         ],
         child: MaterialApp(
+          locale: const Locale('es'),
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
           theme: ScTheme.build('samsung_dark'),
           home: const CuerpoScreen(),
         ),
@@ -187,16 +195,16 @@ void main() {
     await tester.pumpAndSettle();
 
     // Debe mostrar la tarjeta de Evolución Temporal
-    expect(find.text('Evolución Temporal'), findsOneWidget);
-    expect(find.text('Peso & Tendencia'), findsOneWidget);
-    expect(find.text('% Grasa'), findsOneWidget);
+    expect(find.text('Evolución'), findsOneWidget);
+    expect(find.text('Peso'), findsOneWidget);
+    expect(find.text('Grasa'), findsOneWidget);
 
     // Conmutar a % Grasa
-    final fatMetricBtn = find.text('% Grasa');
+    final fatMetricBtn = find.text('Grasa');
     await tester.tap(fatMetricBtn);
     await tester.pumpAndSettle();
 
-    expect(find.text('Evolución Temporal'), findsOneWidget);
+    expect(find.text('Evolución'), findsOneWidget);
 
     await tester.pumpWidget(const SizedBox());
     await tester.pump(const Duration(milliseconds: 100));
@@ -207,13 +215,13 @@ void main() {
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);
 
-    final dao = BodyMeasurementsDao(db, PetDao(db));
+    final dao = BodyMeasurementsDao(db);
     final now = DateTime.now();
     await dao.insertMeasurement(
       BodyMeasurementsCompanion.insert(
         measuredAt: drift.Value(now),
         dateKey: now.dateKey,
-        source: 'mi_scale_2_ble',
+        source: MeasurementSource.miScale2Ble,
         weightKg: 71.4,
         trendWeightKg: 71.6,
         impedanceOhms: const drift.Value(485),
@@ -238,6 +246,9 @@ void main() {
           appDatabaseProvider.overrideWithValue(db),
         ],
         child: MaterialApp(
+          locale: const Locale('es'),
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
           theme: ScTheme.build('samsung_dark'),
           home: const CuerpoScreen(),
         ),
@@ -247,22 +258,22 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Cuerpo'), findsOneWidget);
-    expect(find.text('71.4'), findsOneWidget);
+    expect(find.textContaining('71.4', findRichText: true), findsWidgets);
 
     // Abrir modal de Cinta US Navy desde la Estación de Pesaje
-    final navyBtn = find.text('Cinta US Navy');
+    final navyBtn = find.text('Cinta métrica');
     expect(navyBtn, findsOneWidget);
     await tester.tap(navyBtn);
     await tester.pumpAndSettle();
 
-    expect(find.text('Validación US Navy (Cinta)'), findsOneWidget);
-    expect(find.text('Guardar validación'), findsOneWidget);
+    expect(find.text('Medidas con cinta'), findsOneWidget);
+    expect(find.text('Guardar medidas'), findsOneWidget);
 
-    await tester.tap(find.text('Guardar validación'));
+    await tester.tap(find.text('Guardar medidas'));
     await tester.pumpAndSettle();
 
     // Desplazar hacia la sección de Composición Corporal
-    final compHead = find.text('Composición Corporal');
+    final compHead = find.text('Composición corporal');
     await tester.scrollUntilVisible(
       compHead,
       150,
@@ -271,7 +282,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(compHead, findsOneWidget);
-    final somatotypeCard = find.text('Atlético Muscular');
+    final somatotypeCard = find.text('Atlético');
     expect(somatotypeCard, findsOneWidget);
     await tester.tap(somatotypeCard);
     await tester.pumpAndSettle();
@@ -281,11 +292,13 @@ void main() {
 
     final closeBtn = find.text('Cerrar');
     expect(closeBtn, findsOneWidget);
+    await tester.ensureVisible(closeBtn);
+    await tester.pumpAndSettle();
     await tester.tap(closeBtn);
     await tester.pumpAndSettle();
 
     // Abrir entrenamiento RPE desde Cuerpo
-    final rpeBtn = find.text('Registrar entrenamiento (5s)');
+    final rpeBtn = find.text('Registrar entrenamiento');
     await tester.scrollUntilVisible(
       rpeBtn,
       250,
@@ -296,7 +309,7 @@ void main() {
     await tester.tap(rpeBtn);
     await tester.pumpAndSettle();
 
-    expect(find.text('Entrenamiento en 5 Segundos'), findsOneWidget);
+    expect(find.text('Registrar entrenamiento'), findsWidgets);
     expect(find.text('Pesas / Fuerza'), findsOneWidget);
     expect(find.text('Moderado'), findsOneWidget);
 
@@ -318,6 +331,9 @@ void main() {
           appDatabaseProvider.overrideWithValue(db),
         ],
         child: MaterialApp(
+          locale: const Locale('es'),
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
           theme: ScTheme.build('nxtpaper_eink'),
           home: const CuerpoScreen(),
         ),
@@ -328,7 +344,7 @@ void main() {
 
     expect(find.text('Cuerpo'), findsOneWidget);
 
-    final compHead = find.text('Composición Corporal');
+    final compHead = find.text('Composición corporal');
     await tester.scrollUntilVisible(
       compHead,
       150,

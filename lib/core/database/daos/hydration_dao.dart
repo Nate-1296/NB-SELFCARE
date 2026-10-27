@@ -1,16 +1,16 @@
 import 'package:drift/drift.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../constants/app_constants.dart';
+import '../../clock/clock.dart';
 import '../app_database.dart';
-import 'pet_dao.dart';
 
 /// DAO especializado en el registro atómico de vasos de agua y sincronización de hidratación.
 class HydrationDao {
-  HydrationDao(this._db, this._petDao);
+  HydrationDao(this._db, {this._clock = const Clock()});
+
+  final Clock _clock;
 
   final AppDatabase _db;
-  final PetDao _petDao;
 
   /// Emite todos los registros individuales de agua del día.
   Stream<List<HydrationLog>> watchLogsForDate(String dateKey) {
@@ -29,40 +29,35 @@ class HydrationDao {
     return query.watchSingle().map((row) => row.read(_db.hydrationLogs.volumeMl.sum()) ?? 0);
   }
 
-  /// Registra un vaso de agua (ej. +250ml, +500ml) de forma atómica.
-  ///
-  /// Si se alcanza la meta de agua del usuario, otorga la recompensa en monedas.
-  Future<int> logGlass({
-    required String dateKey,
-    required int volumeMl,
-    int? dailyGoalMl,
-  }) async {
-    return _db.transaction(() async {
-      final int id = await _db.into(_db.hydrationLogs).insert(
-            HydrationLogsCompanion(
-              dateKey: Value(dateKey),
-              volumeMl: Value(volumeMl),
-              loggedAt: Value(DateTime.now()),
-            ),
-          );
-
-      // Calcular nuevo total acumulado
-      final query = _db.selectOnly(_db.hydrationLogs)
-        ..addColumns([_db.hydrationLogs.volumeMl.sum()])
-        ..where(_db.hydrationLogs.dateKey.equals(dateKey));
-      final int totalMl = (await query.getSingle()).read(_db.hydrationLogs.volumeMl.sum()) ?? 0;
-
-      // Si se alcanzó la meta diaria (ej. 2500ml), otorgar recompensa de +15 monedas
-      if (dailyGoalMl != null && totalMl >= dailyGoalMl) {
-        await _petDao.grantDailyReward(
-          dateKey: dateKey,
-          actionType: 'water_goal',
-          baseAmount: AppConstants.coinsWaterGoal,
+  /// Inserta un vaso de agua (ej. +250ml, +500ml).
+  Future<int> insertGlass({required String dateKey, required int volumeMl}) {
+    return _db.into(_db.hydrationLogs).insert(
+          HydrationLogsCompanion(
+            dateKey: Value(dateKey),
+            volumeMl: Value(volumeMl),
+            loggedAt: Value(_clock.now()),
+          ),
         );
-      }
+  }
 
-      return id;
-    });
+  /// Suma de mililitros registrados en [dateKey].
+  Future<int> getTotalWaterMl(String dateKey) async {
+    final query = _db.selectOnly(_db.hydrationLogs)
+      ..addColumns([_db.hydrationLogs.volumeMl.sum()])
+      ..where(_db.hydrationLogs.dateKey.equals(dateKey));
+    return (await query.getSingle()).read(_db.hydrationLogs.volumeMl.sum()) ?? 0;
+  }
+
+  /// Restaura un vaso eliminado (flujo Deshacer).
+  Future<int> restoreGlass(HydrationLog log) {
+    return _db.into(_db.hydrationLogs).insert(
+          HydrationLogsCompanion(
+            dateKey: Value(log.dateKey),
+            volumeMl: Value(log.volumeMl),
+            loggedAt: Value(log.loggedAt),
+            syncedToHealthConnect: Value(log.syncedToHealthConnect),
+          ),
+        );
   }
 
   /// Elimina un registro de vaso de agua por su ID.
@@ -88,6 +83,5 @@ class HydrationDao {
 /// Provider de Riverpod para inyectar HydrationDao.
 final hydrationDaoProvider = Provider<HydrationDao>((ref) {
   final AppDatabase db = ref.watch(appDatabaseProvider);
-  final PetDao petDao = ref.watch(petDaoProvider);
-  return HydrationDao(db, petDao);
+  return HydrationDao(db, clock: ref.watch(clockProvider));
 });

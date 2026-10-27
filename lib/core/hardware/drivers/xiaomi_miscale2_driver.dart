@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:universal_ble/universal_ble.dart';
 
+import '../../clock/clock.dart';
 import '../../constants/ble_uuids.dart';
 import '../body_scale_driver.dart';
 
@@ -13,7 +14,9 @@ import '../body_scale_driver.dart';
 /// permitiendo capturar peso e impedancia en tiempo real sin emparejamiento invasivo
 /// ni falsos positivos de otros periféricos Bluetooth cercanos.
 class XiaomiMiScale2Driver implements BodyScaleDriver {
-  XiaomiMiScale2Driver();
+  XiaomiMiScale2Driver({this._clock = const Clock()});
+
+  final Clock _clock;
 
   /// Identificador oficial Bluetooth SIG de Huami / Xiaomi Anhui Huami Information Tech.
   static const int huamiCompanyId = 0x0157;
@@ -26,7 +29,7 @@ class XiaomiMiScale2Driver implements BodyScaleDriver {
 
   @override
   ScaleMeasurementEvent? parseRawData(Uint8List rawBytes, String deviceAddress) {
-    return parseRawAdvertisement(rawBytes, deviceAddress);
+    return parseRawAdvertisement(rawBytes, deviceAddress, receivedAt: _clock.now());
   }
 
   /// Extrae de forma estricta la trama de báscula únicamente si proviene del
@@ -74,10 +77,12 @@ class XiaomiMiScale2Driver implements BodyScaleDriver {
   }
 
   /// Decodifica la trama canónica de 13 bytes emitida por la báscula Xiaomi.
+  /// [receivedAt] se usa como marca de tiempo cuando la trama no trae una fecha válida.
   static ScaleMeasurementEvent? parseRawAdvertisement(
     Uint8List rawBytes,
-    String deviceAddress,
-  ) {
+    String deviceAddress, {
+    required DateTime receivedAt,
+  }) {
     if (rawBytes.length < 13) return null;
 
     final int ctrl0 = rawBytes[0];
@@ -116,10 +121,10 @@ class XiaomiMiScale2Driver implements BodyScaleDriver {
           second <= 59) {
         timestamp = DateTime(year, month, day, hour, minute, second);
       } else {
-        timestamp = DateTime.now();
+        timestamp = receivedAt;
       }
     } catch (_) {
-      timestamp = DateTime.now();
+      timestamp = receivedAt;
     }
 
     // Parseo de impedancia en ohmios (Bytes 9 y 10 little-endian)
@@ -192,7 +197,7 @@ class XiaomiMiScale2Driver implements BodyScaleDriver {
         if (payload == null) return;
 
         final ScaleMeasurementEvent? event =
-            parseRawAdvertisement(payload, device.deviceId);
+            parseRawAdvertisement(payload, device.deviceId, receivedAt: _clock.now());
         if (event != null &&
             _scanController != null &&
             !_scanController!.isClosed) {
@@ -234,7 +239,7 @@ class XiaomiMiScale2Driver implements BodyScaleDriver {
 
 /// Provider de Riverpod para inyectar el controlador de la báscula Xiaomi.
 final xiaomiMiScale2DriverProvider = Provider<XiaomiMiScale2Driver>((ref) {
-  final driver = XiaomiMiScale2Driver();
+  final driver = XiaomiMiScale2Driver(clock: ref.watch(clockProvider));
   ref.onDispose(() {
     unawaited(driver.stopScan());
   });

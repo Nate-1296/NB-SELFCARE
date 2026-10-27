@@ -25,6 +25,19 @@ class WorkoutDao {
         .get();
   }
 
+  /// Entrenamientos entre dos fechas (inclusive).
+  Stream<List<WorkoutBlock>> watchWorkoutsBetween(String fromDateKey, String toDateKey) =>
+      _workoutsBetween(fromDateKey, toDateKey).watch();
+
+  Future<List<WorkoutBlock>> getWorkoutsBetween(String fromDateKey, String toDateKey) =>
+      _workoutsBetween(fromDateKey, toDateKey).get();
+
+  SimpleSelectStatement<$WorkoutBlocksTable, WorkoutBlock> _workoutsBetween(String from, String to) {
+    return _db.select(_db.workoutBlocks)
+      ..where((tbl) => tbl.dateKey.isBetweenValues(from, to))
+      ..orderBy([(tbl) => OrderingTerm.asc(tbl.performedAt)]);
+  }
+
   /// Inserta un nuevo bloque de entrenamiento RPE en 5 segundos.
   Future<int> insertWorkout(WorkoutBlocksCompanion companion) {
     return _db.into(_db.workoutBlocks).insert(companion);

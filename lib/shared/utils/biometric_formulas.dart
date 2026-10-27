@@ -39,8 +39,8 @@ class DerivedBiometrics {
 /// la ecuación US Navy, Katch-McArdle y el modelo de TDEE Adaptativo.
 abstract final class BiometricFormulas {
   /// Calcula la edad en años con precisión decimal a partir de la fecha de nacimiento.
-  static double calculateDynamicAge(DateTime birthDate, [DateTime? referenceDate]) {
-    final DateTime target = referenceDate ?? DateTime.now();
+  static double calculateDynamicAge(DateTime birthDate, DateTime referenceDate) {
+    final DateTime target = referenceDate;
     final int days = target.difference(birthDate).inDays;
     return days > 0 ? days / 365.25 : 0.0;
   }
@@ -113,7 +113,7 @@ abstract final class BiometricFormulas {
 
     // Proteína Corporal estimada
     final double rawProtein =
-        (muscleMassKg / weightKg) * 100.0 - (waterPercentage * 0.52);
+        (muscleMassKg / weightKg) * 100.0 - waterPercentage;
     final double proteinPercentage = _clampDouble(rawProtein, 10.0, 26.0);
 
     // Grasa Visceral
@@ -236,7 +236,7 @@ abstract final class BiometricFormulas {
 
     // 6. Porcentaje de Proteína Corporal (Protein %)
     final double rawProtein =
-        (muscleMassKg / weightKg) * 100.0 - (waterPercentage * 0.52);
+        (muscleMassKg / weightKg) * 100.0 - waterPercentage;
     final double proteinPercentage = _clampDouble(rawProtein, 10.0, 26.0);
 
     // 7. Grasa Visceral (Índice 1 - 30)
@@ -415,20 +415,6 @@ abstract final class BiometricFormulas {
 
     final double clampedTdee = _clampDouble(rawCalculatedTdee, minAllowed, maxAllowed);
     return clampedTdee.round();
-  }
-
-  /// Gasto calórico neto de ejercicio descontando el metabolismo basal en reposo (1.0 MET).
-  ///
-  /// Kcal Netas = (MET - 1.0) * Peso * (Minutos / 60)
-  static double calculateNetExerciseCalories({
-    required double met,
-    required double weightKg,
-    required int durationMinutes,
-  }) {
-    final double netMet = met > 1.0 ? met - 1.0 : 0.0;
-    final double hours = durationMinutes / 60.0;
-    final double netKcal = netMet * weightKg * hours;
-    return double.parse(netKcal.toStringAsFixed(1));
   }
 
   // --- MÉTODOS PRIVADOS DE CÁLCULO AUXILIAR ---

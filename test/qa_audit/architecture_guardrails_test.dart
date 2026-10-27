@@ -165,5 +165,106 @@ void main() {
         reason: 'Found explicit untyped "dynamic" declarations in core/shared logic:\n${warnings.join('\n')}',
       );
     });
+
+    test('Guardrail 7: La hora actual solo se obtiene a través de core/clock', () {
+      // La vista animada de Nibi usa el reloj de pared solo para temporizar partículas;
+      // se reemplaza por el motor de animación de Nibi 2.0 (docs/15 Fase 6).
+      const Set<String> allowed = <String>{
+        'lib/core/clock/clock.dart',
+        'lib/features/pet_gamification/presentation/widgets/animated_nibi_view.dart',
+      };
+      final List<String> violations = <String>[];
+      for (final File file in dartFiles) {
+        final String path = file.path.replaceAll(r'\\', '/');
+        if (allowed.contains(path) || path.endsWith('.g.dart')) continue;
+        final List<String> lines = file.readAsLinesSync();
+        for (int i = 0; i < lines.length; i++) {
+          final String line = lines[i].trim();
+          if (line.startsWith('//')) continue;
+          if (line.contains('DateTime.now()')) violations.add('$path:${i + 1} -> $line');
+        }
+      }
+      expect(
+        violations,
+        isEmpty,
+        reason: 'Usa clockProvider / Clock en lugar de DateTime.now():\n${violations.join('\n')}',
+      );
+    });
+
+    test('Guardrail 8: La UI no salta los casos de uso en escrituras con reglas de negocio', () {
+      // Recompensas, cascada biométrica, registro de comida/agua/diario/ayuno y TDEE
+      // pasan siempre por features/*/application (docs/15 §6).
+      const List<String> forbiddenCalls = <String>[
+        '.recordReward(',
+        '.insertMeasurement(',
+        '.saveNavyTapeMeasurement(',
+        '.logFoodItemPortion(',
+        '.logCombo(',
+        '.repeatMealFromYesterday(',
+        '.insertGlass(',
+        '.insertEntry(',
+        '.insertWorkout(',
+        '.startFast(',
+        '.endFast(',
+        '.calibrateFromLast14Days(',
+        '.upsertDailySummary(',
+        '.generateMilestones(',
+      ];
+      final List<String> violations = <String>[];
+      for (final File file in dartFiles) {
+        final String path = file.path.replaceAll(r'\\', '/');
+        if (!path.contains('/presentation/') && !path.startsWith('lib/shared/')) continue;
+        final List<String> lines = file.readAsLinesSync();
+        for (int i = 0; i < lines.length; i++) {
+          if (lines[i].contains('ServiceProvider)')) continue;
+          for (final String call in forbiddenCalls) {
+            if (lines[i].contains(call)) violations.add('$path:${i + 1} -> ${lines[i].trim()}');
+          }
+        }
+      }
+      expect(
+        violations,
+        isEmpty,
+        reason: 'Usa el servicio de application/ correspondiente:\n${violations.join('\n')}',
+      );
+    });
+
+    test('Guardrail 9: core/ y shared/ no dependen de features/', () {
+      final List<String> violations = <String>[];
+      for (final File file in dartFiles) {
+        final String path = file.path.replaceAll(r'\\', '/');
+        if (!path.startsWith('lib/core/') && !path.startsWith('lib/shared/')) continue;
+        if (path.endsWith('.g.dart')) continue;
+        final List<String> lines = file.readAsLinesSync();
+        for (int i = 0; i < lines.length; i++) {
+          final String line = lines[i].trim();
+          if (line.startsWith('import ') && line.contains('features/')) {
+            violations.add('$path:${i + 1} -> $line');
+          }
+        }
+      }
+      expect(violations, isEmpty, reason: violations.join('\n'));
+    });
+
+    test('Guardrail 10: la presentación lee y escribe por application/, nunca por DAOs', () {
+      // Excepción temporal: Nibi y su tienda se reescriben enteros en la Fase 6 (Nibi 2.0).
+      const List<String> pendingRewrite = <String>[
+        'lib/features/pet_gamification/presentation/nibi_screen.dart',
+        'lib/features/pet_gamification/presentation/shop_modal.dart',
+      ];
+      final List<String> violations = <String>[];
+      for (final File file in dartFiles) {
+        final String path = file.path.replaceAll(r'\\', '/');
+        if (!path.contains('/presentation/') || pendingRewrite.contains(path)) continue;
+        final List<String> lines = file.readAsLinesSync();
+        for (int i = 0; i < lines.length; i++) {
+          final String line = lines[i].trim();
+          if (line.startsWith('import ') && line.contains('core/database/daos/')) {
+            violations.add('$path:${i + 1} -> $line');
+          }
+        }
+      }
+      expect(violations, isEmpty, reason: violations.join('\n'));
+    });
   });
 }

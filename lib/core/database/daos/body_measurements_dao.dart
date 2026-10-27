@@ -1,16 +1,14 @@
 import 'package:drift/drift.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../constants/app_constants.dart';
+import '../../domain/enums.dart';
 import '../app_database.dart';
-import 'pet_dao.dart';
 
 /// DAO especializado en el registro y consulta de biometría corporal y báscula BLE.
 class BodyMeasurementsDao {
-  BodyMeasurementsDao(this._db, this._petDao);
+  BodyMeasurementsDao(this._db);
 
   final AppDatabase _db;
-  final PetDao _petDao;
 
   /// Emite la medición biométrica más reciente.
   Stream<BodyMeasurement?> watchLatestMeasurement() {
@@ -23,6 +21,15 @@ class BodyMeasurementsDao {
   /// Obtiene la última medición registrada.
   Future<BodyMeasurement?> getLatestMeasurement() {
     return (_db.select(_db.bodyMeasurements)
+          ..orderBy([(tbl) => OrderingTerm.desc(tbl.measuredAt)])
+          ..limit(1))
+        .getSingleOrNull();
+  }
+
+  /// Último pesaje real (excluye las filas creadas solo para la cinta métrica).
+  Future<BodyMeasurement?> getLatestWeighIn() {
+    return (_db.select(_db.bodyMeasurements)
+          ..where((tbl) => tbl.source.equalsValue(MeasurementSource.navyTape).not())
           ..orderBy([(tbl) => OrderingTerm.desc(tbl.measuredAt)])
           ..limit(1))
         .getSingleOrNull();
@@ -46,22 +53,9 @@ class BodyMeasurementsDao {
     return list.reversed.toList();
   }
 
-  /// Guarda una nueva medición (desde báscula BLE, Health Connect o manual)
-  /// y otorga la recompensa diaria de +15 monedas en el libro mayor.
-  Future<int> insertMeasurement(BodyMeasurementsCompanion companion) async {
-    return _db.transaction(() async {
-      final int id = await _db.into(_db.bodyMeasurements).insert(companion);
-
-      // Otorgar +15 monedas por pesaje diario (con idempotencia garantizada)
-      final String dateKey = companion.dateKey.value;
-      await _petDao.grantDailyReward(
-        dateKey: dateKey,
-        actionType: 'weigh_in',
-        baseAmount: AppConstants.coinsWeighIn,
-      );
-
-      return id;
-    });
+  /// Guarda una nueva medición (desde báscula BLE, Health Connect o manual).
+  Future<int> insertMeasurement(BodyMeasurementsCompanion companion) {
+    return _db.into(_db.bodyMeasurements).insert(companion);
   }
 
   /// Elimina una medición corporal por su ID.
@@ -119,70 +113,72 @@ class BodyMeasurementsDao {
         .get();
   }
 
-  /// Guarda o actualiza las mediciones de cinta métrica (cintura, cuello, cadera)
-  /// y el porcentaje de grasa validado por la fórmula US Navy.
-  Future<void> saveNavyTapeMeasurement({
-    required int? existingMeasurementId,
+  /// % de grasa por bioimpedancia del último pesaje real (excluye filas de cinta).
+  Future<double?> getLatestBiaBodyFat() async {
+    final BodyMeasurement? row = await (_db.select(_db.bodyMeasurements)
+          ..where((tbl) =>
+              tbl.source.equalsValue(MeasurementSource.navyTape).not() & tbl.bodyFatPercentage.isNotNull())
+          ..orderBy([(tbl) => OrderingTerm.desc(tbl.measuredAt)])
+          ..limit(1))
+        .getSingleOrNull();
+    return row?.bodyFatPercentage;
+  }
+
+  /// Guarda las medidas de cinta (cintura, cuello, cadera) y la grasa validada US Navy.
+  ///
+  /// * Si ya hay un pesaje en [dateKey], se completan sus columnas de cinta.
+  /// * Si no, se crea una fila de cinta que arrastra el último peso real y su
+  ///   Peso Tendencia (EMA) sin modificarlos, y **no** otorga monedas de pesaje.
+  /// * Si nunca se ha registrado un peso, no hay peso que arrastrar: devuelve `false`.
+  Future<bool> saveNavyTapeMeasurement({
     required String dateKey,
+    required DateTime measuredAt,
     required double waistCm,
     required double neckCm,
     double? hipCm,
     required double validatedBodyFatPercentage,
     required double navyBodyFatPercentage,
-    required double defaultWeightKg,
-    required double heightCm,
   }) async {
-    if (existingMeasurementId != null) {
-      await (_db.update(_db.bodyMeasurements)
-            ..where((tbl) => tbl.id.equals(existingMeasurementId)))
-          .write(
-        BodyMeasurementsCompanion(
-          waistCm: Value(waistCm),
-          neckCm: Value(neckCm),
-          hipCm: Value(hipCm),
-          validatedBodyFatPercentage: Value(validatedBodyFatPercentage),
-        ),
-      );
-    } else {
-      final double bmi = (heightCm > 0)
-          ? defaultWeightKg / ((heightCm / 100.0) * (heightCm / 100.0))
-          : 22.0;
+    return _db.transaction(() async {
+      final BodyMeasurement? sameDay = await getMeasurementForDate(dateKey);
+      if (sameDay != null) {
+        await (_db.update(_db.bodyMeasurements)..where((tbl) => tbl.id.equals(sameDay.id)))
+            .write(
+          BodyMeasurementsCompanion(
+            waistCm: Value(waistCm),
+            neckCm: Value(neckCm),
+            hipCm: Value(hipCm),
+            validatedBodyFatPercentage: Value(validatedBodyFatPercentage),
+          ),
+        );
+        return true;
+      }
 
-      await insertMeasurement(
-        BodyMeasurementsCompanion.insert(
-          dateKey: dateKey,
-          source: 'manual_navy_tape',
-          weightKg: defaultWeightKg,
-          trendWeightKg: defaultWeightKg,
-          bmi: bmi,
-          bodyFatPercentage: Value(navyBodyFatPercentage),
-          waistCm: Value(waistCm),
-          neckCm: Value(neckCm),
-          hipCm: Value(hipCm),
-          validatedBodyFatPercentage: Value(validatedBodyFatPercentage),
-          measuredAt: Value(DateTime.now()),
-        ),
-      );
-    }
+      final BodyMeasurement? latest = await getLatestMeasurement();
+      if (latest == null) return false;
+
+      await _db.into(_db.bodyMeasurements).insert(
+            BodyMeasurementsCompanion.insert(
+              dateKey: dateKey,
+              measuredAt: Value(measuredAt),
+              source: MeasurementSource.navyTape,
+              weightKg: latest.weightKg,
+              trendWeightKg: latest.trendWeightKg,
+              bmi: latest.bmi,
+              bodyFatPercentage: Value(navyBodyFatPercentage),
+              waistCm: Value(waistCm),
+              neckCm: Value(neckCm),
+              hipCm: Value(hipCm),
+              validatedBodyFatPercentage: Value(validatedBodyFatPercentage),
+            ),
+          );
+      return true;
+    });
   }
 }
 
 /// Provider de Riverpod para inyectar BodyMeasurementsDao.
 final bodyMeasurementsDaoProvider = Provider<BodyMeasurementsDao>((ref) {
   final AppDatabase db = ref.watch(appDatabaseProvider);
-  final PetDao petDao = ref.watch(petDaoProvider);
-  return BodyMeasurementsDao(db, petDao);
-});
-
-/// StreamProvider con la última medición registrada.
-final latestMeasurementStreamProvider = StreamProvider<BodyMeasurement?>((ref) {
-  final BodyMeasurementsDao dao = ref.watch(bodyMeasurementsDaoProvider);
-  return dao.watchLatestMeasurement();
-});
-
-/// StreamProvider con el historial temporal de mediciones corporales para gráficas y tendencias.
-final recentMeasurementsStreamProvider =
-    StreamProvider.autoDispose<List<BodyMeasurement>>((ref) {
-  final BodyMeasurementsDao dao = ref.watch(bodyMeasurementsDaoProvider);
-  return dao.watchRecentMeasurements(limit: 90);
+  return BodyMeasurementsDao(db);
 });

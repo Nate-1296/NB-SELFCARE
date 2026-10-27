@@ -1,30 +1,26 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../../core/database/app_database.dart';
-import '../../../../core/database/daos/body_measurements_dao.dart';
-import '../../../../core/database/daos/food_dao.dart';
-import '../../../../core/database/daos/health_sync_dao.dart';
-import '../../../../core/database/daos/pet_dao.dart';
-import '../../../../core/database/daos/user_profile_dao.dart';
-import '../../../../core/database/daos/workout_dao.dart';
+import '../../../../core/clock/clock.dart';
+import '../../../../core/l10n/l10n.dart';
 import '../../../../shared/theme/sc_colors.dart';
 import '../../../../shared/theme/sc_theme.dart';
 import '../../../../shared/utils/date_time_extensions.dart';
 import '../../../../shared/widgets/app_icons.dart';
 import '../../../../shared/widgets/sheet.dart';
+import '../../../pet_gamification/application/reward_service.dart';
+import '../../../pet_gamification/domain/reward_policy.dart';
+import '../../application/weekly_review.dart';
 
 /// Modal para la ceremonia dominical de reflexión semanal y calibración con Nibi.
 class SundayCheckInSheet extends ConsumerStatefulWidget {
   const SundayCheckInSheet({super.key});
 
   static Future<void> show(BuildContext context) {
-    return mostrarHojaMenu<void>(
-      context,
-      builder: (_) => const SundayCheckInSheet(),
-    );
+    return mostrarHojaMenu<void>(context, builder: (_) => const SundayCheckInSheet());
   }
 
   @override
@@ -40,14 +36,10 @@ class _SundayCheckInSheetState extends ConsumerState<SundayCheckInSheet> {
   @override
   Widget build(BuildContext context) {
     final ScColors c = context.sc;
-    final UserProfile? profile = ref.watch(userProfileStreamProvider).value;
-    final DateTime now = DateTime.now();
+    final DateTime now = ref.read(clockProvider).now();
     final String todayKey = now.dateKey;
 
-    final FoodDao foodDao = ref.watch(foodDaoProvider);
-    final WorkoutDao workoutDao = ref.watch(workoutDaoProvider);
-    final HealthSyncDao healthDao = ref.watch(healthSyncDaoProvider);
-    final BodyMeasurementsDao bodyDao = ref.watch(bodyMeasurementsDaoProvider);
+    final AsyncValue<WeeklyReview> review = ref.watch(weeklyReviewProvider(todayKey));
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
@@ -62,14 +54,10 @@ class _SundayCheckInSheetState extends ConsumerState<SundayCheckInSheet> {
                 Container(
                   padding: const EdgeInsets.all(9),
                   decoration: BoxDecoration(
-                    color: c.isFlat ? c.line2 : c.accent.withValues(alpha: 0.15),
+                    color: c.isFlat ? c.bg3 : c.accent.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(14),
                   ),
-                  child: Icon(
-                    Icons.auto_awesome_rounded,
-                    color: c.accent,
-                    size: 24,
-                  ),
+                  child: Icon(Icons.auto_awesome_rounded, color: c.accent, size: 24),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -77,7 +65,7 @@ class _SundayCheckInSheetState extends ConsumerState<SundayCheckInSheet> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: <Widget>[
                       Text(
-                        'Check-In Dominical con Nibi',
+                        context.l10n.todayCheckInDominicalConNibi,
                         style: TextStyle(
                           fontFamily: ScFonts.display,
                           fontSize: 18,
@@ -86,12 +74,8 @@ class _SundayCheckInSheetState extends ConsumerState<SundayCheckInSheet> {
                         ),
                       ),
                       Text(
-                        '60 segundos para revisar la semana y sincronizar',
-                        style: TextStyle(
-                          fontFamily: ScFonts.ui,
-                          fontSize: 12,
-                          color: c.text2,
-                        ),
+                        context.l10n.today60SegundosParaRevisarLa,
+                        style: TextStyle(fontFamily: ScFonts.ui, fontSize: 12, color: c.text2),
                       ),
                     ],
                   ),
@@ -105,82 +89,92 @@ class _SundayCheckInSheetState extends ConsumerState<SundayCheckInSheet> {
             const SizedBox(height: 16),
 
             // 1. Resumen Fisiológico de los últimos 7 días
-            FutureBuilder<Map<String, dynamic>>(
-              future: _computeWeeklyStats(foodDao, workoutDao, healthDao, bodyDao, profile),
-              builder: (BuildContext context, AsyncSnapshot<Map<String, dynamic>> snap) {
-                if (snap.connectionState == ConnectionState.waiting) {
-                  return const Center(
-                    child: Padding(
-                      padding: EdgeInsets.all(16.0),
-                      child: CircularProgressIndicator(),
-                    ),
-                  );
-                }
-                final Map<String, dynamic> stats = snap.data ?? <String, dynamic>{};
-                final int avgKcal = (stats['avgKcal'] as num?)?.toInt() ?? 0;
-                final int workoutsCount = (stats['workoutsCount'] as num?)?.toInt() ?? 0;
-                final double avgSleep = (stats['avgSleep'] as num?)?.toDouble() ?? 0.0;
-                final double weightDelta = (stats['weightDelta'] as num?)?.toDouble() ?? 0.0;
+            if (review.value case final WeeklyReview stats)
+              Builder(
+                builder: (BuildContext context) {
+                  final int avgKcal = stats.averageKcal;
+                  final int workoutsCount = stats.workoutCount;
+                  final double avgSleep = stats.averageSleepHours;
+                  final double weightDelta = stats.trendWeightDeltaKg ?? 0;
 
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    Container(
-                      padding: const EdgeInsets.all(14),
-                      decoration: BoxDecoration(
-                        color: c.bg3,
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(
-                          color: c.isFlat ? c.line2 : c.line,
-                          width: c.isFlat ? 1.5 : 1.0,
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      Container(
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(
+                          color: c.bg3,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: c.isFlat ? c.line2 : c.line,
+                            width: c.isFlat ? 1.5 : 1.0,
+                          ),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: <Widget>[
+                            Text(
+                              context.l10n.todayPulsoDeLosUltimos7,
+                              style: TextStyle(
+                                fontFamily: ScFonts.ui,
+                                fontSize: 10.5,
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: 0.7,
+                                color: c.accent,
+                              ),
+                            ),
+                            const SizedBox(height: 10),
+                            Row(
+                              children: <Widget>[
+                                _statCell(
+                                  c,
+                                  context.l10n.todayIngestaMedia,
+                                  context.l10n.todayKcalD((avgKcal).toString()),
+                                ),
+                                const SizedBox(width: 8),
+                                _statCell(
+                                  c,
+                                  context.l10n.todayEntrenamientos,
+                                  context.l10n.todaySesiones((workoutsCount).toString()),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            Row(
+                              children: <Widget>[
+                                _statCell(
+                                  c,
+                                  context.l10n.todaySuenoPromedio,
+                                  context.l10n.todayHNoche(avgSleep.toStringAsFixed(1).toString()),
+                                ),
+                                const SizedBox(width: 8),
+                                _statCell(
+                                  c,
+                                  context.l10n.todayDeltaDePeso,
+                                  context.l10n.todayKg(
+                                    (weightDelta >= 0 ? '+' : '').toString(),
+                                    weightDelta.toStringAsFixed(2).toString(),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
                         ),
                       ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: <Widget>[
-                          Text(
-                            'PULSO DE LOS ÚLTIMOS 7 DÍAS',
-                            style: TextStyle(
-                              fontFamily: ScFonts.ui,
-                              fontSize: 10.5,
-                              fontWeight: FontWeight.w800,
-                              letterSpacing: 0.7,
-                              color: c.accent,
-                            ),
-                          ),
-                          const SizedBox(height: 10),
-                          Row(
-                            children: <Widget>[
-                              _statCell(c, 'Ingesta media', '$avgKcal kcal/d'),
-                              const SizedBox(width: 8),
-                              _statCell(c, 'Entrenamientos', '$workoutsCount sesiones'),
-                            ],
-                          ),
-                          const SizedBox(height: 8),
-                          Row(
-                            children: <Widget>[
-                              _statCell(c, 'Sueño promedio', '${avgSleep.toStringAsFixed(1)} h/noche'),
-                              const SizedBox(width: 8),
-                              _statCell(
-                                c,
-                                'Delta de peso',
-                                '${weightDelta >= 0 ? "+" : ""}${weightDelta.toStringAsFixed(2)} kg',
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                );
-              },
-            ),
+                    ],
+                  );
+                },
+              )
+            else
+              const Center(
+                child: Padding(padding: EdgeInsets.all(16.0), child: CircularProgressIndicator()),
+              ),
 
             const SizedBox(height: 18),
 
             // 2. Reflexión Subjetiva (Energía, Hambre, Adherencia)
             Text(
-              '¿Cómo te sentiste esta semana?',
+              context.l10n.todayComoTeSentisteEstaSemana,
               style: TextStyle(
                 fontFamily: ScFonts.display,
                 fontSize: 14.5,
@@ -192,30 +186,30 @@ class _SundayCheckInSheetState extends ConsumerState<SundayCheckInSheet> {
 
             _buildRatingRow(
               c: c,
-              label: 'Nivel de energía y vitalidad',
+              label: context.l10n.todayNivelDeEnergiaYVitalidad,
               value: _energyRating,
-              minLabel: 'Fatiga',
-              maxLabel: 'Óptima',
+              minLabel: context.l10n.todayFatiga,
+              maxLabel: context.l10n.todayOptima,
               onChanged: (val) => setState(() => _energyRating = val),
             ),
             const SizedBox(height: 12),
 
             _buildRatingRow(
               c: c,
-              label: 'Saciedad / Control de apetito',
+              label: context.l10n.todaySaciedadControlDeApetito,
               value: _satietyRating,
-              minLabel: 'Hambre alta',
-              maxLabel: 'Saciado',
+              minLabel: context.l10n.todayHambreAlta,
+              maxLabel: context.l10n.todaySaciado,
               onChanged: (val) => setState(() => _satietyRating = val),
             ),
             const SizedBox(height: 12),
 
             _buildRatingRow(
               c: c,
-              label: 'Adherencia al plan nutricional',
+              label: context.l10n.todayAdherenciaAlPlanNutricional,
               value: _adherenceRating,
-              minLabel: 'Complicada',
-              maxLabel: 'Impecable',
+              minLabel: context.l10n.todayComplicada,
+              maxLabel: context.l10n.todayImpecable,
               onChanged: (val) => setState(() => _adherenceRating = val),
             ),
 
@@ -235,17 +229,14 @@ class _SundayCheckInSheetState extends ConsumerState<SundayCheckInSheet> {
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
-                  const Text(
-                    '🐾',
-                    style: TextStyle(fontSize: 24),
-                  ),
+                  const Text('🐾', style: TextStyle(fontSize: 24)),
                   const SizedBox(width: 10),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: <Widget>[
                         Text(
-                          'Consejo Estratégico de Nibi',
+                          context.l10n.todayConsejoEstrategicoDeNibi,
                           style: TextStyle(
                             fontFamily: ScFonts.display,
                             fontSize: 13.5,
@@ -279,16 +270,20 @@ class _SundayCheckInSheetState extends ConsumerState<SundayCheckInSheet> {
                   ? null
                   : () async {
                       unawaited(HapticFeedback.mediumImpact());
-                      await ref.read(petDaoProvider).grantDailyReward(
-                            dateKey: todayKey,
-                            actionType: 'sunday_checkin',
-                            baseAmount: 15,
-                          );
+                      final RewardGrant grant = await ref
+                          .read(rewardServiceProvider)
+                          .grant(RewardAction.sundayCheckIn, dateKey: todayKey);
                       setState(() => _isCompleted = true);
                       if (context.mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('¡Ceremonia dominical completada! 🎉 +15 monedas Nibi sumadas'),
+                          SnackBar(
+                            content: Text(
+                              grant.granted
+                                  ? context.l10n.todayCeremoniaDominicalCompletadaMonedas(
+                                      grant.coins.toString(),
+                                    )
+                                  : context.l10n.todayCeremoniaDominicalCompletada,
+                            ),
                           ),
                         );
                         await Future<void>.delayed(const Duration(milliseconds: 600));
@@ -297,7 +292,9 @@ class _SundayCheckInSheetState extends ConsumerState<SundayCheckInSheet> {
                     },
               icon: Icon(_isCompleted ? Icons.check_circle_rounded : Icons.star_rounded, size: 20),
               label: Text(
-                _isCompleted ? '¡Completado con Éxito!' : 'Cerrar Semana con Nibi (+15 Monedas)',
+                _isCompleted
+                    ? context.l10n.todayCompletadoConExito
+                    : context.l10n.todayCerrarSemanaConNibi15,
                 style: const TextStyle(
                   fontFamily: ScFonts.display,
                   fontSize: 14.5,
@@ -331,21 +328,14 @@ class _SundayCheckInSheetState extends ConsumerState<SundayCheckInSheet> {
         decoration: BoxDecoration(
           color: c.bg,
           borderRadius: BorderRadius.circular(10),
-          border: Border.all(
-            color: c.isFlat ? c.line2 : c.line,
-            width: c.isFlat ? 1.2 : 1.0,
-          ),
+          border: Border.all(color: c.isFlat ? c.line2 : c.line, width: c.isFlat ? 1.2 : 1.0),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
             Text(
               label,
-              style: TextStyle(
-                fontFamily: ScFonts.ui,
-                fontSize: 10.5,
-                color: c.text3,
-              ),
+              style: TextStyle(fontFamily: ScFonts.ui, fontSize: 10.5, color: c.text3),
             ),
             const SizedBox(height: 2),
             Text(
@@ -376,10 +366,7 @@ class _SundayCheckInSheetState extends ConsumerState<SundayCheckInSheet> {
       decoration: BoxDecoration(
         color: c.bg3,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: c.isFlat ? c.line2 : c.line,
-          width: c.isFlat ? 1.3 : 1.0,
-        ),
+        border: Border.all(color: c.isFlat ? c.line2 : c.line, width: c.isFlat ? 1.3 : 1.0),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -397,7 +384,7 @@ class _SundayCheckInSheetState extends ConsumerState<SundayCheckInSheet> {
                 ),
               ),
               Text(
-                '$value / 5',
+                context.l10n.today5((value).toString()),
                 style: TextStyle(
                   fontFamily: ScFonts.display,
                   fontSize: 12,
@@ -434,8 +421,14 @@ class _SundayCheckInSheetState extends ConsumerState<SundayCheckInSheet> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: <Widget>[
-              Text(minLabel, style: TextStyle(fontFamily: ScFonts.ui, fontSize: 10, color: c.text3)),
-              Text(maxLabel, style: TextStyle(fontFamily: ScFonts.ui, fontSize: 10, color: c.text3)),
+              Text(
+                minLabel,
+                style: TextStyle(fontFamily: ScFonts.ui, fontSize: 10, color: c.text3),
+              ),
+              Text(
+                maxLabel,
+                style: TextStyle(fontFamily: ScFonts.ui, fontSize: 10, color: c.text3),
+              ),
             ],
           ),
         ],
@@ -445,63 +438,14 @@ class _SundayCheckInSheetState extends ConsumerState<SundayCheckInSheet> {
 
   String _getNibiAdvice() {
     if (_energyRating <= 2 && _satietyRating <= 2) {
-      return 'Fatiga acumulada detectada. Nibi te sugiere planear 1 o 2 días de mantenimiento calórico (Diet Break o Refeed) para reponer reservas de glucógeno y normalizar la leptina sin comprometer tu progreso.';
+      return context.l10n.todayFatigaAcumuladaDetectadaNibiTe;
     }
     if (_adherenceRating >= 4 && _energyRating >= 4) {
-      return '¡Semana brillante! El balance metabólico es excelente y tu adherencia es sólida. Mantén este mismo ritmo la próxima semana sin modificar tus variables.';
+      return context.l10n.todaySemanaBrillanteElBalanceMetabolico;
     }
     if (_adherenceRating <= 2) {
-      return 'Semana desafiante en adherencia. Recuerda que la constancia vence a la perfección: utiliza el Calorie Cycling o flexibiliza la ventana de comidas para adaptarlo a tus compromisos reales.';
+      return context.l10n.todaySemanaDesafianteEnAdherenciaRecuerda;
     }
-    return 'Buen ritmo general. Prioriza un descanso profundo esta noche y una buena hidratación para empezar la semana con alta disponibilidad neuromotora.';
-  }
-
-  Future<Map<String, dynamic>> _computeWeeklyStats(
-    FoodDao foodDao,
-    WorkoutDao workoutDao,
-    HealthSyncDao healthDao,
-    BodyMeasurementsDao bodyDao,
-    UserProfile? profile,
-  ) async {
-    final DateTime now = DateTime.now();
-    double totalKcal = 0;
-    int daysWithFood = 0;
-    int totalWorkouts = 0;
-    double totalSleepHours = 0;
-    int daysWithSleep = 0;
-
-    for (int i = 0; i < 7; i++) {
-      final DateTime day = now.subtract(Duration(days: i));
-      final String key = day.dateKey;
-
-      final List<FoodLog> foods = await foodDao.getLogsForDate(key);
-      if (foods.isNotEmpty) {
-        final double kcal = foods.fold<double>(0, (double sum, FoodLog f) => sum + f.totalKcal);
-        totalKcal += kcal;
-        daysWithFood++;
-      }
-
-      final List<WorkoutBlock> workouts = await workoutDao.getWorkoutsForDate(key);
-      totalWorkouts += workouts.length;
-
-      final DailySummary? summary = await healthDao.getSummaryForDate(key);
-      if (summary != null && summary.sleepDurationMinutes > 0) {
-        totalSleepHours += summary.sleepDurationMinutes / 60.0;
-        daysWithSleep++;
-      }
-    }
-
-    final List<BodyMeasurement> recent = await bodyDao.getRecentMeasurements(limit: 7);
-    double weightDelta = 0.0;
-    if (recent.length >= 2) {
-      weightDelta = recent.first.trendWeightKg - recent.last.trendWeightKg;
-    }
-
-    return <String, dynamic>{
-      'avgKcal': daysWithFood > 0 ? (totalKcal / daysWithFood).round() : 0,
-      'workoutsCount': totalWorkouts,
-      'avgSleep': daysWithSleep > 0 ? totalSleepHours / daysWithSleep : 0.0,
-      'weightDelta': weightDelta,
-    };
+    return context.l10n.todayBuenRitmoGeneralPriorizaUn;
   }
 }

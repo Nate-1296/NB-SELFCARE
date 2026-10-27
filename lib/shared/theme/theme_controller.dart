@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/database/app_database.dart';
 import '../../core/database/daos/user_profile_dao.dart';
 import 'sc_theme.dart';
 
@@ -14,8 +15,7 @@ class ThemeController extends Notifier<String> {
   @override
   String build() {
     // Si el perfil ya fue cargado, se usa su tema; de lo contrario el tema por defecto.
-    final profileAsync = ref.watch(userProfileStreamProvider);
-    final userTheme = profileAsync.value?.themeMode;
+    final String? userTheme = ref.watch(_profileThemeKeyProvider).value;
 
     if (userTheme != null && userTheme.isNotEmpty) {
       // Mapear compatibilidad con versiones previas si venían con 'material_you' o 'nxtpaper_eink'
@@ -34,6 +34,15 @@ class ThemeController extends Notifier<String> {
     await userProfileDao.updateThemeMode(key);
   }
 }
+
+/// Clave de tema guardada en el perfil (lectura directa: `shared/` no depende de features).
+final _profileThemeKeyProvider = StreamProvider<String?>((Ref ref) {
+  return ref
+      .watch(userProfileDaoProvider)
+      .watchProfile()
+      .map((UserProfile? profile) => profile?.themeMode)
+      .distinct();
+});
 
 /// Provider reactivo del tema activo (clave identificadora).
 final themeControllerProvider =

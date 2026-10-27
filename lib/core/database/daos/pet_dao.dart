@@ -4,12 +4,15 @@ import 'package:drift/drift.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sqlite3/sqlite3.dart';
 
-import '../../constants/app_constants.dart';
+import '../../clock/clock.dart';
+import '../../domain/streak_policy.dart';
 import '../app_database.dart';
 
 /// DAO especializado en el estado de la mascota Nibi y el libro mayor de monedas.
 class PetDao {
-  PetDao(this._db);
+  PetDao(this._db, {this._clock = const Clock()});
+
+  final Clock _clock;
 
   final AppDatabase _db;
 
@@ -30,36 +33,19 @@ class PetDao {
     return watchPetStatus().map((status) => status?.coinsBalance ?? 0);
   }
 
-  /// Otorga una recompensa en monedas con idempotencia diaria por (dateKey, actionType).
+  /// Registra una recompensa en el libro mayor con idempotencia diaria por
+  /// (`dateKey`, `ledgerKey`) y avanza la racha si es el primer hábito del día.
   ///
-  /// Si ya se otorgó la recompensa para ese día y acción, ignora silenciosamente.
-  /// Si `sleepMultiplier` es `1.0`, verifica si el usuario registró sueño reparador hoy
-  /// (`>= 7.5h` o `REM + Profundo >= 90 min`) para aplicar `1.5x` automáticamente,
-  /// y actualiza la racha diaria de forma positiva al completar el primer hábito del día.
-  Future<bool> grantDailyReward({
+  /// Las reglas (montos, multiplicador de sueño) viven en `RewardPolicy`; este
+  /// método solo persiste. Devuelve `false` si la recompensa ya se había reclamado.
+  Future<bool> recordReward({
     required String dateKey,
-    required String actionType,
-    required int baseAmount,
-    double sleepMultiplier = 1.0,
+    required String ledgerKey,
+    required int amount,
+    double multiplierApplied = 1.0,
   }) async {
     return _db.transaction(() async {
       try {
-        double effectiveMultiplier = sleepMultiplier;
-        if (effectiveMultiplier == 1.0) {
-          final DailySummary? summary = await (_db.select(_db.dailySummaries)
-                ..where((tbl) => tbl.dateKey.equals(dateKey)))
-              .getSingleOrNull();
-          if (summary != null) {
-            final int restorativeMin =
-                summary.sleepDeepMinutes + summary.sleepRemMinutes;
-            if (restorativeMin >= 90 || summary.sleepDurationMinutes >= 450) {
-              effectiveMultiplier = AppConstants.goodSleepMultiplier;
-            }
-          }
-        }
-
-        final int finalAmount = (baseAmount * effectiveMultiplier).ceil();
-
         // Revisar si es la primera recompensa positiva del día para avanzar la racha
         final priorTodayRows = await _db.customSelect(
           'SELECT COUNT(*) AS cnt FROM coin_ledger WHERE date_key = ? AND amount > 0',
@@ -71,9 +57,9 @@ class PetDao {
         await _db.into(_db.coinLedger).insert(
               CoinLedgerCompanion(
                 dateKey: Value(dateKey),
-                actionType: Value(actionType),
-                amount: Value(finalAmount),
-                sleepMultiplierApplied: Value(effectiveMultiplier),
+                actionType: Value(ledgerKey),
+                amount: Value(amount),
+                sleepMultiplierApplied: Value(multiplierApplied),
               ),
             );
 
@@ -85,39 +71,26 @@ class PetDao {
           int nextShields = pet.streakShieldsAvailable;
 
           if (isFirstHabitToday) {
-            final DateTime? parsedDate = DateTime.tryParse(dateKey);
-            if (parsedDate != null && pet.currentStreakDays > 0) {
-              final DateTime y = parsedDate.subtract(const Duration(days: 1));
-              final String yesterdayKey =
-                  '${y.year.toString().padLeft(4, '0')}-${y.month.toString().padLeft(2, '0')}-${y.day.toString().padLeft(2, '0')}';
-
-              final yesterdayRows = await _db.customSelect(
-                'SELECT COUNT(*) AS cnt FROM coin_ledger WHERE date_key = ? AND amount > 0',
-                variables: [Variable.withString(yesterdayKey)],
+            final DateTime? day = DateTime.tryParse(dateKey);
+            if (day != null) {
+              final QueryRow lastActiveRow = await _db.customSelect(
+                'SELECT MAX(date_key) AS last_key FROM coin_ledger '
+                'WHERE date_key < ? AND amount > 0',
+                variables: [Variable.withString(dateKey)],
                 readsFrom: {_db.coinLedger},
               ).getSingle();
-              final bool activeYesterday =
-                  yesterdayRows.read<int>('cnt') > 0;
+              final String? lastKey = lastActiveRow.readNullable<String>('last_key');
 
-              final earlierRows = await _db.customSelect(
-                'SELECT COUNT(*) AS cnt FROM coin_ledger WHERE date_key < ? AND amount > 0',
-                variables: [Variable.withString(yesterdayKey)],
-                readsFrom: {_db.coinLedger},
-              ).getSingle();
-              final bool hadEarlierHistory = earlierRows.read<int>('cnt') > 0;
-
-              if (!activeYesterday && hadEarlierHistory) {
-                if (nextShields > 0) {
-                  nextShields -= 1;
-                } else {
-                  nextStreak = 0;
-                }
-              }
-            }
-
-            nextStreak += 1;
-            if (nextStreak > nextHighest) {
-              nextHighest = nextStreak;
+              final StreakUpdate update = StreakPolicy.onFirstHabitOfDay(
+                day: day,
+                lastActiveDay: lastKey == null ? null : DateTime.tryParse(lastKey),
+                currentStreakDays: pet.currentStreakDays,
+                highestStreakDays: pet.highestStreakDays,
+                shieldsAvailable: pet.streakShieldsAvailable,
+              );
+              nextStreak = update.currentStreakDays;
+              nextHighest = update.highestStreakDays;
+              nextShields = update.shieldsAvailable;
             }
           }
 
@@ -125,7 +98,7 @@ class PetDao {
             ..where((tbl) => tbl.id.equals(pet.id));
           await query.write(
             PetStatusCompanion(
-              coinsBalance: Value(pet.coinsBalance + finalAmount),
+              coinsBalance: Value(pet.coinsBalance + amount),
               currentStreakDays: Value(nextStreak),
               highestStreakDays: Value(nextHighest),
               streakShieldsAvailable: Value(nextShields),
@@ -257,7 +230,7 @@ class PetDao {
     await query.write(
       PetStatusCompanion(
         lastAiGreeting: Value(clean),
-        lastGreetingAt: Value(DateTime.now()),
+        lastGreetingAt: Value(_clock.now()),
       ),
     );
   }
@@ -288,11 +261,5 @@ class PetDao {
 /// Provider de Riverpod para inyectar PetDao.
 final petDaoProvider = Provider<PetDao>((ref) {
   final AppDatabase db = ref.watch(appDatabaseProvider);
-  return PetDao(db);
-});
-
-/// StreamProvider que expone el estado de la mascota a la UI.
-final petStatusStreamProvider = StreamProvider<PetStatusData?>((ref) {
-  final PetDao dao = ref.watch(petDaoProvider);
-  return dao.watchPetStatus();
+  return PetDao(db, clock: ref.watch(clockProvider));
 });

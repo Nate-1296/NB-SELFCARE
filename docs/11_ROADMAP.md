@@ -2,6 +2,8 @@
 
 > **Contexto Técnico:** Roadmap estricto de desarrollo para implementar **NB Selfcare** de forma modular, incremental y verificable sin errores de compilación ni dependencias fantasma.
 
+> **Estado real (2026-10-26):** varias casillas marcadas aquí no están implementadas de verdad (Health Connect, notificaciones, IA local, voz). La fuente de verdad del estado y del plan vigente es [`15_AUDITORIA_AAA.md`](15_AUDITORIA_AAA.md).
+
 ---
 
 ## 1. Visión General de las Fases de Desarrollo

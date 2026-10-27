@@ -10,6 +10,8 @@ import 'package:nb_selfcare/core/database/daos/protocol_dao.dart';
 import 'package:nb_selfcare/core/database/daos/recipe_dao.dart';
 import 'package:nb_selfcare/core/database/daos/supplement_dao.dart';
 import 'package:nb_selfcare/core/database/daos/user_profile_dao.dart';
+import 'package:nb_selfcare/core/domain/enums.dart';
+import 'package:nb_selfcare/shared/utils/cycle_phase_calculator.dart';
 
 void main() {
   late AppDatabase db;
@@ -45,7 +47,7 @@ void main() {
       final int polloId = await db.into(db.foodItems).insert(
             const FoodItemsCompanion(
               name: Value('Pechuga de Pollo'),
-              source: Value('test'),
+              source: Value(FoodSource.userCustom),
               kcalPer100g: Value(165.0),
               proteinPer100g: Value(31.0),
               carbsPer100g: Value(0.0),
@@ -56,7 +58,7 @@ void main() {
       final int arrozId = await db.into(db.foodItems).insert(
             const FoodItemsCompanion(
               name: Value('Arroz Cocido'),
-              source: Value('test'),
+              source: Value(FoodSource.userCustom),
               kcalPer100g: Value(130.0),
               proteinPer100g: Value(2.7),
               carbsPer100g: Value(28.0),
@@ -72,7 +74,7 @@ void main() {
       final int recipeId = await recipeDao.createRecipe(
         name: 'Arroz con Pollo Meal Prep',
         description: '4 raciones para la semana',
-        defaultMealType: 'lunch',
+        defaultMealType: MealType.lunch,
         totalYieldServings: 4,
         cookedTotalWeightGrams: 800.0,
         ingredients: [
@@ -242,7 +244,7 @@ void main() {
             UserProfilesCompanion(
               name: const Value('Nathan'),
               birthDate: Value(DateTime(1995, 5, 20)),
-              biologicalSex: const Value('male'),
+              biologicalSex: const Value(BiologicalSex.male),
               heightCm: const Value(178.0),
               targetWeightKg: const Value(72.0),
             ),
@@ -257,8 +259,8 @@ void main() {
         manualFatG: 50,
       );
 
-      await userProfileDao.updateDietArchetype('mediterranean');
-      await userProfileDao.updateDietPhase('diet_break');
+      await userProfileDao.updateDietArchetype(DietArchetype.mediterranean);
+      await userProfileDao.updateDietPhase(DietPhase.dietBreak, startedAt: DateTime(2026, 10, 20));
       await userProfileDao.updateCycleTrackingEnabled(false);
       await userProfileDao.updateFastingEnabled(true);
 
@@ -267,8 +269,8 @@ void main() {
       expect(profile!.isManualMacroMode, isTrue);
       expect(profile.manualKcalTarget, 1800);
       expect(profile.manualProteinG, 150);
-      expect(profile.activeDietArchetype, 'mediterranean');
-      expect(profile.activeDietPhase, 'diet_break');
+      expect(profile.activeDietArchetype, DietArchetype.mediterranean);
+      expect(profile.activeDietPhase, DietPhase.dietBreak);
       expect(profile.isCycleTrackingEnabled, isFalse);
       expect(profile.isFastingEnabled, isTrue);
     });

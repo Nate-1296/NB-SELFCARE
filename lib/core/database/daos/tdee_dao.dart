@@ -4,36 +4,20 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../shared/utils/biometric_formulas.dart';
 import '../../../shared/utils/daily_targets_calculator.dart';
 import '../../../shared/utils/date_time_extensions.dart';
+import '../../clock/clock.dart';
 import '../../constants/app_constants.dart';
+import '../../domain/enums.dart';
 import '../app_database.dart';
+import '../models/tdee_models.dart';
 import 'user_profile_dao.dart';
 
-/// Resultado tipado del motor de calibración quincenal de TDEE Adaptativo.
-class TdeeCalibrationOutcome {
-  const TdeeCalibrationOutcome({
-    required this.didCalibrate,
-    required this.foodDaysLogged,
-    required this.weighInDaysLogged,
-    this.previousTdeeKcal,
-    this.newTdeeKcal,
-    this.wasClamped = false,
-    this.deltaEmaKg,
-    this.averageIntakeKcal,
-  });
-
-  final bool didCalibrate;
-  final int foodDaysLogged;
-  final int weighInDaysLogged;
-  final int? previousTdeeKcal;
-  final int? newTdeeKcal;
-  final bool wasClamped;
-  final double? deltaEmaKg;
-  final double? averageIntakeKcal;
-}
+export '../models/tdee_models.dart';
 
 /// DAO especializado en el registro y auditoría histórica de las calibraciones del TDEE Adaptativo.
 class TdeeDao {
-  TdeeDao(this._db);
+  TdeeDao(this._db, {this._clock = const Clock()});
+
+  final Clock _clock;
 
   final AppDatabase _db;
 
@@ -65,7 +49,7 @@ class TdeeDao {
     required UserProfileDao profileDao,
     DateTime? referenceDate,
   }) async {
-    final DateTime now = referenceDate ?? DateTime.now();
+    final DateTime now = referenceDate ?? _clock.now();
     final String toDateKey = now.dateKey;
     final String fromDateKey = now
         .subtract(const Duration(days: AppConstants.adaptiveTdeeWindowDays - 1))
@@ -90,7 +74,8 @@ class TdeeDao {
     final measurements = await (_db.select(_db.bodyMeasurements)
           ..where((tbl) =>
               tbl.dateKey.isBiggerOrEqualValue(fromDateKey) &
-              tbl.dateKey.isSmallerOrEqualValue(toDateKey))
+              tbl.dateKey.isSmallerOrEqualValue(toDateKey) &
+              tbl.source.equalsValue(MeasurementSource.navyTape).not())
           ..orderBy([(tbl) => OrderingTerm.asc(tbl.measuredAt)]))
         .get();
 
@@ -170,11 +155,5 @@ class TdeeDao {
 /// Provider de Riverpod para inyectar TdeeDao.
 final tdeeDaoProvider = Provider<TdeeDao>((ref) {
   final AppDatabase db = ref.watch(appDatabaseProvider);
-  return TdeeDao(db);
-});
-
-/// StreamProvider con la calibración más reciente del TDEE.
-final latestTdeeCalibrationStreamProvider =
-    StreamProvider.autoDispose<TdeeCalibration?>((ref) {
-  return ref.watch(tdeeDaoProvider).watchLatestCalibration();
+  return TdeeDao(db, clock: ref.watch(clockProvider));
 });

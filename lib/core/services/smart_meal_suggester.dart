@@ -1,8 +1,10 @@
 import 'dart:math' as math;
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../database/app_database.dart';
 import '../database/daos/food_dao.dart';
+import '../domain/enums.dart';
 
 /// Arquetipo dietético con distribución porcentual de macronutrientes.
 class DietArchetypeInfo {
@@ -16,7 +18,7 @@ class DietArchetypeInfo {
     required this.recommendedSearchTerms,
   });
 
-  final String id;
+  final DietArchetype id;
   final String name;
   final String tagline;
   final double proteinPct;
@@ -24,10 +26,10 @@ class DietArchetypeInfo {
   final double fatPct;
   final List<String> recommendedSearchTerms;
 
-  static const Map<String, DietArchetypeInfo> archetypes =
-      <String, DietArchetypeInfo>{
-    'mediterranean': DietArchetypeInfo(
-      id: 'mediterranean',
+  static const Map<DietArchetype, DietArchetypeInfo> archetypes =
+      <DietArchetype, DietArchetypeInfo>{
+    DietArchetype.mediterranean: DietArchetypeInfo(
+      id: DietArchetype.mediterranean,
       name: 'Mediterránea',
       tagline: 'Grasas cardiosaludables, pescado, legumbres y cereales integrales',
       proteinPct: 20.0,
@@ -43,8 +45,8 @@ class DietArchetypeInfo {
         'nueces',
       ],
     ),
-    'keto': DietArchetypeInfo(
-      id: 'keto',
+    DietArchetype.keto: DietArchetypeInfo(
+      id: DietArchetype.keto,
       name: 'Cetogénica (Keto)',
       tagline: 'Muy baja en carbohidratos (<30g netos), alta en grasas saludables',
       proteinPct: 25.0,
@@ -60,8 +62,8 @@ class DietArchetypeInfo {
         'queso',
       ],
     ),
-    'high_protein': DietArchetypeInfo(
-      id: 'high_protein',
+    DietArchetype.highProtein: DietArchetypeInfo(
+      id: DietArchetype.highProtein,
       name: 'Fitness / Hipertrofia',
       tagline: 'Alta en proteínas (2.0–2.4 g/kg) para protección y síntesis muscular',
       proteinPct: 35.0,
@@ -76,8 +78,8 @@ class DietArchetypeInfo {
         'yogurt griego',
       ],
     ),
-    'plant_based': DietArchetypeInfo(
-      id: 'plant_based',
+    DietArchetype.plantBased: DietArchetypeInfo(
+      id: DietArchetype.plantBased,
       name: 'Basada en Plantas',
       tagline: '100% de origen vegetal: legumbres, semillas, frutos secos y granos',
       proteinPct: 20.0,
@@ -93,8 +95,8 @@ class DietArchetypeInfo {
         'plátano',
       ],
     ),
-    'balanced': DietArchetypeInfo(
-      id: 'balanced',
+    DietArchetype.balanced: DietArchetypeInfo(
+      id: DietArchetype.balanced,
       name: 'Equilibrada',
       tagline: 'Distribución balanceada de energía sin restricciones de grupos',
       proteinPct: 25.0,
@@ -109,8 +111,8 @@ class DietArchetypeInfo {
         'manzana',
       ],
     ),
-    'flexible': DietArchetypeInfo(
-      id: 'flexible',
+    DietArchetype.flexible: DietArchetypeInfo(
+      id: DietArchetype.flexible,
       name: 'Modo Libre',
       tagline: 'Personalización sin arquetipo fijo guiada por tus macros adaptativos',
       proteinPct: 25.0,
@@ -120,8 +122,8 @@ class DietArchetypeInfo {
     ),
   };
 
-  static DietArchetypeInfo getById(String? id) {
-    return archetypes[id] ?? archetypes['balanced']!;
+  static DietArchetypeInfo getById(DietArchetype? id) {
+    return archetypes[id] ?? archetypes[DietArchetype.balanced]!;
   }
 }
 
@@ -158,7 +160,7 @@ class SuggestedDailyMenu {
 
   final DietArchetypeInfo archetype;
   final int targetKcal;
-  final Map<String, List<SuggestedMealItem>> meals;
+  final Map<MealType, List<SuggestedMealItem>> meals;
   final double totalKcal;
   final double totalProteinG;
   final double totalCarbsG;
@@ -182,14 +184,14 @@ class SmartMealSuggester {
             : profile.currentAdaptiveTdeeKcal);
 
     // Reparto por tomas: Desayuno 30%, Almuerzo 40%, Cena 30%
-    const Map<String, double> mealDistribution = <String, double>{
-      'breakfast': 0.30,
-      'lunch': 0.40,
-      'dinner': 0.30,
+    const Map<MealType, double> mealDistribution = <MealType, double>{
+      MealType.breakfast: 0.30,
+      MealType.lunch: 0.40,
+      MealType.dinner: 0.30,
     };
 
-    final Map<String, List<SuggestedMealItem>> resultMeals =
-        <String, List<SuggestedMealItem>>{};
+    final Map<MealType, List<SuggestedMealItem>> resultMeals =
+        <MealType, List<SuggestedMealItem>>{};
 
     double totalMenuKcal = 0;
     double totalMenuP = 0;
@@ -199,8 +201,8 @@ class SmartMealSuggester {
     // Obtener catálogo disponible
     final List<FoodItem> catalog = await foodDao.filterCatalog(limit: 60);
 
-    for (final MapEntry<String, double> entry in mealDistribution.entries) {
-      final String mealSlot = entry.key;
+    for (final MapEntry<MealType, double> entry in mealDistribution.entries) {
+      final MealType mealSlot = entry.key;
       final double slotKcal = kcalGoal * entry.value;
 
       // Seleccionar 2-3 alimentos del catálogo compatibles
@@ -255,7 +257,7 @@ class SmartMealSuggester {
 
   List<FoodItem> _pickFoodsForSlot(
     List<FoodItem> catalog,
-    String slot,
+    MealType slot,
     DietArchetypeInfo archetype,
   ) {
     if (catalog.isEmpty) return <FoodItem>[];
@@ -269,9 +271,9 @@ class SmartMealSuggester {
     final List<FoodItem> pool = matched.isNotEmpty ? matched : catalog;
 
     // Tomar 2 alimentos distintos
-    if (slot == 'breakfast') {
+    if (slot == MealType.breakfast) {
       return pool.take(2).toList();
-    } else if (slot == 'lunch') {
+    } else if (slot == MealType.lunch) {
       return pool.skip(math.min(1, pool.length)).take(2).toList();
     } else {
       return pool.reversed.take(2).toList();

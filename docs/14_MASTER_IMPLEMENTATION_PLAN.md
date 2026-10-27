@@ -231,6 +231,8 @@ flowchart TD
 
 ## 3. Matriz de Trazabilidad Total (Garantía de Alcance 100%)
 
+> **Revisado el 2026-10-26** contra el código real. Ver [`15_AUDITORIA_AAA.md`](15_AUDITORIA_AAA.md) §2 para la matriz completa de documentado vs. implementado.
+
 | Ítem / Capacidad | Documento 13 | Fase Asignada | Estado |
 | :--- | :---: | :---: | :---: |
 | **Nuevas Tablas Drift y Migración Schema v2** | Base | **Fase 1** | ✅ Completada |
@@ -242,19 +244,19 @@ flowchart TD
 | **Escáner Inteligente con OCR Local de Tablas** | Lista 3 (#7) | **Fase 3** | ✅ Completada |
 | **Límites de Toxicidad de Micronutrientes (UL)** | Lista 3 (#12) | **Fase 3** | ✅ Completada |
 | **Calorie Cycling y Banco Semanal de Kcal** | Lista 3 (#9) | **Fase 4** | ✅ Completada |
-| **Fases de Dieta, Mantenimiento y Diet Breaks** | Lista 3 (#10) | **Fase 4** | ✅ Completada |
+| **Fases de Dieta, Mantenimiento y Diet Breaks** | Lista 3 (#10) | **Fase 4** | ⚠️ Reverse diet incorrecto y diet break sin caducidad |
 | **Arquetipos de Dieta y Menús Porcionados** | Lista 3 (#2) | **Fase 4** | ✅ Completada |
 | **Oráculo Local de Nutrientes ("¿Qué como hoy?")** | Lista 3 (#7) | **Fase 4** | ✅ Completada |
 | **Dosificación Segura de Ayunos (Límites OMAD)** | Lista 3 (#3) | **Fase 5** | ✅ Completada |
 | **Protocolo de Re-alimentación (Safe Fast-Break)** | Lista 4 (#2) | **Fase 5** | ✅ Completada |
 | **Curva Circadiana de Decaimiento de Cafeína** | Lista 4 (#1) | **Fase 5** | ✅ Completada |
-| **Índice de Disponibilidad (Readiness Score)** | Lista 4 (#6) | **Fase 5** | ✅ Completada |
-| **Pomodoro de Sedentarismo con Health Connect** | Lista 4 (#7) | **Fase 5** | ✅ Completada |
+| **Índice de Disponibilidad (Readiness Score)** | Lista 4 (#6) | **Fase 5** | ⚠️ Lógica lista; sin datos hasta integrar Health Connect real |
+| **Pomodoro de Sedentarismo con Health Connect** | Lista 4 (#7) | **Fase 5** | ❌ Pendiente (no existe código) |
 | **Módulo de Salud Femenina y Ajuste Lúteo** | Lista 3 (#4) | **Fase 6** | ✅ Completada |
 | **Rastreador de Suplementación y Fármacos** | Lista 3 (#11) | **Fase 6** | ✅ Completada |
 | **Salud Intestinal y Escala de Bristol (1–7)** | Lista 4 (#2) | **Fase 6** | ✅ Completada |
 | **Puntuación NOVA de Calidad de la Dieta** | Lista 4 (#3) | **Fase 6** | ✅ Completada |
-| **Tablero Estratégico Semanal "Mi Protocolo"** | Lista 3 (#4) | **Fase 7** | ✅ Completada |
+| **Tablero Estratégico Semanal "Mi Protocolo"** | Lista 3 (#4) | **Fase 7** | ⚠️ Sin copiloto IA ni recordatorios reales |
 | **Mini-Hitos Psicológicos (Happy Scale)** | Lista 4 (#4) | **Fase 7** | ✅ Completada |
 | **Check-In Semanal Dominical con Nibi** | Lista 4 (#5) | **Fase 7** | ✅ Completada |
 | **Exportación de Informe Clínico en PDF** | Lista 3 (#13) | **Fase 7** | ✅ Completada |

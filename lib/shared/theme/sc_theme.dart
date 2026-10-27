@@ -242,8 +242,8 @@ final List<ScThemeDef> kScThemes = <ScThemeDef>[
   // 5. NXTPAPER Color Paper
   _def(
     'nxtpaper_color_paper',
-    'Papel Satinado NXTPAPER',
-    'Pantalla mate con acabado de papel satinado para exteriores.',
+    'Papel en color',
+    'Colores suaves sobre fondo mate, cómodo al sol.',
     bg: 0xFFF3EFE6,
     bg2: 0xFFFFFFFF,
     bg3: 0xFFEAE4D7,
@@ -268,8 +268,8 @@ final List<ScThemeDef> kScThemes = <ScThemeDef>[
   // 6. NXTPAPER E-Ink Tinta Claro
   _def(
     'nxtpaper_eink_light',
-    'Modo Papel E-Ink Claro',
-    'Bordes sólidos de 1.5px, cero sombras, cero desenfoques y cero estelas.',
+    'Papel claro',
+    'Tinta negra sobre papel: máximo contraste y sin estelas.',
     bg: 0xFFF7F5F0,
     bg2: 0xFFFFFFFF,
     bg3: 0xFFF0EDE5,
@@ -288,8 +288,8 @@ final List<ScThemeDef> kScThemes = <ScThemeDef>[
   // 7. NXTPAPER E-Ink Tinta Oscuro
   _def(
     'nxtpaper_eink_dark',
-    'Modo Papel E-Ink Oscuro',
-    'Tinta marfil sobre pizarra mate con definición milimétrica sin ghosting.',
+    'Papel oscuro',
+    'Tinta clara sobre fondo oscuro, para leer de noche.',
     bg: 0xFF101214,
     bg2: 0xFF181A1D,
     bg3: 0xFF202327,
@@ -591,13 +591,36 @@ final Map<String, ScThemeDef> _porKey = <String, ScThemeDef>{
 /// Resuelve la definición de un tema a partir de su clave.
 ScThemeDef scThemeByKey(String key) => _porKey[key] ?? kScThemes.first;
 
+/// Tema "Colores de tu fondo" (Material You, Android 12+): las superficies de
+/// Esmeralda/Jade según el modo del sistema y el acento del fondo de pantalla.
+const String kDynamicThemeKey = 'dynamic_wallpaper';
+
+ScThemeDef dynamicThemeDef(ColorScheme wallpaper) {
+  final bool dark = wallpaper.brightness == Brightness.dark;
+  final ScThemeDef base = scThemeByKey(dark ? 'samsung_dark' : 'samsung_light');
+  return ScThemeDef(
+    key: kDynamicThemeKey,
+    label: base.label,
+    description: base.description,
+    brightness: wallpaper.brightness,
+    colors: base.colors.copyWith(
+      accent: wallpaper.primary,
+      accent2: wallpaper.secondary,
+      ink: wallpaper.onPrimary,
+      soft: wallpaper.primaryContainer.withValues(alpha: dark ? 0.35 : 0.6),
+    ),
+  );
+}
+
 /// Constructor del [ThemeData] final con tipografías y extensiones de tokens.
 abstract final class ScTheme {
-  static ThemeData build(String key) {
-    final ScThemeDef def = scThemeByKey(key);
+  static ThemeData build(String key, {ScThemeDef? override}) {
+    final ScThemeDef def = override ?? scThemeByKey(key);
     final ScColors c = def.colors;
     final Brightness brightness = def.brightness;
 
+    // En Modo Papel los contenedores derivados del color semilla (azulados)
+    // se sustituyen por tinta y papel, para que ningún control quede teñido.
     final ColorScheme scheme = ColorScheme.fromSeed(
       seedColor: c.accent,
       brightness: brightness,
@@ -605,6 +628,15 @@ abstract final class ScTheme {
       onSurface: c.text,
       primary: c.accent,
       onPrimary: c.ink,
+      secondaryContainer: c.isFlat ? c.bg3 : null,
+      onSecondaryContainer: c.isFlat ? c.text : null,
+      primaryContainer: c.isFlat ? c.bg3 : null,
+      onPrimaryContainer: c.isFlat ? c.text : null,
+      outline: c.isFlat ? c.line2 : null,
+      outlineVariant: c.isFlat ? c.line2 : null,
+      surfaceContainerHighest: c.isFlat ? c.bg3 : null,
+      surfaceContainerHigh: c.isFlat ? c.bg3 : null,
+      surfaceContainer: c.isFlat ? c.bg2 : null,
     );
 
     final BorderSide flatBorder = BorderSide(

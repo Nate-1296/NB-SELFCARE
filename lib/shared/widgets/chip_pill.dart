@@ -29,7 +29,9 @@ class ChipPill extends StatelessWidget {
     final Color resolvedIconColor = iconColor ?? (active ? tint : c.text2);
 
     return Material(
-      color: active ? (c.isFlat ? Colors.transparent : tint.withValues(alpha: 0.15)) : Colors.transparent,
+      color: active
+          ? (c.isFlat ? Colors.transparent : tint.withValues(alpha: 0.15))
+          : Colors.transparent,
       shape: StadiumBorder(
         side: BorderSide(
           color: active ? tint : (c.isFlat ? c.line2 : c.line),
@@ -39,25 +41,29 @@ class ChipPill extends StatelessWidget {
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onTap,
-        child: Padding(
-          padding: EdgeInsets.fromLTRB(icon != null ? 12 : 16, 8, 16, 8),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              if (icon != null) ...<Widget>[
-                Icon(icon, size: 16, color: resolvedIconColor),
-                const SizedBox(width: 6),
-              ],
-              Text(
-                label,
-                style: TextStyle(
-                  fontFamily: ScFonts.ui,
-                  fontSize: 13,
-                  fontWeight: active ? FontWeight.w700 : FontWeight.w600,
-                  color: active ? (c.isFlat ? c.text : tint) : c.text,
+        child: ConstrainedBox(
+          // Zona táctil mínima de 48 dp (pautas de accesibilidad de Android).
+          constraints: const BoxConstraints(minHeight: 48),
+          child: Padding(
+            padding: EdgeInsets.fromLTRB(icon != null ? 12 : 16, 8, 16, 8),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                if (icon != null) ...<Widget>[
+                  Icon(icon, size: 16, color: resolvedIconColor),
+                  const SizedBox(width: 6),
+                ],
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontFamily: ScFonts.ui,
+                    fontSize: 13,
+                    fontWeight: active ? FontWeight.w700 : FontWeight.w600,
+                    color: active ? (c.isFlat ? c.text : tint) : c.text,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

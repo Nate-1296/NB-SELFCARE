@@ -1,6 +1,7 @@
 import 'package:drift/drift.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../domain/enums.dart';
 import '../app_database.dart';
 
 /// DAO especializado en la configuración de recordatorios locales y rutinas diarias.
@@ -31,23 +32,23 @@ class RemindersDao {
     await _db.batch((b) {
       b.insertAll(_db.reminders, [
         RemindersCompanion.insert(
-          reminderType: 'morning_weigh_in',
+          reminderType: ReminderType.morningWeighIn,
           timeOfDayMinutes: 7 * 60 + 30, // 07:30
           isEnabled: const Value(true),
         ),
         RemindersCompanion.insert(
-          reminderType: 'hydration',
+          reminderType: ReminderType.hydration,
           timeOfDayMinutes: 11 * 60, // 11:00
           intervalMinutes: const Value(120),
           isEnabled: const Value(true),
         ),
         RemindersCompanion.insert(
-          reminderType: 'fasting_close',
+          reminderType: ReminderType.fastingClose,
           timeOfDayMinutes: 20 * 60, // 20:00
           isEnabled: const Value(false),
         ),
         RemindersCompanion.insert(
-          reminderType: 'journal',
+          reminderType: ReminderType.journal,
           timeOfDayMinutes: 21 * 60 + 30, // 21:30
           isEnabled: const Value(true),
         ),
@@ -79,10 +80,4 @@ class RemindersDao {
 final remindersDaoProvider = Provider<RemindersDao>((ref) {
   final AppDatabase db = ref.watch(appDatabaseProvider);
   return RemindersDao(db);
-});
-
-/// StreamProvider reactivo con los recordatorios configurados.
-final allRemindersStreamProvider =
-    StreamProvider.autoDispose<List<Reminder>>((ref) {
-  return ref.watch(remindersDaoProvider).watchAllReminders();
 });

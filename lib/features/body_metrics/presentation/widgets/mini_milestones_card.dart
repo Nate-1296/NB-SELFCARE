@@ -1,15 +1,16 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/database/app_database.dart';
-import '../../../../core/database/daos/milestone_dao.dart';
-import '../../../../core/database/daos/pet_dao.dart';
+import '../../../../core/l10n/l10n.dart';
 import '../../../../shared/theme/sc_colors.dart';
 import '../../../../shared/theme/sc_theme.dart';
-import '../../../../shared/utils/date_time_extensions.dart';
 import '../../../../shared/widgets/health_card.dart';
+import '../../application/body_queries.dart';
+import '../../application/milestone_service.dart';
 
 /// Tarjeta de subdivisión psicológica de metas en mini-hitos de 1.5 kg (estilo Happy Scale).
 class MiniMilestonesCard extends ConsumerStatefulWidget {
@@ -34,12 +35,11 @@ class _MiniMilestonesCardState extends ConsumerState<MiniMilestonesCard> {
   @override
   Widget build(BuildContext context) {
     final ScColors c = context.sc;
-    final MilestoneDao milestoneDao = ref.watch(milestoneDaoProvider);
+    final List<MilestoneGoal> milestones =
+        ref.watch(milestonesProvider).value ?? const <MilestoneGoal>[];
 
-    return StreamBuilder<List<MilestoneGoal>>(
-      stream: milestoneDao.watchMilestones(),
-      builder: (BuildContext context, AsyncSnapshot<List<MilestoneGoal>> snap) {
-        final List<MilestoneGoal> milestones = snap.data ?? const <MilestoneGoal>[];
+    return Builder(
+      builder: (BuildContext context) {
 
         // Si no existen hitos generados aún, mostramos botón generador
         if (milestones.isEmpty) {
@@ -51,7 +51,7 @@ class _MiniMilestonesCardState extends ConsumerState<MiniMilestonesCard> {
                 Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: c.isFlat ? c.line2 : c.accent.withValues(alpha: 0.15),
+                    color: c.isFlat ? c.bg3 : c.accent.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Icon(Icons.flag_rounded, color: c.accent, size: 22),
@@ -62,7 +62,7 @@ class _MiniMilestonesCardState extends ConsumerState<MiniMilestonesCard> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: <Widget>[
                       Text(
-                        'Mini-Hitos Psicológicos',
+                        context.l10n.bodyMiniHitosPsicologicos,
                         style: TextStyle(
                           fontFamily: ScFonts.display,
                           fontSize: 14.5,
@@ -71,7 +71,7 @@ class _MiniMilestonesCardState extends ConsumerState<MiniMilestonesCard> {
                         ),
                       ),
                       Text(
-                        'Descompón tu meta en tramos alcanzables de 1.5 kg',
+                        context.l10n.bodyDescomponTuMetaEnTramos,
                         style: TextStyle(
                           fontFamily: ScFonts.ui,
                           fontSize: 11.5,
@@ -85,10 +85,9 @@ class _MiniMilestonesCardState extends ConsumerState<MiniMilestonesCard> {
                 FilledButton(
                   onPressed: () async {
                     unawaited(HapticFeedback.lightImpact());
-                    await milestoneDao.generateMilestones(
+                    await ref.read(milestoneServiceProvider).regenerate(
                       currentWeightKg: widget.currentWeightKg,
                       targetWeightKg: widget.targetWeightKg,
-                      stepKg: 1.5,
                     );
                   },
                   style: FilledButton.styleFrom(
@@ -96,15 +95,12 @@ class _MiniMilestonesCardState extends ConsumerState<MiniMilestonesCard> {
                     foregroundColor: c.isFlat ? c.text : c.ink,
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   ),
-                  child: const Text('Generar', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                  child: Text(context.l10n.bodyGenerar, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                 ),
               ],
             ),
           );
         }
-
-        // Comprobar y autocompletar hitos superados
-        _checkAndRewardMilestones(milestones, milestoneDao);
 
         // Hito activo (primer hito aún no completado)
         final MilestoneGoal? activeMilestone = milestones
@@ -138,12 +134,12 @@ class _MiniMilestonesCardState extends ConsumerState<MiniMilestonesCard> {
           final int daysRemaining = (weeksRemaining * 7).round();
 
           if (daysRemaining <= 1) {
-            projectedTimeLabel = '¡A tiro de piedra!';
+            projectedTimeLabel = context.l10n.bodyATiroDePiedra;
           } else if (daysRemaining < 30) {
-            projectedTimeLabel = '~ $daysRemaining días restantes';
+            projectedTimeLabel = context.l10n.bodyDiasRestantes((daysRemaining).toString());
           } else {
             final int weeks = (daysRemaining / 7).round();
-            projectedTimeLabel = '~ $weeks semanas restantes';
+            projectedTimeLabel = context.l10n.bodySemanasRestantes((weeks).toString());
           }
         }
 
@@ -162,7 +158,7 @@ class _MiniMilestonesCardState extends ConsumerState<MiniMilestonesCard> {
                       Icon(Icons.flag_circle_rounded, color: c.accent, size: 22),
                       const SizedBox(width: 8),
                       Text(
-                        'Mini-Hito $completedCount de $totalCount',
+                        context.l10n.bodyMiniHitoDe((completedCount).toString(), (totalCount).toString()),
                         style: TextStyle(
                           fontFamily: ScFonts.display,
                           fontSize: 14.5,
@@ -177,13 +173,12 @@ class _MiniMilestonesCardState extends ConsumerState<MiniMilestonesCard> {
                     children: <Widget>[
                       IconButton(
                         icon: const Icon(Icons.refresh_rounded, size: 18),
-                        tooltip: 'Recalibrar tramos de 1.5 kg',
+                        tooltip: context.l10n.bodyRecalibrarTramosDe15,
                         onPressed: () async {
                           unawaited(HapticFeedback.lightImpact());
-                          await milestoneDao.generateMilestones(
+                          await ref.read(milestoneServiceProvider).regenerate(
                             currentWeightKg: widget.currentWeightKg,
                             targetWeightKg: widget.targetWeightKg,
-                            stepKg: 1.5,
                           );
                         },
                       ),
@@ -205,7 +200,7 @@ class _MiniMilestonesCardState extends ConsumerState<MiniMilestonesCard> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: <Widget>[
                     Text(
-                      'Objetivo inmediato: ${activeMilestone.targetWeightKg.toStringAsFixed(1)} kg',
+                      context.l10n.bodyObjetivoInmediatoKg(activeMilestone.targetWeightKg.toStringAsFixed(1).toString()),
                       style: TextStyle(
                         fontFamily: ScFonts.display,
                         fontSize: 16,
@@ -214,7 +209,7 @@ class _MiniMilestonesCardState extends ConsumerState<MiniMilestonesCard> {
                       ),
                     ),
                     Text(
-                      'Faltan ${remainingKgToActive.toStringAsFixed(1)} kg',
+                      context.l10n.bodyFaltanKg(remainingKgToActive.toStringAsFixed(1).toString()),
                       style: TextStyle(
                         fontFamily: ScFonts.ui,
                         fontSize: 12,
@@ -242,7 +237,7 @@ class _MiniMilestonesCardState extends ConsumerState<MiniMilestonesCard> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: <Widget>[
                     Text(
-                      '${(milestoneProgress * 100).toStringAsFixed(0)}% completado',
+                      context.l10n.bodyCompletado((milestoneProgress * 100).toStringAsFixed(0).toString()),
                       style: TextStyle(
                         fontFamily: ScFonts.ui,
                         fontSize: 11,
@@ -273,7 +268,7 @@ class _MiniMilestonesCardState extends ConsumerState<MiniMilestonesCard> {
                       const SizedBox(width: 10),
                       Expanded(
                         child: Text(
-                          '¡Felicitaciones! Has completado todos los mini-hitos y alcanzado tu meta global.',
+                          context.l10n.bodyFelicitacionesHasCompletadoTodosLos,
                           style: TextStyle(
                             fontFamily: ScFonts.display,
                             fontSize: 13,
@@ -310,7 +305,7 @@ class _MiniMilestonesCardState extends ConsumerState<MiniMilestonesCard> {
                         const SizedBox(width: 10),
                         Expanded(
                           child: Text(
-                            'Hito ${m.milestoneOrder}: ${m.targetWeightKg.toStringAsFixed(1)} kg',
+                            context.l10n.bodyHitoKg(m.milestoneOrder.toString(), m.targetWeightKg.toStringAsFixed(1).toString()),
                             style: TextStyle(
                               fontFamily: ScFonts.ui,
                               fontSize: 12.5,
@@ -324,7 +319,7 @@ class _MiniMilestonesCardState extends ConsumerState<MiniMilestonesCard> {
                         ),
                         if (m.isCompleted)
                           Text(
-                            '¡Logrado! +25 🪙',
+                            context.l10n.bodyLogrado25,
                             style: TextStyle(
                               fontFamily: ScFonts.ui,
                               fontSize: 11,
@@ -336,11 +331,11 @@ class _MiniMilestonesCardState extends ConsumerState<MiniMilestonesCard> {
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                             decoration: BoxDecoration(
-                              color: c.isFlat ? c.line2 : c.accent.withValues(alpha: 0.15),
+                              color: c.isFlat ? c.bg3 : c.accent.withValues(alpha: 0.15),
                               borderRadius: BorderRadius.circular(6),
                             ),
                             child: Text(
-                              'En curso',
+                              context.l10n.bodyEnCurso,
                               style: TextStyle(
                                 fontFamily: ScFonts.ui,
                                 fontSize: 10.5,
@@ -359,29 +354,5 @@ class _MiniMilestonesCardState extends ConsumerState<MiniMilestonesCard> {
         );
       },
     );
-  }
-
-  void _checkAndRewardMilestones(List<MilestoneGoal> milestones, MilestoneDao dao) {
-    final bool isLosing = widget.targetWeightKg < widget.currentWeightKg;
-    final DateTime now = DateTime.now();
-
-    for (final MilestoneGoal m in milestones) {
-      if (!m.isCompleted) {
-        final bool reached = isLosing
-            ? widget.currentWeightKg <= m.targetWeightKg
-            : widget.currentWeightKg >= m.targetWeightKg;
-
-        if (reached) {
-          unawaited(dao.markCompleted(m.id, now));
-          unawaited(
-            ref.read(petDaoProvider).grantDailyReward(
-                  dateKey: now.dateKey,
-                  actionType: 'milestone_reached',
-                  baseAmount: 25,
-                ),
-          );
-        }
-      }
-    }
   }
 }

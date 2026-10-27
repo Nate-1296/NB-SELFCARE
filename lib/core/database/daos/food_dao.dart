@@ -1,52 +1,18 @@
 import 'package:drift/drift.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../clock/clock.dart';
+import '../../domain/enums.dart';
 import '../app_database.dart';
+import '../models/food_models.dart';
 
-/// Registro de comida consumida combinado con los metadatos de su alimento (JOIN).
-class FoodLogWithItem {
-  const FoodLogWithItem({
-    required this.log,
-    this.foodItem,
-  });
-
-  final FoodLog log;
-  final FoodItem? foodItem;
-}
-
-/// Ingrediente resuelto dentro de una plantilla de combo casero.
-class MealComboIngredientDetail {
-  const MealComboIngredientDetail({
-    required this.foodItem,
-    required this.baseGrams,
-  });
-
-  final FoodItem foodItem;
-  final double baseGrams;
-}
-
-/// Plantilla de combo casero enriquecida con ingredientes y macronutrientes base (1.0x).
-class MealComboWithDetails {
-  const MealComboWithDetails({
-    required this.combo,
-    required this.ingredients,
-    required this.baseKcal,
-    required this.baseProteinG,
-    required this.baseCarbsG,
-    required this.baseFatG,
-  });
-
-  final MealCombo combo;
-  final List<MealComboIngredientDetail> ingredients;
-  final double baseKcal;
-  final double baseProteinG;
-  final double baseCarbsG;
-  final double baseFatG;
-}
+export '../models/food_models.dart';
 
 /// DAO especializado en el catálogo de alimentos, búsqueda FTS5 y registro de comidas.
 class FoodDao {
-  FoodDao(this._db);
+  FoodDao(this._db, {this._clock = const Clock()});
+
+  final Clock _clock;
 
   final AppDatabase _db;
 
@@ -109,7 +75,7 @@ class FoodDao {
       return ftsItems
           .where((item) {
             if (onlyFavorites && !item.isFavorite) return false;
-            if (onlyCustom && item.source != 'user_custom') return false;
+            if (onlyCustom && item.source != FoodSource.userCustom) return false;
             return true;
           })
           .take(limit)
@@ -119,12 +85,12 @@ class FoodDao {
     final selectQuery = _db.select(_db.foodItems);
     if (onlyFavorites && onlyCustom) {
       selectQuery.where(
-        (tbl) => tbl.isFavorite.equals(true) & tbl.source.equals('user_custom'),
+        (tbl) => tbl.isFavorite.equals(true) & tbl.source.equalsValue(FoodSource.userCustom),
       );
     } else if (onlyFavorites) {
       selectQuery.where((tbl) => tbl.isFavorite.equals(true));
     } else if (onlyCustom) {
-      selectQuery.where((tbl) => tbl.source.equals('user_custom'));
+      selectQuery.where((tbl) => tbl.source.equalsValue(FoodSource.userCustom));
     }
 
     selectQuery
@@ -192,7 +158,7 @@ class FoodDao {
     required FoodLog existingLog,
     FoodItem? food,
     required double newGrams,
-    String? mealType,
+    MealType? mealType,
   }) async {
     final double safeGrams = newGrams.clamp(1.0, 5000.0);
     final query = _db.update(_db.foodLogs)
@@ -285,7 +251,7 @@ class FoodDao {
   Future<({int? yesterdaySodiumMg, double? yesterdayCarbsG, double? avg7dCarbsG})>
       getRetentionNutritionContext(String todayDateKey) async {
     final DateTime? parsedToday = DateTime.tryParse(todayDateKey);
-    final DateTime refDate = parsedToday ?? DateTime.now();
+    final DateTime refDate = parsedToday ?? _clock.now();
     String fmtDate(DateTime d) =>
         '${d.year.toString().padLeft(4, '0')}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
 
@@ -378,9 +344,9 @@ class FoodDao {
   }
 
   /// Obtiene los registros de un bloque horario en una fecha (ej. desayuno de ayer).
-  Future<List<FoodLog>> getLogsForDateAndMeal(String dateKey, String mealType) {
+  Future<List<FoodLog>> getLogsForDateAndMeal(String dateKey, MealType mealType) {
     return (_db.select(_db.foodLogs)
-          ..where((tbl) => tbl.dateKey.equals(dateKey) & tbl.mealType.equals(mealType)))
+          ..where((tbl) => tbl.dateKey.equals(dateKey) & tbl.mealType.equalsValue(mealType)))
         .get();
   }
 
@@ -390,12 +356,12 @@ class FoodDao {
   Future<List<int>> repeatMealFromYesterday({
     required String fromDateKey,
     required String toDateKey,
-    required String mealType,
+    required MealType mealType,
   }) async {
     final List<FoodLog> pastLogs = await getLogsForDateAndMeal(fromDateKey, mealType);
     if (pastLogs.isEmpty) return [];
 
-    final now = DateTime.now();
+    final now = _clock.now();
     final List<int> newIds = [];
 
     await _db.transaction(() async {
@@ -510,19 +476,39 @@ class FoodDao {
         .map((rows) => rows.map((r) => r.read<String>('date_key')).toSet());
   }
 
+  /// Kcal registradas por día dentro de un rango (solo días con registros).
+  Stream<Map<String, int>> watchDailyKcalInRange(String startDateKey, String endDateKey) {
+    return _db
+        .customSelect(
+          '''
+          SELECT date_key, SUM(total_kcal) AS kcal FROM food_logs
+          WHERE date_key >= ? AND date_key <= ?
+          GROUP BY date_key
+          ''',
+          variables: [Variable.withString(startDateKey), Variable.withString(endDateKey)],
+          readsFrom: {_db.foodLogs},
+        )
+        .watch()
+        .map(
+          (rows) => <String, int>{
+            for (final QueryRow r in rows) r.read<String>('date_key'): r.read<double>('kcal').round(),
+          },
+        );
+  }
+
   /// Registra una porción exacta de un [FoodItem] y actualiza su marca `lastUsedAt`.
   Future<int> logFoodItemPortion({
     required FoodItem food,
     required double grams,
     required String dateKey,
-    required String mealType,
+    required MealType mealType,
   }) async {
     final double safeGrams = grams.clamp(1.0, 5000.0);
     final double ratio = safeGrams / 100.0;
     final double portionMult = food.defaultServingGrams > 0
         ? safeGrams / food.defaultServingGrams
         : 1.0;
-    final DateTime now = DateTime.now();
+    final DateTime now = _clock.now();
 
     return _db.transaction(() async {
       final int logId = await _db.into(_db.foodLogs).insert(
@@ -563,7 +549,7 @@ class FoodDao {
   /// Crea una nueva plantilla de combo casero con sus ingredientes y gramos base.
   Future<int> createCombo({
     required String name,
-    required String defaultMealType,
+    required MealType defaultMealType,
     required List<MapEntry<int, double>> itemsWithGrams,
   }) async {
     return _db.transaction(() async {
@@ -593,7 +579,7 @@ class FoodDao {
     required int comboId,
     required double multiplier,
     required String dateKey,
-    required String mealType,
+    required MealType mealType,
   }) async {
     return _db.transaction(() async {
       // 1. Obtener ingredientes del combo
@@ -601,7 +587,7 @@ class FoodDao {
             ..where((tbl) => tbl.comboId.equals(comboId)))
           .get();
 
-      final now = DateTime.now();
+      final now = _clock.now();
       final List<int> loggedIds = [];
 
       for (final item in items) {
@@ -653,5 +639,5 @@ class FoodDao {
 /// Provider de Riverpod para inyectar FoodDao.
 final foodDaoProvider = Provider<FoodDao>((ref) {
   final AppDatabase db = ref.watch(appDatabaseProvider);
-  return FoodDao(db);
+  return FoodDao(db, clock: ref.watch(clockProvider));
 });

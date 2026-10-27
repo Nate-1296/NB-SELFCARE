@@ -1,11 +1,14 @@
 import 'package:drift/drift.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../clock/clock.dart';
 import '../app_database.dart';
 
 /// DAO para el tablero de planificación semanal estratégica "Mi Protocolo".
 class ProtocolDao {
-  ProtocolDao(this._db);
+  ProtocolDao(this._db, {this._clock = const Clock()});
+
+  final Clock _clock;
 
   final AppDatabase _db;
 
@@ -43,7 +46,7 @@ class ProtocolDao {
           fastingDaysBitmask: Value(fastingDaysBitmask),
           workoutSlotsJson: Value(workoutSlotsJson),
           dietArchetype: Value(dietArchetype),
-          updatedAt: Value(DateTime.now()),
+          updatedAt: Value(_clock.now()),
         ),
       );
       return existing.id;
@@ -55,7 +58,7 @@ class ProtocolDao {
               workoutSlotsJson: Value(workoutSlotsJson),
               dietArchetype: Value(dietArchetype),
               isCurrentActive: const Value(true),
-              updatedAt: Value(DateTime.now()),
+              updatedAt: Value(_clock.now()),
             ),
           );
     }
@@ -65,6 +68,6 @@ class ProtocolDao {
 /// Provider de Riverpod para inyectar ProtocolDao.
 final protocolDaoProvider = Provider<ProtocolDao>((ref) {
   final AppDatabase db = ref.watch(appDatabaseProvider);
-  return ProtocolDao(db);
+  return ProtocolDao(db, clock: ref.watch(clockProvider));
 });
 

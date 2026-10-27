@@ -1,202 +1,115 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../../core/database/app_database.dart';
-import '../../../../core/database/daos/caffeine_dao.dart';
-import '../../../../core/database/daos/user_profile_dao.dart';
-import '../../../../core/services/caffeine_pharmacokinetics_service.dart';
+import '../../../../core/l10n/l10n.dart';
 import '../../../../core/services/readiness_engine.dart';
 import '../../../../shared/theme/sc_colors.dart';
 import '../../../../shared/theme/sc_theme.dart';
+import '../../../../shared/theme/sc_tokens.dart';
+import '../../../../shared/utils/date_formats.dart';
 import '../../../../shared/widgets/health_card.dart';
+import '../../../../shared/widgets/tonal_badge.dart';
+import '../../../journal/application/caffeine_queries.dart';
 import '../../../journal/presentation/widgets/caffeine_tracker_sheet.dart';
+import '../../application/readiness_queries.dart';
 
-/// Tarjeta de Recuperación y Disposición Diaria (Readiness Score) en Hoy.
+/// Disposición del día (sueño, FC en reposo y carga reciente) y franja de cafeína.
+///
+/// Solo muestra una puntuación cuando hay sueño registrado para esa noche.
 class ReadinessCard extends ConsumerWidget {
   const ReadinessCard({
     super.key,
     required this.dateKey,
+    required this.onLogSleep,
   });
 
   final String dateKey;
+  final VoidCallback onLogSleep;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final ScColors c = context.sc;
-    final ReadinessEngine engine = ref.watch(readinessEngineProvider);
-    final UserProfile? profile = ref.watch(userProfileStreamProvider).value;
-    final CaffeineDao caffeineDao = ref.watch(caffeineDaoProvider);
-    final CaffeinePharmacokineticsService caffeineService =
-        ref.watch(caffeinePharmacokineticsServiceProvider);
-
-    final double actualSleepHours = profile?.dailySleepGoalHours ?? 7.5;
-    final double targetSleepHours = profile?.dailySleepGoalHours ?? 8.0;
-
-    // Calcular readiness score
-    final DailyReadinessResult readiness = engine.compute(
-      actualSleepHours: actualSleepHours,
-      targetSleepHours: targetSleepHours,
-      currentRhrBpm: 60,
-      baselineRhrBpm: 60,
-      recent3DayWorkoutHours: 1.5,
-      averageRecentRpe: 7.0,
-    );
-
-    final DateTime now = DateTime.now();
-    final DateTime targetBedtime = DateTime(now.year, now.month, now.day, 23, 0);
-
+    final DailyReadinessResult? readiness = ref.watch(readinessProvider(dateKey)).value;
     return HealthCard(
+      margin: EdgeInsets.zero,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          // Fila superior: Título e Indicador de Score
+          if (readiness == null) _NoSleepYet(onLogSleep: onLogSleep) else _ReadinessSummary(readiness),
+          const SizedBox(height: ScSpace.m),
+          _CaffeineStrip(dateKey: dateKey),
+        ],
+      ),
+    );
+  }
+}
+
+extension ReadinessCategoryL10n on ReadinessCategory {
+  String label(AppLocalizations l10n) => switch (this) {
+        ReadinessCategory.optimal => l10n.readinessOptimal,
+        ReadinessCategory.favorable => l10n.readinessFavorable,
+        ReadinessCategory.recoveryNeeded => l10n.readinessRecovery,
+      };
+
+  String advice(AppLocalizations l10n) => switch (this) {
+        ReadinessCategory.optimal => l10n.readinessAdviceOptimal,
+        ReadinessCategory.favorable => l10n.readinessAdviceFavorable,
+        ReadinessCategory.recoveryNeeded => l10n.readinessAdviceRecovery,
+      };
+}
+
+class _ReadinessSummary extends StatelessWidget {
+  const _ReadinessSummary(this.readiness);
+
+  final DailyReadinessResult readiness;
+
+  @override
+  Widget build(BuildContext context) {
+    final ScColors c = context.sc;
+    final AppLocalizations l10n = context.l10n;
+    return Semantics(
+      container: true,
+      label: l10n.readinessSemantics(readiness.totalScore, readiness.category.label(l10n)),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
           Row(
             children: <Widget>[
-              Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  color: c.isFlat ? c.line2 : c.accent.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(12),
-                  border: c.isFlat ? Border.all(color: c.line2, width: 1.5) : null,
-                ),
-                child: Center(
-                  child: Text(
-                    '${readiness.totalScore}',
-                    style: TextStyle(
-                      fontFamily: ScFonts.display,
-                      fontSize: 19,
-                      fontWeight: FontWeight.w900,
-                      color: c.accent,
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 12),
+              ExcludeSemantics(child: _ScoreBox(score: readiness.totalScore)),
+              const SizedBox(width: ScSpace.m),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
-                    Row(
+                    Wrap(
+                      spacing: ScSpace.s,
+                      runSpacing: ScSpace.xxs,
+                      crossAxisAlignment: WrapCrossAlignment.center,
                       children: <Widget>[
-                        Text(
-                          'Disposición & Energía',
-                          style: TextStyle(
-                            fontFamily: ScFonts.display,
-                            fontSize: 15,
-                            fontWeight: FontWeight.w800,
-                            color: c.text,
-                          ),
-                        ),
-                        const SizedBox(width: 6),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 7,
-                            vertical: 2,
-                          ),
-                          decoration: BoxDecoration(
-                            color: c.isFlat ? c.line2 : c.soft,
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          child: Text(
-                            readiness.categoryLabel.toUpperCase(),
-                            style: TextStyle(
-                              fontFamily: ScFonts.display,
-                              fontSize: 10,
-                              fontWeight: FontWeight.w800,
-                              color: c.accent,
-                              letterSpacing: 0.5,
-                            ),
-                          ),
-                        ),
+                        Text(l10n.todayDisposicionEnergia, style: context.text.titleMedium),
+                        TonalBadge(label: readiness.category.label(l10n)),
                       ],
                     ),
-                    const SizedBox(height: 2),
+                    const SizedBox(height: ScSpace.xxs),
                     Text(
-                      'Sueño (${readiness.sleepSubScore.round()}p) · FC Reposo (${readiness.rhrSubScore.round()}p) · Carga (${readiness.strainSubScore.round()}p)',
-                      style: TextStyle(
-                        fontFamily: ScFonts.ui,
-                        fontSize: 11,
-                        color: c.text2,
+                      l10n.todaySuenoPFcReposoP(
+                        readiness.sleepSubScore.round().toString(),
+                        readiness.rhrSubScore.round().toString(),
+                        readiness.strainSubScore.round().toString(),
                       ),
+                      style: context.text.bodySmall,
                     ),
                   ],
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 10),
-
-          // Consejo de acción adaptativa
+          const SizedBox(height: ScSpace.s + 2),
           Text(
-            readiness.actionableAdvice,
-            style: TextStyle(
-              fontFamily: ScFonts.ui,
-              fontSize: 12.5,
-              color: c.text,
-              height: 1.35,
-            ),
-          ),
-          const SizedBox(height: 12),
-
-          // Franja de Cronobiología de Cafeína
-          StreamBuilder<List<CaffeineLog>>(
-            stream: caffeineDao.watchLogsForDate(dateKey),
-            builder: (BuildContext context, AsyncSnapshot<List<CaffeineLog>> snap) {
-              final List<CaffeineLog> cLogs = snap.data ?? const <CaffeineLog>[];
-              final CaffeineStatus cStatus = caffeineService.evaluateStatus(
-                logs: cLogs,
-                targetBedtime: targetBedtime,
-                currentTime: now,
-              );
-
-              return Material(
-                color: c.bg3,
-                borderRadius: BorderRadius.circular(12),
-                child: InkWell(
-                  borderRadius: BorderRadius.circular(12),
-                  onTap: () {
-                    unawaited(HapticFeedback.selectionClick());
-                    unawaited(CaffeineTrackerSheet.show(context, dateKey: dateKey));
-                  },
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 10,
-                    ),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: c.isFlat ? c.line2 : c.line,
-                        width: c.isFlat ? 1.3 : 1.0,
-                      ),
-                    ),
-                    child: Row(
-                      children: <Widget>[
-                        Icon(Icons.coffee_rounded, size: 18, color: c.accent),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            cLogs.isEmpty
-                                ? 'Sin cafeína hoy · Límite para dormir: ${cStatus.recommendedCutoffTime.hour.toString().padLeft(2, '0')}:${cStatus.recommendedCutoffTime.minute.toString().padLeft(2, '0')}'
-                                : 'Cafeína activa: ${cStatus.currentResidualMg.toStringAsFixed(0)} mg · Al dormir: ${cStatus.bedtimeResidualMg.toStringAsFixed(0)} mg',
-                            style: TextStyle(
-                              fontFamily: ScFonts.ui,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                              color: c.text,
-                            ),
-                          ),
-                        ),
-                        Icon(Icons.chevron_right_rounded, size: 18, color: c.text2),
-                      ],
-                    ),
-                  ),
-                ),
-              );
-            },
+            readiness.category.advice(l10n),
+            style: TextStyle(fontFamily: ScFonts.ui, fontSize: 12.5, color: c.text, height: 1.35),
           ),
         ],
       ),
@@ -204,3 +117,121 @@ class ReadinessCard extends ConsumerWidget {
   }
 }
 
+class _ScoreBox extends StatelessWidget {
+  const _ScoreBox({required this.score});
+
+  final int score;
+
+  @override
+  Widget build(BuildContext context) {
+    final ScColors c = context.sc;
+    return Container(
+      width: 44,
+      height: 44,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: c.isFlat ? c.bg3 : c.accent.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(ScRadius.control),
+        border: c.isFlat ? Border.all(color: c.line2, width: 1.5) : null,
+      ),
+      child: Text(
+        '$score',
+        style: TextStyle(
+          fontFamily: ScFonts.display,
+          fontSize: 19,
+          fontWeight: FontWeight.w900,
+          color: c.isFlat ? c.text : c.accent,
+        ),
+      ),
+    );
+  }
+}
+
+class _NoSleepYet extends StatelessWidget {
+  const _NoSleepYet({required this.onLogSleep});
+
+  final VoidCallback onLogSleep;
+
+  @override
+  Widget build(BuildContext context) {
+    final ScColors c = context.sc;
+    final AppLocalizations l10n = context.l10n;
+    return Row(
+      children: <Widget>[
+        Icon(Icons.bedtime_outlined, size: 22, color: c.isFlat ? c.text : c.fasting),
+        const SizedBox(width: ScSpace.m),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Text(l10n.todayDisposicionEnergia, style: context.text.titleMedium),
+              Text(l10n.readinessNoSleep, style: context.text.bodySmall),
+            ],
+          ),
+        ),
+        const SizedBox(width: ScSpace.s),
+        TextButton(onPressed: onLogSleep, child: Text(l10n.readinessLogSleep)),
+      ],
+    );
+  }
+}
+
+class _CaffeineStrip extends ConsumerWidget {
+  const _CaffeineStrip({required this.dateKey});
+
+  final String dateKey;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final ScColors c = context.sc;
+    final AppLocalizations l10n = context.l10n;
+    final CaffeineDay? day = ref.watch(caffeineDayProvider(dateKey)).value;
+    if (day == null) return const SizedBox.shrink();
+
+    final String cutoff = DateFormats.time(day.status.recommendedCutoffTime, l10n.localeName);
+    final String text = day.logs.isEmpty
+        ? l10n.caffeineNoneToday(cutoff)
+        : l10n.todayCafeinaActivaMgAlDormir(
+            day.status.currentResidualMg.toStringAsFixed(0),
+            day.status.bedtimeResidualMg.toStringAsFixed(0),
+          );
+
+    return Material(
+      color: c.bg3,
+      borderRadius: BorderRadius.circular(ScRadius.control),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(ScRadius.control),
+        onTap: () {
+          unawaited(HapticFeedback.selectionClick());
+          unawaited(CaffeineTrackerSheet.show(context, dateKey: dateKey));
+        },
+        child: Container(
+          constraints: const BoxConstraints(minHeight: 48),
+          padding: const EdgeInsets.symmetric(horizontal: ScSpace.m, vertical: ScSpace.s + 2),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(ScRadius.control),
+            border: Border.all(color: c.isFlat ? c.line2 : c.line, width: c.isFlat ? 1.5 : 1.0),
+          ),
+          child: Row(
+            children: <Widget>[
+              Icon(Icons.coffee_rounded, size: 18, color: c.isFlat ? c.text : c.accent),
+              const SizedBox(width: ScSpace.s),
+              Expanded(
+                child: Text(
+                  text,
+                  style: TextStyle(
+                    fontFamily: ScFonts.ui,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: c.text,
+                  ),
+                ),
+              ),
+              Icon(Icons.chevron_right_rounded, size: 18, color: c.text2),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}

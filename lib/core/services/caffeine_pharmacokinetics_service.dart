@@ -93,12 +93,16 @@ class CaffeinePharmacokineticsService {
   }
 
   /// Evalúa el estado integral de cafeína: nivel actual, nivel proyectado al dormir y alerta de sueño.
+  ///
+  /// Con [cutoffHoursBeforeBed] (preferencia del perfil) la hora límite es
+  /// `targetBedtime - cutoffHoursBeforeBed`; sin ella se deriva de una taza de 100 mg.
   CaffeineStatus evaluateStatus({
     required List<CaffeineLog> logs,
     required DateTime targetBedtime,
-    DateTime? currentTime,
+    required DateTime currentTime,
+    double? cutoffHoursBeforeBed,
   }) {
-    final DateTime now = currentTime ?? DateTime.now();
+    final DateTime now = currentTime;
     final double currentResidual = computeResidualCaffeineAt(
       logs: logs,
       targetTime: now,
@@ -107,11 +111,13 @@ class CaffeinePharmacokineticsService {
       logs: logs,
       targetTime: targetBedtime,
     );
-    final DateTime cutoffTime = computeBedtimeCutoff(
-      targetBedtime: targetBedtime,
-      typicalDoseMg: 100.0,
-      maxResidual: maxBedtimeResidualMg,
-    );
+    final DateTime cutoffTime = cutoffHoursBeforeBed != null && cutoffHoursBeforeBed > 0
+        ? targetBedtime.subtract(Duration(minutes: (cutoffHoursBeforeBed * 60).round()))
+        : computeBedtimeCutoff(
+            targetBedtime: targetBedtime,
+            typicalDoseMg: 100.0,
+            maxResidual: maxBedtimeResidualMg,
+          );
 
     final bool isPassed = now.isAfter(cutoffTime);
     final bool willDisrupt = bedtimeResidual > maxBedtimeResidualMg;

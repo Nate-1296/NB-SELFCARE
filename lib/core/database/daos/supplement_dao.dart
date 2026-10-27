@@ -1,11 +1,15 @@
 import 'package:drift/drift.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../shared/utils/date_time_extensions.dart';
+import '../../clock/clock.dart';
 import '../app_database.dart';
 
 /// DAO para seguimiento de suplementación, creatina y medicación prescrita.
 class SupplementDao {
-  SupplementDao(this._db);
+  SupplementDao(this._db, {this._clock = const Clock()});
+
+  final Clock _clock;
 
   final AppDatabase _db;
 
@@ -87,7 +91,7 @@ class SupplementDao {
       await query.write(
         SupplementLogsCompanion(
           wasTaken: Value(wasTaken),
-          takenAt: Value(DateTime.now()),
+          takenAt: Value(_clock.now()),
         ),
       );
     } else {
@@ -96,7 +100,7 @@ class SupplementDao {
               dateKey: Value(dateKey),
               supplementId: Value(supplementId),
               wasTaken: Value(wasTaken),
-              takenAt: Value(DateTime.now()),
+              takenAt: Value(_clock.now()),
             ),
           );
     }
@@ -112,12 +116,18 @@ class SupplementDao {
 
     if (waterSupplements.isEmpty) return false;
 
-    // 2. Verificar si hubo al menos 3 tomas en los últimos 7 días
+    // 2. Verificar si hubo al menos 3 tomas en los últimos 7 días (incluido hoy)
+    final DateTime? today = DateTime.tryParse(currentDateKey);
+    if (today == null) return false;
+    final String fromDateKey = today.subtract(const Duration(days: 6)).dateKey;
     final supplementIds = waterSupplements.map((s) => s.id).toList();
     final logs = await (_db.select(_db.supplementLogs)
           ..where((tbl) =>
-              tbl.supplementId.isIn(supplementIds) & tbl.wasTaken.equals(true))
-          ..limit(10))
+              tbl.supplementId.isIn(supplementIds) &
+              tbl.wasTaken.equals(true) &
+              tbl.dateKey.isBiggerOrEqualValue(fromDateKey) &
+              tbl.dateKey.isSmallerOrEqualValue(currentDateKey))
+          ..limit(3))
         .get();
 
     return logs.length >= 3;
@@ -127,6 +137,6 @@ class SupplementDao {
 /// Provider de Riverpod para inyectar SupplementDao.
 final supplementDaoProvider = Provider<SupplementDao>((ref) {
   final AppDatabase db = ref.watch(appDatabaseProvider);
-  return SupplementDao(db);
+  return SupplementDao(db, clock: ref.watch(clockProvider));
 });
 

@@ -7,6 +7,8 @@ import 'package:image_picker/image_picker.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
 import '../../../../core/database/app_database.dart';
+import '../../../../core/domain/enums.dart';
+import '../../../../core/l10n/l10n.dart';
 import '../../../../core/services/nutrition_label_ocr_service.dart';
 import '../../../../core/services/open_food_facts_service.dart';
 import '../../../../shared/theme/sc_colors.dart';
@@ -27,7 +29,7 @@ class BarcodeScannerSheet extends ConsumerStatefulWidget {
     required this.targetDateKey,
   });
 
-  final String initialMealType;
+  final MealType initialMealType;
   final String targetDateKey;
 
   @override
@@ -63,7 +65,7 @@ class _BarcodeScannerSheetState extends ConsumerState<BarcodeScannerSheet> {
     setState(() {
       _isResolving = true;
       _statusMessage =
-          'Buscando $cleanCode en catálogo local y Open Food Facts...';
+          context.l10n.foodBuscandoEnCatalogoLocalY((cleanCode).toString());
     });
 
     unawaited(HapticFeedback.mediumImpact());
@@ -100,19 +102,18 @@ class _BarcodeScannerSheetState extends ConsumerState<BarcodeScannerSheet> {
             final ScColors dialogColors = ctx.sc;
             return AlertDialog(
               backgroundColor: dialogColors.bg2,
-              title: const Text('Producto no registrado'),
+              title: Text(context.l10n.foodProductoNoRegistrado),
               content: Text(
-                'El código $cleanCode aún no figura en tu catálogo ni en Open Food Facts.\n\n'
-                '¿Quieres registrarlo manualmente para futuras lecturas offline?',
+                context.l10n.foodElCodigoAunNoFigura((cleanCode).toString()),
               ),
               actions: <Widget>[
                 TextButton(
                   onPressed: () => Navigator.of(ctx).pop(false),
-                  child: const Text('Seguir escaneando'),
+                  child: Text(context.l10n.foodSeguirEscaneando),
                 ),
                 FilledButton(
                   onPressed: () => Navigator.of(ctx).pop(true),
-                  child: const Text('Crear alimento'),
+                  child: Text(context.l10n.comerCreateFood),
                 ),
               ],
             );
@@ -131,7 +132,7 @@ class _BarcodeScannerSheetState extends ConsumerState<BarcodeScannerSheet> {
       setState(() {
         _isResolving = false;
         _statusMessage =
-            'Sin conexión o tiempo agotado. Usa entrada manual o crea el producto.';
+            context.l10n.foodSinConexionOTiempoAgotado;
       });
       await _scannerController.start();
     }
@@ -283,7 +284,7 @@ class _BarcodeScannerSheetState extends ConsumerState<BarcodeScannerSheet> {
                       mainAxisSize: MainAxisSize.min,
                       children: <Widget>[
                         Text(
-                          'Escáner EAN-13',
+                          context.l10n.foodEscanerEan13,
                           softWrap: true,
                           style: TextStyle(
                             fontFamily: ScFonts.display,
@@ -293,7 +294,7 @@ class _BarcodeScannerSheetState extends ConsumerState<BarcodeScannerSheet> {
                           ),
                         ),
                         Text(
-                          'Destino: ${slot.title}',
+                          context.l10n.foodDestino(slot.title(context.l10n).toString()),
                           softWrap: true,
                           style: TextStyle(
                             fontFamily: ScFonts.ui,
@@ -320,7 +321,7 @@ class _BarcodeScannerSheetState extends ConsumerState<BarcodeScannerSheet> {
                         children: <Widget>[
                           if (!isFrontCamera)
                             IconButton(
-                              tooltip: 'Linterna',
+                              tooltip: context.l10n.foodLinterna,
                               visualDensity: VisualDensity.compact,
                               onPressed: () async {
                                 await _scannerController.toggleTorch();
@@ -333,7 +334,7 @@ class _BarcodeScannerSheetState extends ConsumerState<BarcodeScannerSheet> {
                               ),
                             ),
                           IconButton(
-                            tooltip: 'Cambiar cámara',
+                            tooltip: context.l10n.foodCambiarCamara,
                             visualDensity: VisualDensity.compact,
                             onPressed: () async {
                               await _scannerController.switchCamera();
@@ -342,7 +343,7 @@ class _BarcodeScannerSheetState extends ConsumerState<BarcodeScannerSheet> {
                                 Icon(Icons.cameraswitch_rounded, color: c.text),
                           ),
                           IconButton(
-                            tooltip: 'Cerrar',
+                            tooltip: context.l10n.commonClose,
                             visualDensity: VisualDensity.compact,
                             onPressed: () => Navigator.of(context).pop(),
                             icon: Icon(AppIcons.close, color: c.text),
@@ -390,7 +391,7 @@ class _BarcodeScannerSheetState extends ConsumerState<BarcodeScannerSheet> {
                       ),
                     Text(
                       _statusMessage ??
-                          'Enfoca el código de barras del envase. Si ya lo escaneaste antes, cargará al instante sin internet.',
+                          context.l10n.foodEnfocaElCodigoDeBarras,
                       textAlign: TextAlign.center,
                       softWrap: true,
                       style: TextStyle(
@@ -415,7 +416,7 @@ class _BarcodeScannerSheetState extends ConsumerState<BarcodeScannerSheet> {
                               ),
                             ),
                             icon: const Icon(Icons.dialpad_rounded, size: 18),
-                            label: const Text('Escribir EAN'),
+                            label: Text(context.l10n.foodEscribirEan),
                           ),
                         ),
                         const SizedBox(width: 10),
@@ -430,7 +431,7 @@ class _BarcodeScannerSheetState extends ConsumerState<BarcodeScannerSheet> {
                               ),
                             ),
                             icon: const Icon(AppIcons.add, size: 18),
-                            label: const Text('Crear manual'),
+                            label: Text(context.l10n.foodCrearManual),
                           ),
                         ),
                       ],
@@ -455,7 +456,7 @@ class _BarcodeScannerSheetState extends ConsumerState<BarcodeScannerSheet> {
                           color: c.accent,
                         ),
                         label: Text(
-                          'Escanear Tabla Nutricional (OCR)',
+                          context.l10n.foodEscanearTablaNutricionalOcr,
                           style: TextStyle(
                             fontFamily: ScFonts.ui,
                             fontSize: 12.5,
@@ -536,13 +537,13 @@ class _ManualBarcodeDialogState extends State<_ManualBarcodeDialog> {
     final ScColors c = context.sc;
     return AlertDialog(
       backgroundColor: c.bg2,
-      title: const Text('Escribir código EAN / UPC'),
+      title: Text(context.l10n.foodEscribirCodigoEanUpc),
       content: TextField(
         controller: _codeCtrl,
         keyboardType: TextInputType.number,
         autofocus: true,
         decoration: InputDecoration(
-          hintText: 'Ej. 8480000123456',
+          hintText: context.l10n.foodEj8480000123456,
           filled: true,
           fillColor: c.bg3,
           border: OutlineInputBorder(
@@ -558,7 +559,7 @@ class _ManualBarcodeDialogState extends State<_ManualBarcodeDialog> {
       actions: <Widget>[
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cancelar'),
+          child: Text(context.l10n.commonCancel),
         ),
         FilledButton(
           onPressed: () {
@@ -567,7 +568,7 @@ class _ManualBarcodeDialogState extends State<_ManualBarcodeDialog> {
               Navigator.of(context).pop(code);
             }
           },
-          child: const Text('Buscar'),
+          child: Text(context.l10n.foodBuscar),
         ),
       ],
     );

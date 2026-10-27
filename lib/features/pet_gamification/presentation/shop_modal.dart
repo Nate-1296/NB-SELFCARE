@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/clock/clock.dart';
 import '../../../core/database/app_database.dart';
 import '../../../core/database/daos/pet_dao.dart';
 import '../../../shared/theme/sc_colors.dart';
@@ -10,6 +11,7 @@ import '../../../shared/theme/sc_theme.dart';
 import '../../../shared/utils/date_time_extensions.dart';
 import '../../../shared/widgets/app_icons.dart';
 import '../../../shared/widgets/health_card.dart';
+import '../application/pet_queries.dart';
 
 /// Modal de la Tienda de Recompensas y Personalización de Nibi.
 class ShopModal extends ConsumerWidget {
@@ -138,7 +140,7 @@ class ShopModal extends ConsumerWidget {
                           final ok = await petDao.buyShopItem(
                             itemId: 'shield_daily',
                             cost: 25,
-                            dateKey: DateTime.now().dateKey,
+                            dateKey: ref.read(clockProvider).now().dateKey,
                             isConsumable: true,
                             shieldsToAdd: 1,
                           );
@@ -165,7 +167,7 @@ class ShopModal extends ConsumerWidget {
                           final ok = await petDao.buyShopItem(
                             itemId: 'shield_weekend',
                             cost: 65,
-                            dateKey: DateTime.now().dateKey,
+                            dateKey: ref.read(clockProvider).now().dateKey,
                             isConsumable: true,
                             shieldsToAdd: 3,
                           );
@@ -202,7 +204,7 @@ class ShopModal extends ConsumerWidget {
                           final ok = await petDao.buyShopItem(
                             itemId: 'hat_chef',
                             cost: 30,
-                            dateKey: DateTime.now().dateKey,
+                            dateKey: ref.read(clockProvider).now().dateKey,
                           );
                           if (ok) {
                             await petDao.equipItem(hatId: 'hat_chef');
@@ -231,7 +233,7 @@ class ShopModal extends ConsumerWidget {
                           final ok = await petDao.buyShopItem(
                             itemId: 'hat_headband',
                             cost: 35,
-                            dateKey: DateTime.now().dateKey,
+                            dateKey: ref.read(clockProvider).now().dateKey,
                           );
                           if (ok) {
                             await petDao.equipItem(hatId: 'hat_headband');
@@ -260,7 +262,7 @@ class ShopModal extends ConsumerWidget {
                           final ok = await petDao.buyShopItem(
                             itemId: 'hat_zen_halo',
                             cost: 45,
-                            dateKey: DateTime.now().dateKey,
+                            dateKey: ref.read(clockProvider).now().dateKey,
                           );
                           if (ok) {
                             await petDao.equipItem(hatId: 'hat_zen_halo');
@@ -289,7 +291,7 @@ class ShopModal extends ConsumerWidget {
                           final ok = await petDao.buyShopItem(
                             itemId: 'hat_crown',
                             cost: 60,
-                            dateKey: DateTime.now().dateKey,
+                            dateKey: ref.read(clockProvider).now().dateKey,
                           );
                           if (ok) {
                             await petDao.equipItem(hatId: 'hat_crown');
@@ -329,7 +331,7 @@ class ShopModal extends ConsumerWidget {
                           final ok = await petDao.buyShopItem(
                             itemId: 'bg_zen_garden',
                             cost: 40,
-                            dateKey: DateTime.now().dateKey,
+                            dateKey: ref.read(clockProvider).now().dateKey,
                           );
                           if (ok) {
                             await petDao.equipItem(bgId: 'bg_zen_garden');
@@ -352,7 +354,7 @@ class ShopModal extends ConsumerWidget {
                           final ok = await petDao.buyShopItem(
                             itemId: 'bg_mountain_dawn',
                             cost: 50,
-                            dateKey: DateTime.now().dateKey,
+                            dateKey: ref.read(clockProvider).now().dateKey,
                           );
                           if (ok) {
                             await petDao.equipItem(bgId: 'bg_mountain_dawn');
@@ -376,7 +378,7 @@ class ShopModal extends ConsumerWidget {
                           final ok = await petDao.buyShopItem(
                             itemId: 'bg_starry_dojo',
                             cost: 55,
-                            dateKey: DateTime.now().dateKey,
+                            dateKey: ref.read(clockProvider).now().dateKey,
                           );
                           if (ok) {
                             await petDao.equipItem(bgId: 'bg_starry_dojo');
@@ -410,7 +412,7 @@ class ShopModal extends ConsumerWidget {
                           final ok = await petDao.buyShopItem(
                             itemId: 'snack_apple',
                             cost: 10,
-                            dateKey: DateTime.now().dateKey,
+                            dateKey: ref.read(clockProvider).now().dateKey,
                             isConsumable: true,
                           );
                           if (context.mounted && ok) {

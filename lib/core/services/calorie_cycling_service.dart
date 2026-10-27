@@ -176,11 +176,10 @@ class CalorieCyclingService {
       final String dateKey =
           '${day.year.toString().padLeft(4, '0')}-${day.month.toString().padLeft(2, '0')}-${day.day.toString().padLeft(2, '0')}';
 
-      final int dayTarget = schedule[i - 1].targetKcal;
-      targetSum += dayTarget;
-
+      // Solo cuentan los días registrados: un día sin datos no es un "ahorro".
       final int? consumed = caloriesLoggedByDateKey[dateKey];
       if (consumed != null) {
+        targetSum += schedule[i - 1].targetKcal;
         consumedSum += consumed;
         daysLogged++;
       }

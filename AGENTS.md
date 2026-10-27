@@ -9,6 +9,7 @@
 
 1. **100% Offline-First & Cero Telemetría:**
    * **PROHIBIDO:** Añadir dependencias de Firebase, Supabase, Google Analytics, Sentry remoto, Crashlytics o cualquier backend en la nube.
+   * Única excepción documentada: ML Kit on-device para escáner y OCR (ADR-13). No ampara ningún otro SDK.
    * La única llamada HTTP permitida es a la API pública de **Open Food Facts** para resolver códigos de barras no cacheados. Todo resultado debe guardarse inmediatamente en SQLite local.
    * `android:allowBackup="false"` debe permanecer siempre en `AndroidManifest.xml`.
 2. **Cero Placeholders y Código Completo:**
@@ -43,6 +44,9 @@ Antes de implementar cualquier característica, consulta su especificación téc
 * [`docs/10_SECURITY_AND_TESTING.md`](docs/10_SECURITY_AND_TESTING.md): Suite de pruebas unitarias y verificación de fugas de red.
 * [`docs/11_ROADMAP.md`](docs/11_ROADMAP.md): Plan de ejecución modular en 6 fases.
 * [`docs/12_DECISIONS.md`](docs/12_DECISIONS.md): Registro de decisiones de arquitectura (ADR-01 a ADR-12).
+* [`docs/13_COMPETITIVE_ANALYSIS_AND_VALUE_GAPS.md`](docs/13_COMPETITIVE_ANALYSIS_AND_VALUE_GAPS.md): Benchmark de mercado y brechas de valor.
+* [`docs/14_MASTER_IMPLEMENTATION_PLAN.md`](docs/14_MASTER_IMPLEMENTATION_PLAN.md): Plan maestro de las 7 fases de expansión.
+* [`docs/15_AUDITORIA_AAA.md`](docs/15_AUDITORIA_AAA.md): Auditoría de calidad (documentado vs. implementado), hallazgos P0/P1 y arquitectura objetivo. **Leer antes de tocar código.**
 
 ---
 

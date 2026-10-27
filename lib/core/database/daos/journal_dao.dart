@@ -1,16 +1,13 @@
 import 'package:drift/drift.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../constants/app_constants.dart';
 import '../app_database.dart';
-import 'pet_dao.dart';
 
 /// DAO especializado en el diario privado y reflexiones personales.
 class JournalDao {
-  JournalDao(this._db, this._petDao);
+  JournalDao(this._db);
 
   final AppDatabase _db;
-  final PetDao _petDao;
 
   /// Emite en vivo las entradas del diario para una fecha específica.
   Stream<List<JournalEntry>> watchEntriesForDate(String dateKey) {
@@ -28,20 +25,9 @@ class JournalDao {
         .watch();
   }
 
-  /// Guarda una nueva entrada en el diario y otorga +10 monedas en el libro mayor.
-  Future<int> insertEntry(JournalEntriesCompanion companion) async {
-    return _db.transaction(() async {
-      final int id = await _db.into(_db.journalEntries).insert(companion);
-
-      final String dateKey = companion.dateKey.value;
-      await _petDao.grantDailyReward(
-        dateKey: dateKey,
-        actionType: 'journal_entry',
-        baseAmount: AppConstants.coinsJournalEntry,
-      );
-
-      return id;
-    });
+  /// Guarda una nueva entrada en el diario.
+  Future<int> insertEntry(JournalEntriesCompanion companion) {
+    return _db.into(_db.journalEntries).insert(companion);
   }
 
   /// Restaura una entrada de diario eliminada (flujo Deshacer).
@@ -70,6 +56,5 @@ class JournalDao {
 /// Provider de Riverpod para inyectar JournalDao.
 final journalDaoProvider = Provider<JournalDao>((ref) {
   final AppDatabase db = ref.watch(appDatabaseProvider);
-  final PetDao petDao = ref.watch(petDaoProvider);
-  return JournalDao(db, petDao);
+  return JournalDao(db);
 });

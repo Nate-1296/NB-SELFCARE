@@ -1,4 +1,5 @@
 import 'dart:io';
+
 import 'package:drift/drift.dart' as drift;
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
@@ -9,15 +10,21 @@ import 'package:nb_selfcare/core/database/daos/fasting_dao.dart';
 import 'package:nb_selfcare/core/database/daos/journal_dao.dart';
 import 'package:nb_selfcare/core/database/daos/pet_dao.dart';
 import 'package:nb_selfcare/core/database/daos/user_profile_dao.dart';
+import 'package:nb_selfcare/core/domain/enums.dart';
+import 'package:nb_selfcare/core/l10n/l10n.dart';
 import 'package:nb_selfcare/core/services/backup_service.dart';
 import 'package:nb_selfcare/core/services/cross_analytics_engine.dart';
+import 'package:nb_selfcare/features/fasting/application/fasting_service.dart';
 import 'package:nb_selfcare/features/fasting/presentation/fasting_screen.dart';
+import 'package:nb_selfcare/features/journal/application/journal_service.dart';
 import 'package:nb_selfcare/features/profile_goals/presentation/app_settings_screen.dart';
 import 'package:nb_selfcare/features/profile_goals/presentation/perfil_yo_screen.dart';
 import 'package:nb_selfcare/features/today/presentation/hoy_screen.dart';
 import 'package:nb_selfcare/shared/theme/sc_theme.dart';
 import 'package:nb_selfcare/shared/utils/date_time_extensions.dart';
 
+import '../support/test_container.dart';
+import '../support/widget_test_helpers.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
@@ -31,16 +38,16 @@ void main() {
   setUp(() async {
     db = AppDatabase(NativeDatabase.memory());
     petDao = PetDao(db);
-    fastingDao = FastingDao(db, petDao);
-    journalDao = JournalDao(db, petDao);
+    fastingDao = FastingDao(db);
+    journalDao = JournalDao(db);
     crossAnalyticsEngine = CrossAnalyticsEngine(db);
-    backupService = BackupService(db);
+    backupService = BackupService(db, temporaryDirectory: () async => Directory.systemTemp);
 
     await UserProfileDao(db).createProfile(
       UserProfilesCompanion(
         name: const drift.Value('Nathan'),
         birthDate: drift.Value(DateTime(1998, 5, 20)),
-        biologicalSex: const drift.Value('male'),
+        biologicalSex: const drift.Value(BiologicalSex.male),
         heightCm: const drift.Value(178.0),
         targetWeightKg: const drift.Value(72.0),
         weeklyGoalRateKg: const drift.Value(-0.5),
@@ -108,11 +115,15 @@ void main() {
 
   group('FastingDao and FastingScreen', () {
     test('Iniciar y completar ayuno de ≥ 14 horas otorga +20 monedas Nibi', () async {
-      final startedAt = DateTime.now().subtract(const Duration(hours: 16));
-      final sessionId = await fastingDao.startFast(
+      final DateTime now = DateTime(2026, 10, 23, 12);
+      final ProviderContainer container = createTestContainer(db, now: now);
+      addTearDown(container.dispose);
+      final FastingService service = container.read(fastingServiceProvider);
+
+      final sessionId = await service.start(
         protocolName: '16:8',
         targetHours: 16,
-        startedAt: startedAt,
+        startedAt: now.subtract(const Duration(hours: 16)),
       );
 
       final active = await fastingDao.getActiveSession();
@@ -121,8 +132,10 @@ void main() {
       expect(active.targetHours, equals(16));
 
       // Finalizar sesión de 16h
-      final completed = await fastingDao.endFast(sessionId: sessionId, notes: 'Sensación de energía');
-      expect(completed, isTrue);
+      final FastFinishResult? completed = await service.finish(sessionId);
+      expect(completed, isNotNull);
+      expect(completed!.coins, equals(20));
+      expect(completed.suggestsRefeedingGuide, isFalse, reason: '16 h < 18 h');
 
       final updatedSession = await (db.select(db.fastingSessions)..where((tbl) => tbl.id.equals(sessionId))).getSingle();
       expect(updatedSession.isCompleted, isTrue);
@@ -145,6 +158,9 @@ void main() {
             fastingDaoProvider.overrideWithValue(fastingDao),
           ],
           child: MaterialApp(
+            locale: const Locale('es'),
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
             theme: ScTheme.build('samsung_dark'),
             home: const FastingScreen(),
           ),
@@ -153,12 +169,17 @@ void main() {
 
       await tester.pumpAndSettle();
 
-      expect(find.text('Ayuno Intermitente'), findsOneWidget);
-      expect(find.text('Elegir Protocolo de Ayuno'), findsOneWidget);
-      expect(find.text('16:8'), findsOneWidget);
+      expect(find.text('Ayuno'), findsOneWidget);
+      expect(find.text('Empezar ayuno 16:8'), findsOneWidget);
+      await tester.scrollUntilVisible(find.text('20:4'), 300, scrollable: find.byType(Scrollable).first);
       expect(find.text('18:6'), findsOneWidget);
       expect(find.text('20:4'), findsOneWidget);
-      expect(find.text('Iniciar Ayuno (16:8)'), findsOneWidget);
+
+      // Elegir 18:6 actualiza el botón de inicio.
+      await tester.tap(find.text('18:6'));
+      await tester.pumpAndSettle();
+      await tester.scrollUntilVisible(find.text('Empezar ayuno 18:6'), -300, scrollable: find.byType(Scrollable).first);
+      expect(find.text('Empezar ayuno 18:6'), findsOneWidget);
 
       // Limpiar timers reactivos de Drift
       await tester.pumpWidget(const SizedBox());
@@ -168,8 +189,10 @@ void main() {
 
   group('JournalDao and JournalAnalyticsProfileScreen', () {
     test('Insertar entrada en diario otorga +10 monedas Nibi y persiste datos', () async {
-      final now = DateTime.now();
-      final id = await journalDao.insertEntry(
+      final DateTime now = DateTime(2026, 10, 23, 21);
+      final ProviderContainer container = createTestContainer(db, now: now);
+      addTearDown(container.dispose);
+      final ({int entryId, int coins}) saved = await container.read(journalServiceProvider).save(
         JournalEntriesCompanion(
           dateKey: drift.Value(now.dateKey),
           createdAt: drift.Value(now),
@@ -180,8 +203,10 @@ void main() {
           tagsJson: const drift.Value('["recuperacion"]'),
         ),
       );
+      final int id = saved.entryId;
 
       expect(id, isPositive);
+      expect(saved.coins, equals(10));
 
       final entries = await (db.select(db.journalEntries)..where((tbl) => tbl.id.equals(id))).get();
       expect(entries.length, equals(1));
@@ -206,9 +231,10 @@ void main() {
             crossAnalyticsEngineProvider.overrideWithValue(crossAnalyticsEngine),
             backupServiceProvider.overrideWithValue(backupService),
           ],
-          child: MaterialApp(
+          child: routedTestApp(
             theme: ScTheme.build('samsung_dark'),
             home: const PerfilYoScreen(),
+            routes: const <String, Widget>{'/ajustes': AppSettingsScreen()},
           ),
         ),
       );
@@ -220,12 +246,10 @@ void main() {
       // El Diario vive exclusivamente en el widget 4×4 de Hoy, jamás en Perfil
       expect(find.text('Diario de Reflexión'), findsNothing);
       expect(find.text('Diario Personal'), findsNothing);
-      expect(find.text('Ajustes de la Aplicación'), findsOneWidget);
-
-      await tester.tap(find.text('Ajustes de la Aplicación'));
+      await tester.tap(find.byTooltip('Ajustes'));
       await tester.pumpAndSettle();
       expect(find.byType(AppSettingsScreen), findsOneWidget);
-      expect(find.text('Aspecto y Pantalla'), findsOneWidget);
+      expect(find.text('Apariencia'), findsOneWidget);
 
       // Limpiar timers reactivos de Drift
       await tester.pumpWidget(const SizedBox());
@@ -247,6 +271,9 @@ void main() {
             journalDaoProvider.overrideWithValue(journalDao),
           ],
           child: MaterialApp(
+            locale: const Locale('es'),
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
             theme: ScTheme.build('samsung_dark'),
             home: const HoyScreen(),
           ),
@@ -286,7 +313,7 @@ void main() {
       final afterPet = await petDao.getPetStatus();
       expect(afterPet?.coinsBalance, equals(initialCoins + 10));
 
-      // Desmontar ProviderScope para limpiar timers reactivos y el TTL de 120s de LocalAiService
+      // Desmontar ProviderScope para limpiar timers reactivos y el TTL de 120s de TextAssistant
       await tester.pumpWidget(const SizedBox());
       await tester.pump(const Duration(milliseconds: 100));
     });
@@ -301,7 +328,7 @@ void main() {
     test('Exporta con VACUUM INTO a directorio temporal y verifica integridad ok', () async {
       final tempDir = Directory.systemTemp.createTempSync('nb_backup_test_');
       try {
-        final exportedFile = await db.exportCleanDatabaseBackup(tempDir.path);
+        final exportedFile = await db.exportCleanDatabaseBackup(tempDir.path, stamp: DateTime(2026, 10, 26));
         expect(exportedFile.existsSync(), isTrue);
 
         final bool isValid = await backupService.verifyBackupIntegrity(exportedFile.path);
@@ -328,7 +355,7 @@ void main() {
         await db.into(db.foodItems).insert(
               FoodItemsCompanion.insert(
                 name: 'Arepa de choclo artesanal',
-                source: 'custom',
+                source: FoodSource.userCustom,
                 kcalPer100g: 230,
                 proteinPer100g: 6,
                 carbsPer100g: 38,
@@ -336,7 +363,7 @@ void main() {
               ),
             );
 
-        final exportedFile = await db.exportCleanDatabaseBackup(tempDir.path);
+        final exportedFile = await db.exportCleanDatabaseBackup(tempDir.path, stamp: DateTime(2026, 10, 26));
 
         // 2. Borrar entradas en la base de datos activa
         await db.delete(db.journalEntries).go();
@@ -369,7 +396,7 @@ void main() {
       final int foodId = await db.into(db.foodItems).insert(
             FoodItemsCompanion.insert(
               name: 'Avena integral',
-              source: 'usda',
+              source: FoodSource.usdaSeed,
               kcalPer100g: 370,
               proteinPer100g: 13,
               carbsPer100g: 60,
@@ -395,7 +422,7 @@ void main() {
           await db.into(db.foodLogs).insert(
                 FoodLogsCompanion.insert(
                   dateKey: dayKey,
-                  mealType: 'lunch',
+                  mealType: MealType.lunch,
                   foodItemId: foodId,
                   gramsConsumed: 100,
                   totalKcal: carbs * 4,
@@ -433,7 +460,7 @@ void main() {
           await db.into(db.foodLogs).insert(
                 FoodLogsCompanion.insert(
                   dateKey: dayKey,
-                  mealType: 'lunch',
+                  mealType: MealType.lunch,
                   foodItemId: foodId,
                   gramsConsumed: 100,
                   totalKcal: carbs * 4,

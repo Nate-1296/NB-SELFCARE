@@ -15,6 +15,9 @@ abstract final class AppConstants {
   static const double glycogenSupercompensationFactor = 1.30;
   static const double biaWaterShiftThresholdPercent = 0.40;
 
+  /// Hora de acostarse de referencia para la curva de cafeína.
+  static const int defaultBedtimeHour = 23;
+
   // TDEE Adaptativo
   static const int adaptiveTdeeWindowDays = 14;
   static const int adaptiveTdeeMinFoodLogDays = 10;
@@ -27,7 +30,6 @@ abstract final class AppConstants {
   static const int initialCoinsBalance = 50;
   static const int initialStreakShields = 1;
   static const double goodSleepMultiplier = 1.5;
-  static const int localAiMemoryTtlSeconds = 120;
 
   // Monedas por acción
   static const int coinsWeighIn = 15;

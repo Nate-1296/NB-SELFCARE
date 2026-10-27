@@ -1,19 +1,20 @@
 import 'dart:async';
-import 'package:drift/drift.dart' as drift;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../../core/constants/app_constants.dart';
 import '../../../../core/database/app_database.dart';
-import '../../../../core/database/daos/food_dao.dart';
-import '../../../../core/database/daos/pet_dao.dart';
-import '../../../../core/database/daos/recipe_dao.dart';
+import '../../../../core/database/models/recipe_models.dart';
+import '../../../../core/domain/enums.dart';
+import '../../../../core/l10n/l10n.dart';
 import '../../../../shared/theme/sc_colors.dart';
 import '../../../../shared/theme/sc_theme.dart';
 import '../../../../shared/widgets/app_icons.dart';
-import '../../../../shared/widgets/health_card.dart';
 import '../../../../shared/widgets/sheet.dart';
+import '../../application/food_catalog_service.dart';
+import '../../application/food_logging_service.dart';
+import 'ingredient_picker_sheet.dart';
 import 'meal_slot_selector.dart';
 
 /// Borrador en memoria de un ingrediente seleccionado para una receta.
@@ -40,16 +41,16 @@ class RecipeBuilderSheet extends ConsumerStatefulWidget {
   const RecipeBuilderSheet({
     super.key,
     required this.targetDateKey,
-    this.initialMealType = 'lunch',
+    this.initialMealType = MealType.lunch,
   });
 
   final String targetDateKey;
-  final String initialMealType;
+  final MealType initialMealType;
 
   static Future<Recipe?> show(
     BuildContext context, {
     required String targetDateKey,
-    String initialMealType = 'lunch',
+    MealType initialMealType = MealType.lunch,
   }) {
     return mostrarHojaMenu<Recipe?>(
       context,
@@ -71,7 +72,7 @@ class _RecipeBuilderSheetState extends ConsumerState<RecipeBuilderSheet> {
   final TextEditingController _servingsCtrl = TextEditingController(text: '4');
   final TextEditingController _cookedWeightCtrl = TextEditingController();
 
-  late String _mealType;
+  late MealType _mealType;
   bool _useCookedWeightMode = false;
   bool _logImmediately = true;
   bool _isSaving = false;
@@ -112,12 +113,11 @@ class _RecipeBuilderSheetState extends ConsumerState<RecipeBuilderSheet> {
   double get _servingFat => _servings > 0 ? _totalFat / _servings : 0.0;
 
   Future<void> _pickIngredient() async {
-    final FoodDao foodDao = ref.read(foodDaoProvider);
     final FoodItem? selected = await showModalBottomSheet<FoodItem>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => _PickIngredientDialog(foodDao: foodDao),
+      builder: (_) => const IngredientPickerSheet(),
     );
 
     if (selected != null && mounted) {
@@ -144,21 +144,21 @@ class _RecipeBuilderSheetState extends ConsumerState<RecipeBuilderSheet> {
         final ScColors c = ctx.sc;
         return AlertDialog(
           backgroundColor: c.bg2,
-          title: Text('Cantidad de ${food.name}'),
+          title: Text(context.l10n.foodCantidadDe(food.name.toString())),
           content: TextField(
             controller: gramsCtrl,
             keyboardType:
                 const TextInputType.numberWithOptions(decimal: true),
             autofocus: true,
-            decoration: const InputDecoration(
-              labelText: 'Gramos crudos',
+            decoration: InputDecoration(
+              labelText: context.l10n.foodGramosCrudos,
               suffixText: 'g',
             ),
           ),
           actions: <Widget>[
             TextButton(
               onPressed: () => Navigator.of(ctx).pop(),
-              child: const Text('Cancelar'),
+              child: Text(context.l10n.commonCancel),
             ),
             FilledButton(
               onPressed: () {
@@ -167,7 +167,7 @@ class _RecipeBuilderSheetState extends ConsumerState<RecipeBuilderSheet> {
                 );
                 Navigator.of(ctx).pop(g);
               },
-              child: const Text('Añadir'),
+              child: Text(context.l10n.comerAnadir),
             ),
           ],
         );
@@ -179,8 +179,8 @@ class _RecipeBuilderSheetState extends ConsumerState<RecipeBuilderSheet> {
     if (!_formKey.currentState!.validate()) return;
     if (_ingredients.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Añade al menos un ingrediente a la receta.'),
+        SnackBar(
+          content: Text(context.l10n.foodAnadeAlMenosUnIngrediente),
         ),
       );
       return;
@@ -190,10 +190,6 @@ class _RecipeBuilderSheetState extends ConsumerState<RecipeBuilderSheet> {
     unawaited(HapticFeedback.mediumImpact());
 
     try {
-      final RecipeDao recipeDao = ref.read(recipeDaoProvider);
-      final FoodDao foodDao = ref.read(foodDaoProvider);
-      final PetDao petDao = ref.read(petDaoProvider);
-
       final double? cookedGrams = _useCookedWeightMode
           ? double.tryParse(
               _cookedWeightCtrl.text.trim().replaceAll(',', '.'),
@@ -207,65 +203,22 @@ class _RecipeBuilderSheetState extends ConsumerState<RecipeBuilderSheet> {
         );
       }).toList();
 
-      final int recipeId = await recipeDao.createRecipe(
+      final Recipe? createdRecipe = await ref.read(foodCatalogServiceProvider).createRecipe(
         name: _nameCtrl.text.trim(),
-        description: _descCtrl.text.trim().isNotEmpty
-            ? _descCtrl.text.trim()
-            : null,
+        description: _descCtrl.text.trim().isNotEmpty ? _descCtrl.text.trim() : null,
         defaultMealType: _mealType,
-        totalYieldServings: _servings,
+        servings: _servings,
         cookedTotalWeightGrams: cookedGrams,
         ingredients: drafts,
       );
 
-      final Recipe? createdRecipe = await recipeDao.getRecipeById(recipeId);
-
       // Si el usuario marcó registrar 1 porción hoy
       if (_logImmediately && createdRecipe != null) {
-        // También creamos el FoodItem representativo si es necesario, o registramos
-        // un food item consolidado de la receta
-        final FoodItem? recipeFood = await foodDao.getByBarcode('RECIPE_$recipeId');
-        if (recipeFood != null) {
-          await foodDao.logFoodItemPortion(
-            food: recipeFood,
-            grams: recipeFood.defaultServingGrams,
-            dateKey: widget.targetDateKey,
-            mealType: _mealType,
-          );
-        } else {
-          // Crear alimento correspondiente a la ración de la receta
-          final int foodItemId = await foodDao.insertFood(
-            FoodItemsCompanion.insert(
-              barcode: drift.Value('RECIPE_$recipeId'),
-              name: createdRecipe.name,
-              brand: const drift.Value('Receta Casera'),
-              source: 'user_custom',
-              defaultServingGrams: const drift.Value(100.0),
-              servingLabel: const drift.Value('1 ración'),
-              kcalPer100g: createdRecipe.kcalPerServing,
-              proteinPer100g: createdRecipe.proteinPerServing,
-              carbsPer100g: createdRecipe.carbsPerServing,
-              fatPer100g: createdRecipe.fatPerServing,
-              fiberPer100g: drift.Value(createdRecipe.fiberPerServing),
-              sodiumMgPer100g: drift.Value(createdRecipe.sodiumMgPerServing),
-            ),
-          );
-          final FoodItem? newFood = await foodDao.getById(foodItemId);
-          if (newFood != null) {
-            await foodDao.logFoodItemPortion(
-              food: newFood,
-              grams: 100.0,
-              dateKey: widget.targetDateKey,
+        await ref.read(foodLoggingServiceProvider).logRecipeServing(
+              recipe: createdRecipe,
               mealType: _mealType,
+              dateKey: widget.targetDateKey,
             );
-          }
-        }
-
-        await petDao.grantDailyReward(
-          dateKey: widget.targetDateKey,
-          actionType: 'meal_log_$_mealType',
-          baseAmount: AppConstants.coinsMealLog,
-        );
       }
 
       if (mounted) {
@@ -273,7 +226,7 @@ class _RecipeBuilderSheetState extends ConsumerState<RecipeBuilderSheet> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              '¡Receta "${_nameCtrl.text.trim()}" guardada exitosamente! 🍲',
+              context.l10n.foodRecetaGuardadaExitosamente(_nameCtrl.text.trim().toString()),
             ),
           ),
         );
@@ -281,7 +234,7 @@ class _RecipeBuilderSheetState extends ConsumerState<RecipeBuilderSheet> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error al guardar la receta: $e')),
+          SnackBar(content: Text(context.l10n.foodErrorAlGuardarLaReceta((e).toString()))),
         );
       }
     } finally {
@@ -314,7 +267,7 @@ class _RecipeBuilderSheetState extends ConsumerState<RecipeBuilderSheet> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: <Widget>[
                   Text(
-                    'Nueva Receta (Batch Cooking)',
+                    context.l10n.foodNuevaRecetaBatchCooking,
                     style: TextStyle(
                       fontFamily: ScFonts.display,
                       fontSize: 18,
@@ -333,13 +286,13 @@ class _RecipeBuilderSheetState extends ConsumerState<RecipeBuilderSheet> {
               // Nombre de la receta
               TextFormField(
                 controller: _nameCtrl,
-                decoration: const InputDecoration(
-                  labelText: 'Nombre de la receta (ej. Arroz con Pollo)',
-                  prefixIcon: Icon(Icons.soup_kitchen_rounded),
+                decoration: InputDecoration(
+                  labelText: context.l10n.foodNombreDeLaRecetaEj,
+                  prefixIcon: const Icon(Icons.soup_kitchen_rounded),
                 ),
                 validator: (String? val) {
                   if (val == null || val.trim().isEmpty) {
-                    return 'Introduce un nombre para la receta';
+                    return context.l10n.foodIntroduceUnNombreParaLa;
                   }
                   return null;
                 },
@@ -350,7 +303,7 @@ class _RecipeBuilderSheetState extends ConsumerState<RecipeBuilderSheet> {
               MealSlotSelectorGrid(
                 selectedMealType: _mealType,
                 compact: true,
-                onSelected: (String m) => setState(() => _mealType = m),
+                onSelected: (MealType m) => setState(() => _mealType = m),
               ),
               const SizedBox(height: 14),
 
@@ -371,7 +324,7 @@ class _RecipeBuilderSheetState extends ConsumerState<RecipeBuilderSheet> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: <Widget>[
                         Text(
-                          'Rendimiento y Raciones',
+                          context.l10n.foodRendimientoYRaciones,
                           style: TextStyle(
                             fontFamily: ScFonts.display,
                             fontSize: 13.5,
@@ -382,7 +335,7 @@ class _RecipeBuilderSheetState extends ConsumerState<RecipeBuilderSheet> {
                         Row(
                           children: <Widget>[
                             Text(
-                              _useCookedWeightMode ? 'Por peso' : 'Por platos',
+                              _useCookedWeightMode ? context.l10n.foodPorPeso: context.l10n.foodPorPlatos,
                               style: TextStyle(
                                 fontFamily: ScFonts.ui,
                                 fontSize: 11,
@@ -407,15 +360,15 @@ class _RecipeBuilderSheetState extends ConsumerState<RecipeBuilderSheet> {
                             child: TextFormField(
                               controller: _servingsCtrl,
                               keyboardType: TextInputType.number,
-                              decoration: const InputDecoration(
-                                labelText: 'Número de raciones iguales',
+                              decoration: InputDecoration(
+                                labelText: context.l10n.foodNumeroDeRacionesIguales,
                                 suffixText: 'platos',
                               ),
                               onChanged: (_) => setState(() {}),
                               validator: (String? val) {
                                 final int? n = int.tryParse(val ?? '');
                                 if (n == null || n <= 0) {
-                                  return 'Debe ser al menos 1';
+                                  return context.l10n.foodDebeSerAlMenos1;
                                 }
                                 return null;
                               },
@@ -430,8 +383,8 @@ class _RecipeBuilderSheetState extends ConsumerState<RecipeBuilderSheet> {
                             child: TextFormField(
                               controller: _servingsCtrl,
                               keyboardType: TextInputType.number,
-                              decoration: const InputDecoration(
-                                labelText: 'Raciones estimadas',
+                              decoration: InputDecoration(
+                                labelText: context.l10n.foodRacionesEstimadas,
                                 suffixText: 'porciones',
                               ),
                               onChanged: (_) => setState(() {}),
@@ -445,8 +398,8 @@ class _RecipeBuilderSheetState extends ConsumerState<RecipeBuilderSheet> {
                                   const TextInputType.numberWithOptions(
                                 decimal: true,
                               ),
-                              decoration: const InputDecoration(
-                                labelText: 'Peso total cocinado',
+                              decoration: InputDecoration(
+                                labelText: context.l10n.foodPesoTotalCocinado,
                                 suffixText: 'g',
                               ),
                             ),
@@ -465,7 +418,7 @@ class _RecipeBuilderSheetState extends ConsumerState<RecipeBuilderSheet> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: <Widget>[
                   Text(
-                    'Ingredientes Crudos (${_ingredients.length})',
+                    context.l10n.foodIngredientesCrudos(_ingredients.length.toString()),
                     style: TextStyle(
                       fontFamily: ScFonts.display,
                       fontSize: 14.5,
@@ -480,7 +433,7 @@ class _RecipeBuilderSheetState extends ConsumerState<RecipeBuilderSheet> {
                       side: BorderSide(color: c.isFlat ? c.line2 : c.accent),
                     ),
                     icon: const Icon(AppIcons.add, size: 16),
-                    label: const Text('Ingrediente'),
+                    label: Text(context.l10n.foodIngrediente),
                   ),
                 ],
               ),
@@ -499,7 +452,7 @@ class _RecipeBuilderSheetState extends ConsumerState<RecipeBuilderSheet> {
                   ),
                   child: Center(
                     child: Text(
-                      'Toca "+ Ingrediente" para añadir alimentos crudos del catálogo.',
+                      context.l10n.foodTocaIngredienteParaAnadirAlimentos,
                       style: TextStyle(
                         fontFamily: ScFonts.ui,
                         fontSize: 12,
@@ -543,7 +496,7 @@ class _RecipeBuilderSheetState extends ConsumerState<RecipeBuilderSheet> {
                                 ),
                               ),
                               Text(
-                                '${item.rawGrams.toStringAsFixed(0)}g • ${item.kcal.toStringAsFixed(0)} kcal (P: ${item.proteinG.toStringAsFixed(1)}g | C: ${item.carbsG.toStringAsFixed(1)}g | G: ${item.fatG.toStringAsFixed(1)}g)',
+                                context.l10n.foodGKcalPGC2(item.rawGrams.toStringAsFixed(0).toString(), item.kcal.toStringAsFixed(0).toString(), item.proteinG.toStringAsFixed(1).toString(), item.carbsG.toStringAsFixed(1).toString(), item.fatG.toStringAsFixed(1).toString()),
                                 style: TextStyle(
                                   fontFamily: ScFonts.ui,
                                   fontSize: 11,
@@ -586,7 +539,7 @@ class _RecipeBuilderSheetState extends ConsumerState<RecipeBuilderSheet> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
                     Text(
-                      'Nutrición por Ración (1 de $_servings):',
+                      context.l10n.foodNutricionPorRacion1De((_servings).toString()),
                       style: TextStyle(
                         fontFamily: ScFonts.display,
                         fontSize: 13,
@@ -599,30 +552,30 @@ class _RecipeBuilderSheetState extends ConsumerState<RecipeBuilderSheet> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: <Widget>[
                         _MacroSummaryChip(
-                          label: 'Calorías',
-                          value: '${_servingKcal.round()} kcal',
+                          label: context.l10n.foodCalorias,
+                          value: context.l10n.foodKcal2(_servingKcal.round().toString()),
                           color: c.calories,
                         ),
                         _MacroSummaryChip(
-                          label: 'Proteínas',
-                          value: '${_servingProtein.toStringAsFixed(1)} g',
+                          label: context.l10n.foodProteinas,
+                          value: context.l10n.foodG7(_servingProtein.toStringAsFixed(1).toString()),
                           color: c.protein,
                         ),
                         _MacroSummaryChip(
-                          label: 'Carbos',
-                          value: '${_servingCarbs.toStringAsFixed(1)} g',
+                          label: context.l10n.todayCarbos,
+                          value: context.l10n.foodG8(_servingCarbs.toStringAsFixed(1).toString()),
                           color: c.carbs,
                         ),
                         _MacroSummaryChip(
-                          label: 'Grasas',
-                          value: '${_servingFat.toStringAsFixed(1)} g',
+                          label: context.l10n.todayGrasas,
+                          value: context.l10n.foodG9(_servingFat.toStringAsFixed(1).toString()),
                           color: c.fat,
                         ),
                       ],
                     ),
                     const SizedBox(height: 6),
                     Text(
-                      'Total de la olla: ${_totalKcal.round()} kcal • Peso crudo: ${_totalRawWeight.round()}g',
+                      context.l10n.foodTotalDeLaOllaKcal(_totalKcal.round().toString(), _totalRawWeight.round().toString()),
                       style: TextStyle(
                         fontFamily: ScFonts.ui,
                         fontSize: 10.5,
@@ -641,9 +594,9 @@ class _RecipeBuilderSheetState extends ConsumerState<RecipeBuilderSheet> {
                 value: _logImmediately,
                 onChanged: (bool? v) =>
                     setState(() => _logImmediately = v ?? true),
-                title: const Text(
-                  'Registrar 1 ración en el diario de hoy',
-                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                title: Text(
+                  context.l10n.foodRegistrar1RacionEnEl,
+                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
                 ),
                 controlAffinity: ListTileControlAffinity.leading,
               ),
@@ -659,7 +612,7 @@ class _RecipeBuilderSheetState extends ConsumerState<RecipeBuilderSheet> {
                   ),
                   onPressed: _isSaving ? null : _saveRecipe,
                   child: Text(
-                    _isSaving ? 'Guardando...' : 'Guardar Receta en Catálogo',
+                    _isSaving ? context.l10n.foodGuardando: context.l10n.foodGuardarRecetaEnCatalogo,
                     style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
                 ),
@@ -710,416 +663,3 @@ class _MacroSummaryChip extends StatelessWidget {
   }
 }
 
-/// Selector de ingredientes crudos desde el catálogo local para RecipeBuilderSheet.
-class _PickIngredientDialog extends StatefulWidget {
-  const _PickIngredientDialog({required this.foodDao});
-
-  final FoodDao foodDao;
-
-  @override
-  State<_PickIngredientDialog> createState() => _PickIngredientDialogState();
-}
-
-class _PickIngredientDialogState extends State<_PickIngredientDialog> {
-  final TextEditingController _ctrl = TextEditingController();
-  List<FoodItem> _items = <FoodItem>[];
-  bool _loading = false;
-
-  @override
-  void initState() {
-    super.initState();
-    unawaited(_search(''));
-  }
-
-  @override
-  void dispose() {
-    _ctrl.dispose();
-    super.dispose();
-  }
-
-  Future<void> _search(String q) async {
-    setState(() => _loading = true);
-    final List<FoodItem> res = await widget.foodDao.filterCatalog(
-      query: q,
-      limit: 30,
-    );
-    if (mounted) {
-      setState(() {
-        _items = res;
-        _loading = false;
-      });
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final ScColors c = context.sc;
-    return Container(
-      height: MediaQuery.of(context).size.height * 0.75,
-      decoration: BoxDecoration(
-        color: c.bg,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
-      child: Column(
-        children: <Widget>[
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: <Widget>[
-              Text(
-                'Seleccionar Ingrediente',
-                style: TextStyle(
-                  fontFamily: ScFonts.display,
-                  fontSize: 17,
-                  fontWeight: FontWeight.bold,
-                  color: c.text,
-                ),
-              ),
-              IconButton(
-                icon: Icon(AppIcons.close, color: c.text2),
-                onPressed: () => Navigator.of(context).pop(),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          TextField(
-            controller: _ctrl,
-            autofocus: true,
-            decoration: const InputDecoration(
-              hintText: 'Buscar ingrediente (ej. Pollo, Arroz, Aceite...)',
-              prefixIcon: Icon(Icons.search_rounded),
-            ),
-            onChanged: _search,
-          ),
-          const SizedBox(height: 10),
-          Expanded(
-            child: _loading
-                ? const Center(child: CircularProgressIndicator())
-                : _items.isEmpty
-                    ? Center(
-                        child: Text(
-                          'No se encontraron alimentos.',
-                          style: TextStyle(color: c.text2),
-                        ),
-                      )
-                    : ListView.separated(
-                        itemCount: _items.length,
-                        separatorBuilder: (_, _) => const Divider(height: 1),
-                        itemBuilder: (BuildContext ctx, int i) {
-                          final FoodItem f = _items[i];
-                          return ListTile(
-                            title: Text(
-                              f.name,
-                              style: const TextStyle(
-                                fontWeight: FontWeight.w600,
-                                fontSize: 13.5,
-                              ),
-                            ),
-                            subtitle: Text(
-                              '${f.kcalPer100g.round()} kcal / 100g • P:${f.proteinPer100g.toStringAsFixed(1)} C:${f.carbsPer100g.toStringAsFixed(1)} G:${f.fatPer100g.toStringAsFixed(1)}',
-                              style: TextStyle(
-                                color: c.text2,
-                                fontSize: 11,
-                              ),
-                            ),
-                            trailing: Icon(
-                              Icons.add_circle_outline_rounded,
-                              color: c.accent,
-                            ),
-                            onTap: () => Navigator.of(ctx).pop(f),
-                          );
-                        },
-                      ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// Hoja modal que lista las recetas guardadas para registro rápido en 1 toque.
-class SavedRecipesSheet extends ConsumerWidget {
-  const SavedRecipesSheet({
-    super.key,
-    required this.targetDateKey,
-    this.initialMealType = 'lunch',
-  });
-
-  final String targetDateKey;
-  final String initialMealType;
-
-  static Future<void> show(
-    BuildContext context, {
-    required String targetDateKey,
-    String initialMealType = 'lunch',
-  }) {
-    return mostrarHojaMenu<void>(
-      context,
-      builder: (_) => SavedRecipesSheet(
-        targetDateKey: targetDateKey,
-        initialMealType: initialMealType,
-      ),
-    );
-  }
-
-  Future<void> _logRecipeServing(
-    BuildContext context,
-    WidgetRef ref,
-    Recipe recipe,
-  ) async {
-    unawaited(HapticFeedback.mediumImpact());
-    final FoodDao foodDao = ref.read(foodDaoProvider);
-    final PetDao petDao = ref.read(petDaoProvider);
-
-    final FoodItem? recipeFood =
-        await foodDao.getByBarcode('RECIPE_${recipe.id}');
-    if (recipeFood != null) {
-      await foodDao.logFoodItemPortion(
-        food: recipeFood,
-        grams: recipeFood.defaultServingGrams,
-        dateKey: targetDateKey,
-        mealType: initialMealType,
-      );
-    } else {
-      final int foodId = await foodDao.insertFood(
-        FoodItemsCompanion.insert(
-          barcode: drift.Value('RECIPE_${recipe.id}'),
-          name: recipe.name,
-          brand: const drift.Value('Receta Casera'),
-          source: 'user_custom',
-          defaultServingGrams: const drift.Value(100.0),
-          servingLabel: const drift.Value('1 ración'),
-          kcalPer100g: recipe.kcalPerServing,
-          proteinPer100g: recipe.proteinPerServing,
-          carbsPer100g: recipe.carbsPerServing,
-          fatPer100g: recipe.fatPerServing,
-          fiberPer100g: drift.Value(recipe.fiberPerServing),
-          sodiumMgPer100g: drift.Value(recipe.sodiumMgPerServing),
-        ),
-      );
-      final FoodItem? newFood = await foodDao.getById(foodId);
-      if (newFood != null) {
-        await foodDao.logFoodItemPortion(
-          food: newFood,
-          grams: 100.0,
-          dateKey: targetDateKey,
-          mealType: initialMealType,
-        );
-      }
-    }
-
-    await petDao.grantDailyReward(
-      dateKey: targetDateKey,
-      actionType: 'meal_log_$initialMealType',
-      baseAmount: AppConstants.coinsMealLog,
-    );
-
-    if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            '¡1 ración de "${recipe.name}" registrada en $initialMealType! 🍲',
-          ),
-        ),
-      );
-      Navigator.of(context).pop();
-    }
-  }
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final ScColors c = context.sc;
-    final AsyncValue<List<Recipe>> recipesAsync =
-        ref.watch(allRecipesStreamProvider);
-
-    return Container(
-      height: MediaQuery.of(context).size.height * 0.78,
-      decoration: BoxDecoration(
-        color: c.bg,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-      ),
-      padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: <Widget>[
-              Row(
-                children: <Widget>[
-                  Icon(Icons.soup_kitchen_rounded, color: c.accent, size: 22),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Mis Recetas Caseras',
-                    style: TextStyle(
-                      fontFamily: ScFonts.display,
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: c.text,
-                    ),
-                  ),
-                ],
-              ),
-              IconButton(
-                icon: Icon(AppIcons.close, color: c.text2),
-                onPressed: () => Navigator.of(context).pop(),
-              ),
-            ],
-          ),
-          const SizedBox(height: 6),
-          Text(
-            'Batch Cooking y recetas multiración calculadas exactamente por porción.',
-            style: TextStyle(
-              fontFamily: ScFonts.ui,
-              fontSize: 12,
-              color: c.text2,
-            ),
-          ),
-          const SizedBox(height: 12),
-          SizedBox(
-            width: double.infinity,
-            child: OutlinedButton.icon(
-              style: OutlinedButton.styleFrom(
-                side: BorderSide(color: c.isFlat ? c.line2 : c.accent),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14),
-                ),
-              ),
-              onPressed: () async {
-                final Recipe? created = await RecipeBuilderSheet.show(
-                  context,
-                  targetDateKey: targetDateKey,
-                  initialMealType: initialMealType,
-                );
-                if (created != null && context.mounted) {
-                  Navigator.of(context).pop();
-                }
-              },
-              icon: const Icon(AppIcons.add, size: 16),
-              label: const Text('Crear Nueva Receta Multiración'),
-            ),
-          ),
-          const SizedBox(height: 14),
-          Expanded(
-            child: recipesAsync.when(
-              data: (List<Recipe> recipes) {
-                if (recipes.isEmpty) {
-                  return Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: <Widget>[
-                        Icon(
-                          Icons.soup_kitchen_outlined,
-                          size: 44,
-                          color: c.text3,
-                        ),
-                        const SizedBox(height: 10),
-                        Text(
-                          'Aún no has creado recetas caseras',
-                          style: TextStyle(
-                            fontFamily: ScFonts.display,
-                            fontSize: 15,
-                            fontWeight: FontWeight.bold,
-                            color: c.text,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Crea platos multiración para porcionar tu Batch Cooking sin recalcular a mano.',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontFamily: ScFonts.ui,
-                            fontSize: 12,
-                            color: c.text2,
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                }
-
-                return ListView.separated(
-                  itemCount: recipes.length,
-                  separatorBuilder: (_, _) => const SizedBox(height: 8),
-                  itemBuilder: (BuildContext ctx, int i) {
-                    final Recipe r = recipes[i];
-                    return HealthCard(
-                      margin: EdgeInsets.zero,
-                      padding: const EdgeInsets.all(12),
-                      child: Row(
-                        children: <Widget>[
-                          Container(
-                            padding: const EdgeInsets.all(10),
-                            decoration: BoxDecoration(
-                              color: c.isFlat ? c.line2 : c.soft,
-                              shape: BoxShape.circle,
-                            ),
-                            child: Icon(
-                              Icons.restaurant_rounded,
-                              size: 20,
-                              color: c.accent,
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: <Widget>[
-                                Text(
-                                  r.name,
-                                  style: TextStyle(
-                                    fontFamily: ScFonts.ui,
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.bold,
-                                    color: c.text,
-                                  ),
-                                ),
-                                const SizedBox(height: 2),
-                                Text(
-                                  '${r.kcalPerServing.round()} kcal • Rinde ${r.totalYieldServings} raciones',
-                                  style: TextStyle(
-                                    fontFamily: ScFonts.ui,
-                                    fontSize: 11.5,
-                                    color: c.text2,
-                                  ),
-                                ),
-                                const SizedBox(height: 2),
-                                Text(
-                                  'P: ${r.proteinPerServing.toStringAsFixed(1)}g | C: ${r.carbsPerServing.toStringAsFixed(1)}g | G: ${r.fatPerServing.toStringAsFixed(1)}g',
-                                  style: TextStyle(
-                                    fontFamily: ScFonts.ui,
-                                    fontSize: 11,
-                                    color: c.text3,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          FilledButton.tonal(
-                            style: FilledButton.styleFrom(
-                              visualDensity: VisualDensity.compact,
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 10,
-                              ),
-                            ),
-                            onPressed: () => _logRecipeServing(ctx, ref, r),
-                            child: const Text(
-                              '+ 1 Ración',
-                              style: TextStyle(fontSize: 11.5),
-                            ),
-                          ),
-                        ],
-                      ),
-                    );
-                  },
-                );
-              },
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (Object e, _) => Text('Error: $e'),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}

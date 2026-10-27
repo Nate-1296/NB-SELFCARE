@@ -3,6 +3,3687 @@
   "appTitle": "NB Selfcare",
   "@appTitle": {
     "description": "Nombre comercial de la aplicación."
+  },
+  "commonUndo": "Deshacer",
+  "commonClose": "Cerrar",
+  "commonSave": "Guardar",
+  "commonCancel": "Cancelar",
+  "commonContinue": "Continuar",
+  "commonEdit": "Editar",
+  "commonDelete": "Eliminar",
+  "commonLoadError": "No pudimos cargar esta pantalla: {error}",
+  "@commonLoadError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "todayWaterLogged": "+{ml} ml de agua registrados",
+  "@todayWaterLogged": {
+    "placeholders": {
+      "ml": {
+        "type": "int"
+      }
+    }
+  },
+  "todayWaterLoggedGoal": "+{ml} ml · ¡meta de agua cumplida! +{coins} monedas",
+  "@todayWaterLoggedGoal": {
+    "placeholders": {
+      "ml": {
+        "type": "int"
+      },
+      "coins": {
+        "type": "int"
+      }
+    }
+  },
+  "todayWaterRemoved": "Vaso de {ml} ml eliminado",
+  "@todayWaterRemoved": {
+    "placeholders": {
+      "ml": {
+        "type": "int"
+      }
+    }
+  },
+  "todayStepsAdded": "+{amount} pasos ({total} hoy)",
+  "@todayStepsAdded": {
+    "placeholders": {
+      "amount": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "todayRepeatNothing": "Ayer no registraste comidas para repetir",
+  "todayRepeatDone": "Comidas de ayer repetidas ({count} alimentos)",
+  "@todayRepeatDone": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "todayGreetingMorning0": "Buenos días, {name}",
+  "@todayGreetingMorning0": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "todayGreetingMorning1": "Buen día, {name}",
+  "@todayGreetingMorning1": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "todayGreetingMorning2": "Feliz mañana, {name}",
+  "@todayGreetingMorning2": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "todayGreetingAfternoon0": "Buenas tardes, {name}",
+  "@todayGreetingAfternoon0": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "todayGreetingAfternoon1": "Feliz tarde, {name}",
+  "@todayGreetingAfternoon1": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "todayGreetingAfternoon2": "Qué buena tarde, {name}",
+  "@todayGreetingAfternoon2": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "todayGreetingNight0": "Buenas noches, {name}",
+  "@todayGreetingNight0": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "todayGreetingNight1": "Feliz noche, {name}",
+  "@todayGreetingNight1": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "todayGreetingNight2": "Linda noche, {name}",
+  "@todayGreetingNight2": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "todayWeeklyPlanTooltip": "Mi protocolo semanal",
+  "todaySundayTitle": "Revisión dominical con Nibi",
+  "todaySundaySubtitle": "Repasa tu semana y ajusta tu plan en un minuto",
+  "todayEditCards": "Editar tarjetas de Hoy",
+  "todaySaveLayout": "Guardar diseño",
+  "todayPesoYEma": "Peso",
+  "todayRetencionHidricaTemporalDetectada": "Retención hídrica temporal detectada",
+  "todayPesarme": "Pesarme",
+  "todayAyuno": "Ayuno",
+  "todayHidratacion": "Agua",
+  "todayMl": "{totalWaterMl} ml",
+  "@todayMl": {
+    "placeholders": {
+      "totalWaterMl": {
+        "type": "String"
+      }
+    }
+  },
+  "today250Ml": "+250 ml",
+  "today500Ml": "+500 ml",
+  "todayNuevoPensamientoDe": "Nuevo pensamiento de {petName}",
+  "@todayNuevoPensamientoDe": {
+    "placeholders": {
+      "petName": {
+        "type": "String"
+      }
+    }
+  },
+  "todayBonoSuenoX15": "Bono Sueño x1.5 🪙",
+  "todayIrAlSantuarioDe": "Ir al Santuario de {petName}",
+  "@todayIrAlSantuarioDe": {
+    "placeholders": {
+      "petName": {
+        "type": "String"
+      }
+    }
+  },
+  "todayObjetivosDelDia": "Objetivos del Día",
+  "todayKcal": "{abs} kcal",
+  "@todayKcal": {
+    "placeholders": {
+      "abs": {
+        "type": "String"
+      }
+    }
+  },
+  "todayProteina": "Proteína",
+  "todayCarbos": "Carbos",
+  "todayGrasas": "Grasas",
+  "todayCarbohidratos": "Carbohidratos",
+  "todayGrasasSaludables": "Grasas saludables",
+  "todayRegistrarComida": "Registrar comida",
+  "todayRepetirAyer": "Repetir ayer",
+  "todayG": "{toInt}/{toInt2} g",
+  "@todayG": {
+    "placeholders": {
+      "toInt": {
+        "type": "String"
+      },
+      "toInt2": {
+        "type": "String"
+      }
+    }
+  },
+  "todaySueno": "Sueño",
+  "todayRegistrarSueno": "Registrar sueño",
+  "todayPasosNeat": "Pasos",
+  "todayMetaKcalActivas": "Meta: {goalSteps} · ~{activeKcal} kcal activas",
+  "@todayMetaKcalActivas": {
+    "placeholders": {
+      "goalSteps": {
+        "type": "String"
+      },
+      "activeKcal": {
+        "type": "String"
+      }
+    }
+  },
+  "todayAjustar": "Ajustar",
+  "todayEntrenamiento": "Entrenamiento",
+  "todayEntreno5s": "Registrar",
+  "todayMostrar": "Mostrar",
+  "todayPersonalizaHoyAlternaTamano22": "Personaliza Hoy: alterna tamaño 2×2 o 4×2, ordena u oculta tarjetas.",
+  "todayRestaurarOrden": "Restaurar orden",
+  "todayCambiarTamano": "Cambiar tamaño ({title})",
+  "@todayCambiarTamano": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "todayBloque44Unico": "Bloque 4×4 único",
+  "todaySubir": "Subir ({title})",
+  "@todaySubir": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "todayBajar": "Bajar ({title})",
+  "@todayBajar": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "todayOcultar": "Ocultar ({title})",
+  "@todayOcultar": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "todayTarjetasOcultas": "Tarjetas ocultas ({length})",
+  "@todayTarjetasOcultas": {
+    "placeholders": {
+      "length": {
+        "type": "String"
+      }
+    }
+  },
+  "todayTocaParaVolverAAnadir": "Toca para volver a añadir cualquier tarjeta a tu resumen de Hoy.",
+  "todayTexto": "{title} ({label})",
+  "@todayTexto": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      },
+      "label": {
+        "type": "String"
+      }
+    }
+  },
+  "todayPasosNeatYSueno": "Pasos y sueño",
+  "todayPasosDelDia": "Pasos del día",
+  "todayTexto2": "{steps} / {dailyStepsGoal}",
+  "@todayTexto2": {
+    "placeholders": {
+      "steps": {
+        "type": "String"
+      },
+      "dailyStepsGoal": {
+        "type": "String"
+      }
+    }
+  },
+  "today1000Pasos": "+1,000 pasos",
+  "today2500Pasos": "+2,500 pasos",
+  "todayMeta": "Meta ({dailyStepsGoal})",
+  "@todayMeta": {
+    "placeholders": {
+      "dailyStepsGoal": {
+        "type": "String"
+      }
+    }
+  },
+  "todayHorasDeSuenoAnoche": "Horas de sueño anoche",
+  "todayH": "{toStringAsFixed} h",
+  "@todayH": {
+    "placeholders": {
+      "toStringAsFixed": {
+        "type": "String"
+      }
+    }
+  },
+  "todayGuardarResumenDiario": "Guardar Resumen Diario",
+  "todayDisposicionEnergia": "Disposición del día",
+  "todaySuenoPFcReposoP": "Sueño {round}/40 · Pulso {round2}/35 · Carga {round3}/25",
+  "@todaySuenoPFcReposoP": {
+    "placeholders": {
+      "round": {
+        "type": "String"
+      },
+      "round2": {
+        "type": "String"
+      },
+      "round3": {
+        "type": "String"
+      }
+    }
+  },
+  "todayDificil": "Difícil",
+  "todayNeutro": "Neutro",
+  "todayBien": "Bien",
+  "todayGenial": "Genial",
+  "todayRadiante": "Radiante",
+  "todayEscribePrimeroUnasPalabrasPara": "Escribe primero unas palabras para sugerir tu estado.",
+  "todayNoSePudoAdjuntarLa": "No se pudo adjuntar la imagen: {e}",
+  "@todayNoSePudoAdjuntarLa": {
+    "placeholders": {
+      "e": {
+        "type": "String"
+      }
+    }
+  },
+  "todayEntradaDeDiarioEliminada": "Entrada de diario eliminada.",
+  "todayDiarioPersonal": "Diario Personal",
+  "todayEspacioPrivado44RegistraTu": "Solo en tu teléfono · Anota cómo te sientes y descubre qué te sienta bien",
+  "todayTexto3": "+{coinsJournalEntry} 🪙",
+  "@todayTexto3": {
+    "placeholders": {
+      "coinsJournalEntry": {
+        "type": "String"
+      }
+    }
+  },
+  "todayComoTeSientesEnEste": "¿Cómo te sientes en este momento?",
+  "todayEnergiaFisica": "Energía física",
+  "todayNivelDeEstres": "Nivel de estrés",
+  "todayEscribeSinPrisaLoQue": "Escribe sin prisa lo que piensas, agradeces o aprendiste hoy...",
+  "todayQuitarFoto": "Quitar foto",
+  "todayAdjuntarFoto": "Adjuntar foto",
+  "todaySugerirEstado": "Sugerir estado",
+  "todayGuardarEnMiDiario": "Guardar en mi diario (+{coinsJournalEntry} 🪙)",
+  "@todayGuardarEnMiDiario": {
+    "placeholders": {
+      "coinsJournalEntry": {
+        "type": "String"
+      }
+    }
+  },
+  "todayReflexionesRecientes": "Reflexiones recientes",
+  "todayEnergia5Estres5": "{dateKey} · Energía {energyLevel3}/5 · Estrés {stressLevel2}/5",
+  "@todayEnergia5Estres5": {
+    "placeholders": {
+      "dateKey": {
+        "type": "String"
+      },
+      "energyLevel3": {
+        "type": "String"
+      },
+      "stressLevel2": {
+        "type": "String"
+      }
+    }
+  },
+  "todayEliminarEntrada": "Eliminar entrada",
+  "todayCheckInDominicalConNibi": "Check-In Dominical con Nibi",
+  "today60SegundosParaRevisarLa": "60 segundos para revisar la semana y sincronizar",
+  "todayPulsoDeLosUltimos7": "PULSO DE LOS ÚLTIMOS 7 DÍAS",
+  "todayComoTeSentisteEstaSemana": "¿Cómo te sentiste esta semana?",
+  "todayNivelDeEnergiaYVitalidad": "Nivel de energía y vitalidad",
+  "todaySaciedadControlDeApetito": "Saciedad / Control de apetito",
+  "todayAdherenciaAlPlanNutricional": "Adherencia al plan nutricional",
+  "todayConsejoEstrategicoDeNibi": "Consejo Estratégico de Nibi",
+  "today5": "{value} / 5",
+  "@today5": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "todayActivitySaved": "Guardado: {steps} pasos y {hours} h de sueño",
+  "@todayActivitySaved": {
+    "placeholders": {
+      "steps": {
+        "type": "int"
+      },
+      "hours": {
+        "type": "String"
+      }
+    }
+  },
+  "todayActivitySavedCoins": "Guardado: {steps} pasos y {hours} h de sueño · +{coins} monedas",
+  "@todayActivitySavedCoins": {
+    "placeholders": {
+      "steps": {
+        "type": "int"
+      },
+      "hours": {
+        "type": "String"
+      },
+      "coins": {
+        "type": "int"
+      }
+    }
+  },
+  "todayPromptGratitude": "Gratitud de hoy",
+  "todayPromptGratitudeStarter": "Hoy agradezco profundamente ",
+  "todayPromptBody": "Sensación corporal",
+  "todayPromptBodyStarter": "Mi cuerpo hoy se siente ",
+  "todayPromptWin": "Pequeño logro",
+  "todayPromptWinStarter": "Algo que hice bien por mí hoy fue ",
+  "todayPromptRelease": "Soltar tensión",
+  "todayPromptReleaseStarter": "Dejo ir la preocupación sobre ",
+  "todayNibi": "Nibi",
+  "todayIngestaMedia": "Ingesta media",
+  "todayKcalD": "{avgKcal} kcal/d",
+  "@todayKcalD": {
+    "placeholders": {
+      "avgKcal": {
+        "type": "String"
+      }
+    }
+  },
+  "todayEntrenamientos": "Entrenamientos",
+  "todaySesiones": "{workoutsCount} sesiones",
+  "@todaySesiones": {
+    "placeholders": {
+      "workoutsCount": {
+        "type": "String"
+      }
+    }
+  },
+  "todaySuenoPromedio": "Sueño promedio",
+  "todayHNoche": "{avgSleep} h/noche",
+  "@todayHNoche": {
+    "placeholders": {
+      "avgSleep": {
+        "type": "String"
+      }
+    }
+  },
+  "todayDeltaDePeso": "Delta de peso",
+  "todayKg": "{weightDelta}{weightDelta2} kg",
+  "@todayKg": {
+    "placeholders": {
+      "weightDelta": {
+        "type": "String"
+      },
+      "weightDelta2": {
+        "type": "String"
+      }
+    }
+  },
+  "todayFatiga": "Fatiga",
+  "todayOptima": "Óptima",
+  "todayHambreAlta": "Hambre alta",
+  "todaySaciado": "Saciado",
+  "todayComplicada": "Complicada",
+  "todayImpecable": "Impecable",
+  "todayCeremoniaDominicalCompletadaMonedas": "¡Ceremonia dominical completada! 🎉 +{grant} monedas",
+  "@todayCeremoniaDominicalCompletadaMonedas": {
+    "placeholders": {
+      "grant": {
+        "type": "String"
+      }
+    }
+  },
+  "todayCeremoniaDominicalCompletada": "¡Ceremonia dominical completada! 🎉",
+  "todayCompletadoConExito": "¡Completado con Éxito!",
+  "todayCerrarSemanaConNibi15": "Cerrar Semana con Nibi (+15 Monedas)",
+  "todayFatigaAcumuladaDetectadaNibiTe": "Fatiga acumulada detectada. Nibi te sugiere planear 1 o 2 días de mantenimiento calórico (Diet Break o Refeed) para reponer reservas de glucógeno y normalizar la leptina sin comprometer tu progreso.",
+  "todaySemanaBrillanteElBalanceMetabolico": "¡Semana brillante! El balance metabólico es excelente y tu adherencia es sólida. Mantén este mismo ritmo la próxima semana sin modificar tus variables.",
+  "todaySemanaDesafianteEnAdherenciaRecuerda": "Semana desafiante en adherencia. Recuerda que la constancia vence a la perfección: utiliza el Calorie Cycling o flexibiliza la ventana de comidas para adaptarlo a tus compromisos reales.",
+  "todayBuenRitmoGeneralPriorizaUn": "Buen ritmo general. Prioriza un descanso profundo esta noche y una buena hidratación para empezar la semana con alta disponibilidad neuromotora.",
+  "todayDatosSincronizadosDesdeHealthConnect": "Datos sincronizados desde Health Connect",
+  "todayHealthConnectNoTieneRegistros": "Health Connect no tiene registros de este día; puedes ajustarlos aquí.",
+  "todayConectaHealthConnectEnAjustes": "Conecta Health Connect en Ajustes para importar sueño y pasos.",
+  "todaySincronizando": "Sincronizando...",
+  "todayHealthConnect": "Health Connect",
+  "todayCumplesTuMetaDeH": "Cumples tu meta de {sleepGoalHours} h: tus monedas de hoy valen ×1.5 🪙",
+  "@todayCumplesTuMetaDeH": {
+    "placeholders": {
+      "sleepGoalHours": {
+        "type": "String"
+      }
+    }
+  },
+  "todayConHDeSuenoTus": "Con {sleepGoalHours} h de sueño tus monedas de hoy valen ×1.5 🪙",
+  "@todayConHDeSuenoTus": {
+    "placeholders": {
+      "sleepGoalHours": {
+        "type": "String"
+      }
+    }
+  },
+  "todayReflexionGuardadaEnTuDiario": "¡Reflexión guardada en tu Diario! (+{saved} monedas 🪙)",
+  "@todayReflexionGuardadaEnTuDiario": {
+    "placeholders": {
+      "saved": {
+        "type": "String"
+      }
+    }
+  },
+  "todayReflexionGuardadaEnTuDiario2": "¡Reflexión guardada en tu Diario!",
+  "todayVerMenos": "Ver menos",
+  "todayVerMas": "Ver más",
+  "todayTuDiaEmpiezaEnBlanco": "Tu día empieza en blanco · Elige por dónde comenzar",
+  "todayDe5HabitosConMovimiento": "{activePillars} de 5 hábitos con movimiento hoy",
+  "@todayDe5HabitosConMovimiento": {
+    "placeholders": {
+      "activePillars": {
+        "type": "String"
+      }
+    }
+  },
+  "todayDiaRedondoDe5Habitos": "¡Día redondo! {activePillars} de 5 hábitos activos hoy",
+  "@todayDiaRedondoDe5Habitos": {
+    "placeholders": {
+      "activePillars": {
+        "type": "String"
+      }
+    }
+  },
+  "todayOcultaS": "{rhythmMessage} · {hiddenCount} oculta(s)",
+  "@todayOcultaS": {
+    "placeholders": {
+      "rhythmMessage": {
+        "type": "String"
+      },
+      "hiddenCount": {
+        "type": "String"
+      }
+    }
+  },
+  "todayCafeinaActivaMgAlDormir": "Cafeína activa: {cStatus} mg · Al dormir: {cStatus2} mg",
+  "@todayCafeinaActivaMgAlDormir": {
+    "placeholders": {
+      "cStatus": {
+        "type": "String"
+      },
+      "cStatus2": {
+        "type": "String"
+      }
+    }
+  },
+  "todayAmpliar42": "Ampliar 4×2",
+  "todayReducir22": "Reducir 2×2",
+  "todayGrasaNavy": "Grasa Navy: {m}%",
+  "@todayGrasaNavy": {
+    "placeholders": {
+      "m": {
+        "type": "String"
+      }
+    }
+  },
+  "todayGrasaBia": "Grasa corporal: {m}%",
+  "@todayGrasaBia": {
+    "placeholders": {
+      "m": {
+        "type": "String"
+      }
+    }
+  },
+  "todayMetaKg": "Meta: {targetWeightKg} kg",
+  "@todayMetaKg": {
+    "placeholders": {
+      "targetWeightKg": {
+        "type": "String"
+      }
+    }
+  },
+  "todayKg2": "{m} kg",
+  "@todayKg2": {
+    "placeholders": {
+      "m": {
+        "type": "String"
+      }
+    }
+  },
+  "todaySinPesaje": "Sin pesaje",
+  "todayTendenciaEmaKg": "Tendencia: {m} kg",
+  "@todayTendenciaEmaKg": {
+    "placeholders": {
+      "m": {
+        "type": "String"
+      }
+    }
+  },
+  "todayConectaTuMiScale2": "Conecta tu Mi Scale 2 o registra manual",
+  "todayMetaKcalEntreno": "Meta: {effectiveGoalKcal} kcal (+{targets} entreno)",
+  "@todayMetaKcalEntreno": {
+    "placeholders": {
+      "effectiveGoalKcal": {
+        "type": "String"
+      },
+      "targets": {
+        "type": "String"
+      }
+    }
+  },
+  "todayMetaKcal": "Meta: {effectiveGoalKcal} kcal",
+  "@todayMetaKcal": {
+    "placeholders": {
+      "effectiveGoalKcal": {
+        "type": "String"
+      }
+    }
+  },
+  "todayDisponiblesConsumidas": "disponibles · {consumedKcal} consumidas",
+  "@todayDisponiblesConsumidas": {
+    "placeholders": {
+      "consumedKcal": {
+        "type": "String"
+      }
+    }
+  },
+  "todayPorEncimaConsumidas": "por encima · {consumedKcal} consumidas",
+  "@todayPorEncimaConsumidas": {
+    "placeholders": {
+      "consumedKcal": {
+        "type": "String"
+      }
+    }
+  },
+  "todayAutofagiaProfunda": "Autofagia profunda 🔥",
+  "todayQuemaGlucogeno": "Quema glucógeno",
+  "todayFaseDigestiva": "Fase digestiva",
+  "today168Libre": "16:8 libre",
+  "todayMetaH": "{phaseLabel} · Meta {targetH}h",
+  "@todayMetaH": {
+    "placeholders": {
+      "phaseLabel": {
+        "type": "String"
+      },
+      "targetH": {
+        "type": "String"
+      }
+    }
+  },
+  "todayVentanaAbiertaDescansoDigestivoListo": "Ventana abierta · Descanso digestivo listo",
+  "todayVerProgreso": "Ver progreso",
+  "todayIniciarAyuno": "Iniciar ayuno",
+  "todayMetaMl": "Meta: {goalMl} ml",
+  "@todayMetaMl": {
+    "placeholders": {
+      "goalMl": {
+        "type": "String"
+      }
+    }
+  },
+  "todayMetaDiariaMlTomasRegistradas": "Meta diaria: {goalMl} ml · {glassesCount} tomas registradas hoy",
+  "@todayMetaDiariaMlTomasRegistradas": {
+    "placeholders": {
+      "goalMl": {
+        "type": "String"
+      },
+      "glassesCount": {
+        "type": "String"
+      }
+    }
+  },
+  "todayH2": "{sleepHours} h",
+  "@todayH2": {
+    "placeholders": {
+      "sleepHours": {
+        "type": "String"
+      }
+    }
+  },
+  "todayH3": "-- h",
+  "todaySuenoReparadorBonoX15": "Sueño reparador · Bono x1.5 🪙 activo",
+  "todayMetaHDeDescanso": "Meta: {goalHours} h de descanso",
+  "@todayMetaHDeDescanso": {
+    "placeholders": {
+      "goalHours": {
+        "type": "String"
+      }
+    }
+  },
+  "todayKcal2": "{totalNetKcal} kcal",
+  "@todayKcal2": {
+    "placeholders": {
+      "totalNetKcal": {
+        "type": "String"
+      }
+    }
+  },
+  "todaySinSesionHoy": "Sin sesión hoy",
+  "todayBloqueSMinEfectivos": "{workoutsToday} bloque(s) · {totalMinutes} min efectivos",
+  "@todayBloqueSMinEfectivos": {
+    "placeholders": {
+      "workoutsToday": {
+        "type": "String"
+      },
+      "totalMinutes": {
+        "type": "String"
+      }
+    }
+  },
+  "todayRegistraFuerzaCardioODeporte": "Registra fuerza, cardio o deporte en segundos",
+  "fastingPhaseAnabolic": "Fase digestiva",
+  "fastingPhaseGlycogenolysis": "Usando glucógeno",
+  "fastingPhaseFatBurning": "Quema de grasa",
+  "fastingPhaseKetosis": "Cetosis",
+  "fastingPhaseAutophagy": "Autofagia",
+  "readinessOptimal": "Óptima",
+  "readinessFavorable": "Favorable",
+  "readinessRecovery": "Recuperación",
+  "readinessAdviceOptimal": "Buen día para entrenar fuerte o intentar una marca personal.",
+  "readinessAdviceFavorable": "Energía estable: ideal para tu rutina habitual a ritmo moderado.",
+  "readinessAdviceRecovery": "Hoy toca cuidarte: una caminata suave, movilidad, agua y acostarte temprano.",
+  "readinessNoSleep": "Registra cómo dormiste para calcular tu disposición de hoy.",
+  "readinessLogSleep": "Registrar sueño",
+  "readinessSemantics": "Disposición del día: {score} de 100, {category}",
+  "@readinessSemantics": {
+    "placeholders": {
+      "score": {
+        "type": "int"
+      },
+      "category": {
+        "type": "String"
+      }
+    }
+  },
+  "caffeineNoneToday": "Sin cafeína hoy · Límite sugerido: {time}",
+  "@caffeineNoneToday": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "hoyWidgetNibi": "Nibi",
+  "hoyWidgetNutrition": "Comida del día",
+  "hoyWidgetHydration": "Agua",
+  "hoyWidgetBody": "Peso",
+  "hoyWidgetSteps": "Pasos",
+  "hoyWidgetSleep": "Sueño",
+  "hoyWidgetWorkout": "Entrenamiento",
+  "hoyWidgetFasting": "Ayuno",
+  "hoyWidgetJournal": "Diario",
+  "todayUndoLastGlass": "Deshacer el último vaso",
+  "comerTitle": "Comida",
+  "comerWeekdayInitials": "L,M,X,J,V,S,D",
+  "comerPreviousDay": "Día anterior",
+  "comerNextDay": "Día siguiente",
+  "comerThisWeek": "Esta semana",
+  "comerBackToToday": "Volver a hoy",
+  "comerSearchHint": "Buscar alimento o marca",
+  "comerScanBarcode": "Escanear código de barras",
+  "comerWriteMeal": "Escribir comida",
+  "comerWriteMealHint": "Por voz o texto",
+  "comerCombos": "Mis combos",
+  "comerCombosHint": "Tus comidas de siempre",
+  "comerRecipes": "Recetas",
+  "comerRecipesHint": "Para cocinar por lotes",
+  "comerCreateFood": "Crear alimento",
+  "comerCreateFoodHint": "Un producto o plato propio",
+  "comerSmartMenu": "Menú sugerido",
+  "comerSmartMenuHint": "Ideas para tus macros",
+  "comerFasting": "Ayuno",
+  "comerFastingIdle": "Elige tu ventana y empieza",
+  "comerFastingActive": "{phase} · {hours} de {target} h",
+  "@comerFastingActive": {
+    "placeholders": {
+      "phase": {
+        "type": "String"
+      },
+      "hours": {
+        "type": "int"
+      },
+      "target": {
+        "type": "int"
+      }
+    }
+  },
+  "comerMealsTitle": "Comidas del día",
+  "comerEntriesCount": "{count, plural, =0{Sin registros} =1{1 registro} other{{count} registros}}",
+  "@comerEntriesCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "comerFoodDeleted": "Eliminado: {name}",
+  "@comerFoodDeleted": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "comerFoodFallbackName": "Alimento",
+  "comerNothingYesterday": "Ayer no registraste nada en {meal}.",
+  "@comerNothingYesterday": {
+    "placeholders": {
+      "meal": {
+        "type": "String"
+      }
+    }
+  },
+  "comerCopiedYesterday": "{count, plural, =1{Se copió 1 alimento de ayer en {meal}} other{Se copiaron {count} alimentos de ayer en {meal}}}",
+  "@comerCopiedYesterday": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "meal": {
+        "type": "String"
+      }
+    }
+  },
+  "comerComboSuggestedName": "Mi {meal}",
+  "@comerComboSuggestedName": {
+    "placeholders": {
+      "meal": {
+        "type": "String"
+      }
+    }
+  },
+  "comerComboSaved": "Combo «{name}» guardado ({count} alimentos)",
+  "@comerComboSaved": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "comerWaterLogged": "+{ml} ml de agua",
+  "@comerWaterLogged": {
+    "placeholders": {
+      "ml": {
+        "type": "int"
+      }
+    }
+  },
+  "comerWaterLoggedGoal": "+{ml} ml · ¡Meta de agua cumplida! +{coins} monedas",
+  "@comerWaterLoggedGoal": {
+    "placeholders": {
+      "ml": {
+        "type": "int"
+      },
+      "coins": {
+        "type": "int"
+      }
+    }
+  },
+  "comerGlassDeleted": "Vaso de {ml} ml eliminado",
+  "@comerGlassDeleted": {
+    "placeholders": {
+      "ml": {
+        "type": "int"
+      }
+    }
+  },
+  "comerNovaTitle": "Grado de procesamiento",
+  "comerNovaFreshBadge": "{pct}% poco procesado",
+  "@comerNovaFreshBadge": {
+    "placeholders": {
+      "pct": {
+        "type": "int"
+      }
+    }
+  },
+  "comerNovaFreshKcal": "Poco procesado: {kcal} kcal",
+  "@comerNovaFreshKcal": {
+    "placeholders": {
+      "kcal": {
+        "type": "int"
+      }
+    }
+  },
+  "comerNovaUltraKcal": "Ultraprocesado: {kcal} kcal",
+  "@comerNovaUltraKcal": {
+    "placeholders": {
+      "kcal": {
+        "type": "int"
+      }
+    }
+  },
+  "comerNovaPartial": "{kcal} kcal sin clasificar (alimentos sin dato NOVA).",
+  "@comerNovaPartial": {
+    "placeholders": {
+      "kcal": {
+        "type": "int"
+      }
+    }
+  },
+  "comerNovaNone": "Los alimentos de hoy aún no tienen clasificación NOVA. Los productos escaneados la traen de Open Food Facts.",
+  "comerNovaHowItWorks": "¿Qué es la clasificación NOVA?",
+  "comerBankTitle": "Balance de la semana",
+  "comerBankDaysLeft": "{days, plural, =0{Último día} =1{Queda 1 día} other{Quedan {days} días}}",
+  "@comerBankDaysLeft": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "comerBankEmpty": "El balance empieza a contar cuando cierres el primer día registrado de esta semana.",
+  "comerBankSavings": "Llevas {kcal} kcal por debajo de tu meta en {days, plural, =1{1 día} other{{days} días}}. Tienes margen para una comida más generosa este fin de semana.",
+  "@comerBankSavings": {
+    "placeholders": {
+      "kcal": {
+        "type": "int"
+      },
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "comerBankOver": "Llevas {kcal} kcal por encima de tu meta en {days, plural, =1{1 día} other{{days} días}}. Lo que cuenta es la semana completa: los próximos días lo equilibran.",
+  "@comerBankOver": {
+    "placeholders": {
+      "kcal": {
+        "type": "int"
+      },
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "comerBankEven": "Vas justo en tu meta tras {days, plural, =1{1 día} other{{days} días}}. ¡Buen ritmo!",
+  "@comerBankEven": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "comerBankEaten": "Comido / meta",
+  "comerKcalOf": "{eaten} / {target} kcal",
+  "@comerKcalOf": {
+    "placeholders": {
+      "eaten": {
+        "type": "int"
+      },
+      "target": {
+        "type": "int"
+      }
+    }
+  },
+  "comerDietType": "Tipo de dieta",
+  "comerElectrolitosYFibra": "Minerales y fibra",
+  "comerUlSodio2300mg": "Sodio sobre el límite diario",
+  "comerSodioElevado": "Sodio alto",
+  "comerSodioNa": "Sodio",
+  "comerPotasioK": "Potasio",
+  "comerMagnesioMg": "Magnesio",
+  "comerFibraDietetica": "Fibra dietética",
+  "comerMg": "{sodiumMg} mg",
+  "@comerMg": {
+    "placeholders": {
+      "sodiumMg": {
+        "type": "String"
+      }
+    }
+  },
+  "comerMetaMg": "Meta {targetSodiumMg} mg",
+  "@comerMetaMg": {
+    "placeholders": {
+      "targetSodiumMg": {
+        "type": "String"
+      }
+    }
+  },
+  "comerTechoUl": "Sobre el límite",
+  "comerMg2": "{potassiumMg} mg",
+  "@comerMg2": {
+    "placeholders": {
+      "potassiumMg": {
+        "type": "String"
+      }
+    }
+  },
+  "comerMetaMg2": "Meta {targetPotassiumMg} mg",
+  "@comerMetaMg2": {
+    "placeholders": {
+      "targetPotassiumMg": {
+        "type": "String"
+      }
+    }
+  },
+  "comerTechoSupl": "Revisa suplementos",
+  "comerMg3": "{magnesiumMg} mg",
+  "@comerMg3": {
+    "placeholders": {
+      "magnesiumMg": {
+        "type": "String"
+      }
+    }
+  },
+  "comerMetaMg3": "Meta {targetMagnesiumMg} mg",
+  "@comerMetaMg3": {
+    "placeholders": {
+      "targetMagnesiumMg": {
+        "type": "String"
+      }
+    }
+  },
+  "comerG": "{fiberG} g",
+  "@comerG": {
+    "placeholders": {
+      "fiberG": {
+        "type": "String"
+      }
+    }
+  },
+  "comerMetaG": "Meta {targetFiberG} g",
+  "@comerMetaG": {
+    "placeholders": {
+      "targetFiberG": {
+        "type": "String"
+      }
+    }
+  },
+  "comerBalanceEnergetico": "Balance energético",
+  "comerKcal": " / {targetKcal} kcal",
+  "@comerKcal": {
+    "placeholders": {
+      "targetKcal": {
+        "type": "String"
+      }
+    }
+  },
+  "comerKcalEntreno": "+{netWorkoutKcal} kcal por entrenar",
+  "@comerKcalEntreno": {
+    "placeholders": {
+      "netWorkoutKcal": {
+        "type": "String"
+      }
+    }
+  },
+  "comerQueComerParaCerrarMis": "¿Qué comer para cerrar mis macros?",
+  "comerG2": "{currentG} g",
+  "@comerG2": {
+    "placeholders": {
+      "currentG": {
+        "type": "String"
+      }
+    }
+  },
+  "comerG3": " / {targetG} g",
+  "@comerG3": {
+    "placeholders": {
+      "targetG": {
+        "type": "String"
+      }
+    }
+  },
+  "comerDisponiblesKcal": "Disponibles: {remaining} kcal",
+  "@comerDisponiblesKcal": {
+    "placeholders": {
+      "remaining": {
+        "type": "String"
+      }
+    }
+  },
+  "comerKcalSobreLaMeta": "+{remaining} kcal sobre la meta",
+  "@comerKcalSobreLaMeta": {
+    "placeholders": {
+      "remaining": {
+        "type": "String"
+      }
+    }
+  },
+  "comerMetaCubierta": "Meta cubierta",
+  "comerFaltanG": "Faltan {value} g",
+  "@comerFaltanG": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "comerNetosGFibraG": "Netos: {netCarbs} g · Fibra: {totalFiber} g",
+  "@comerNetosGFibraG": {
+    "placeholders": {
+      "netCarbs": {
+        "type": "String"
+      },
+      "totalFiber": {
+        "type": "String"
+      }
+    }
+  },
+  "comerHidratacion": "Hidratación",
+  "comerAguaAcumulada": "Agua de hoy",
+  "comerMl": "{totalMl} / {goalMl} ml ({pct}%)",
+  "@comerMl": {
+    "placeholders": {
+      "totalMl": {
+        "type": "String"
+      },
+      "goalMl": {
+        "type": "String"
+      },
+      "pct": {
+        "type": "String"
+      }
+    }
+  },
+  "comer250Ml": "250 ml",
+  "comer500Ml": "500 ml",
+  "comerAMedida": "A medida",
+  "comerMl2": "{item} ml · {formatClock}",
+  "@comerMl2": {
+    "placeholders": {
+      "item": {
+        "type": "String"
+      },
+      "formatClock": {
+        "type": "String"
+      }
+    }
+  },
+  "comerAhora": "Ahora",
+  "comerKcal2": "{mealKcal} kcal",
+  "@comerKcal2": {
+    "placeholders": {
+      "mealKcal": {
+        "type": "String"
+      }
+    }
+  },
+  "comerSinAlimentosRegistradosTodaviaEn": "Aún no hay nada en {slot}.",
+  "@comerSinAlimentosRegistradosTodaviaEn": {
+    "placeholders": {
+      "slot": {
+        "type": "String"
+      }
+    }
+  },
+  "comerAnadir": "Añadir",
+  "comerGuardarCombo": "Guardar combo",
+  "comerGPGCG": "{log} g  •  P {log2}g · C {log3}g · G {log4}g",
+  "@comerGPGCG": {
+    "placeholders": {
+      "log": {
+        "type": "String"
+      },
+      "log2": {
+        "type": "String"
+      },
+      "log3": {
+        "type": "String"
+      },
+      "log4": {
+        "type": "String"
+      }
+    }
+  },
+  "comerKcal3": "{log} kcal",
+  "@comerKcal3": {
+    "placeholders": {
+      "log": {
+        "type": "String"
+      }
+    }
+  },
+  "comerEliminarRegistro": "Eliminar registro",
+  "comerPGCGG": "P {mealP}g · C {mealC}g · G {mealF}g",
+  "@comerPGCGG": {
+    "placeholders": {
+      "mealP": {
+        "type": "String"
+      },
+      "mealC": {
+        "type": "String"
+      },
+      "mealF": {
+        "type": "String"
+      }
+    }
+  },
+  "comerAlimento": "Alimento",
+  "foodSeEncontraronEImportaronProductos": "¡Se encontraron e importaron {offItems} productos de Open Food Facts! 🌐",
+  "@foodSeEncontraronEImportaronProductos": {
+    "placeholders": {
+      "offItems": {
+        "type": "String"
+      }
+    }
+  },
+  "foodNoSeHallaronResultadosEn": "No se hallaron resultados en Open Food Facts.",
+  "foodErrorAlConsultarOpenFood": "Error al consultar Open Food Facts: {e}",
+  "@foodErrorAlConsultarOpenFood": {
+    "placeholders": {
+      "e": {
+        "type": "String"
+      }
+    }
+  },
+  "foodAnadirAlimento": "Añadir alimento",
+  "foodTocaParaPorcionRapidaO": "Toca + para porción rápida o abre el alimento para ajustar gramos",
+  "foodCerrarBuscador": "Cerrar buscador",
+  "foodListo": "Listo",
+  "foodBuscarIngredientePlatoOMarca": "Buscar ingrediente, plato o marca...",
+  "foodLimpiarTexto": "Limpiar texto",
+  "foodTodos": "Todos",
+  "foodFavoritos": "Favoritos",
+  "foodMisCreados": "Mis creados",
+  "foodCrearNuevo": "Crear nuevo",
+  "foodConsultandoCatalogoLocal": "Consultando catálogo local...",
+  "foodGKcalPGC": "{servingG} g · {servingKcal} kcal  •  P {p}g · C {carbs}g · G {fat}g",
+  "@foodGKcalPGC": {
+    "placeholders": {
+      "servingG": {
+        "type": "String"
+      },
+      "servingKcal": {
+        "type": "String"
+      },
+      "p": {
+        "type": "String"
+      },
+      "carbs": {
+        "type": "String"
+      },
+      "fat": {
+        "type": "String"
+      }
+    }
+  },
+  "foodCrearAlimentoPropio": "Crear alimento propio",
+  "foodNoEstaLoQueBuscas": "¿No está lo que buscas?",
+  "foodBuscarEnElCatalogoOpen": "Buscar \"{query}\" en el catálogo Open Food Facts",
+  "@foodBuscarEnElCatalogoOpen": {
+    "placeholders": {
+      "query": {
+        "type": "String"
+      }
+    }
+  },
+  "foodBuscar": "Buscar",
+  "foodAnadidoGEn": "Añadido: {food} ({grams} g) en {slot}",
+  "@foodAnadidoGEn": {
+    "placeholders": {
+      "food": {
+        "type": "String"
+      },
+      "grams": {
+        "type": "String"
+      },
+      "slot": {
+        "type": "String"
+      }
+    }
+  },
+  "foodQuitarDeFavoritos": "Quitar de favoritos",
+  "foodMarcarComoFavorito": "Marcar como favorito",
+  "foodAunNoHayAlimentosEn": "Aún no hay alimentos en este filtro",
+  "foodNoEncontramosEnTuCatalogo": "No encontramos \"{query}\" en tu catálogo local",
+  "@foodNoEncontramosEnTuCatalogo": {
+    "placeholders": {
+      "query": {
+        "type": "String"
+      }
+    }
+  },
+  "foodPuedesBuscarloEnOpenFood": "Puedes buscarlo en Open Food Facts (catálogo mundial de millones de alimentos) o crearlo a mano.",
+  "foodPuedesCrearloEnSegundosY": "Puedes crearlo en segundos y quedará disponible offline para siempre.",
+  "foodConsultandoOpenFoodFacts": "Consultando Open Food Facts...",
+  "foodBuscarEnOpenFoodFacts": "Buscar en Open Food Facts",
+  "foodG": "{g} g",
+  "@foodG": {
+    "placeholders": {
+      "g": {
+        "type": "String"
+      }
+    }
+  },
+  "foodEnergiaDeLaPorcion": "Energía de la porción",
+  "foodKcal": " kcal",
+  "foodParaG": "Para {grams} g",
+  "@foodParaG": {
+    "placeholders": {
+      "grams": {
+        "type": "String"
+      }
+    }
+  },
+  "foodProteina": "Proteína {pPct}%",
+  "@foodProteina": {
+    "placeholders": {
+      "pPct": {
+        "type": "String"
+      }
+    }
+  },
+  "foodCarbos": "Carbos {cPct}%",
+  "@foodCarbos": {
+    "placeholders": {
+      "cPct": {
+        "type": "String"
+      }
+    }
+  },
+  "foodGrasas": "Grasas {fPct}%",
+  "@foodGrasas": {
+    "placeholders": {
+      "fPct": {
+        "type": "String"
+      }
+    }
+  },
+  "foodGrasasTotales": "Grasas totales",
+  "foodFibraYAzucar": "Fibra y Azúcar",
+  "foodCantidadARegistrar": "Cantidad a registrar",
+  "foodMomentoDeComida": "Momento de comida",
+  "foodElectrolitosEnEstaPorcion": "Minerales en esta porción",
+  "foodSodioNa": "Sodio",
+  "foodPotasioK": "Potasio",
+  "foodMagnesioMg": "Magnesio",
+  "foodLasEtiquetasComercialesSuelenDeclarar": "Las etiquetas suelen indicar el sodio pero no el potasio ni el magnesio.",
+  "foodRegistrarEnKcal": "Registrar en {selectedSlot} · {kcal} kcal",
+  "@foodRegistrarEnKcal": {
+    "placeholders": {
+      "selectedSlot": {
+        "type": "String"
+      },
+      "kcal": {
+        "type": "String"
+      }
+    }
+  },
+  "foodG2": "{baseLabel} ({baseGrams}g)",
+  "@foodG2": {
+    "placeholders": {
+      "baseLabel": {
+        "type": "String"
+      },
+      "baseGrams": {
+        "type": "String"
+      }
+    }
+  },
+  "foodG3": "{baseGrams} g",
+  "@foodG3": {
+    "placeholders": {
+      "baseGrams": {
+        "type": "String"
+      }
+    }
+  },
+  "foodGuardarEnFavoritos": "Guardar en favoritos",
+  "foodG4": "{protein} g",
+  "@foodG4": {
+    "placeholders": {
+      "protein": {
+        "type": "String"
+      }
+    }
+  },
+  "foodG100g": "{widget} g / 100g",
+  "@foodG100g": {
+    "placeholders": {
+      "widget": {
+        "type": "String"
+      }
+    }
+  },
+  "foodG5": "{carbs} g",
+  "@foodG5": {
+    "placeholders": {
+      "carbs": {
+        "type": "String"
+      }
+    }
+  },
+  "foodNetosG": "Netos: {netCarbs} g",
+  "@foodNetosG": {
+    "placeholders": {
+      "netCarbs": {
+        "type": "String"
+      }
+    }
+  },
+  "foodG6": "{fat} g",
+  "@foodG6": {
+    "placeholders": {
+      "fat": {
+        "type": "String"
+      }
+    }
+  },
+  "foodGFibra": "{fiber} g fibra",
+  "@foodGFibra": {
+    "placeholders": {
+      "fiber": {
+        "type": "String"
+      }
+    }
+  },
+  "foodGAzucares": "{sugar} g azúcares",
+  "@foodGAzucares": {
+    "placeholders": {
+      "sugar": {
+        "type": "String"
+      }
+    }
+  },
+  "foodMg": "{sodium} mg",
+  "@foodMg": {
+    "placeholders": {
+      "sodium": {
+        "type": "String"
+      }
+    }
+  },
+  "foodDatoNoReportado": "Dato no reportado",
+  "foodMg2": "{potassium} mg",
+  "@foodMg2": {
+    "placeholders": {
+      "potassium": {
+        "type": "String"
+      }
+    }
+  },
+  "foodMg3": "{magnesium} mg",
+  "@foodMg3": {
+    "placeholders": {
+      "magnesium": {
+        "type": "String"
+      }
+    }
+  },
+  "foodProductoNoRegistrado": "Producto no registrado",
+  "foodElCodigoAunNoFigura": "El código {cleanCode} aún no figura en tu catálogo ni en Open Food Facts.\n\n¿Quieres registrarlo manualmente para futuras lecturas offline?",
+  "@foodElCodigoAunNoFigura": {
+    "placeholders": {
+      "cleanCode": {
+        "type": "String"
+      }
+    }
+  },
+  "foodSeguirEscaneando": "Seguir escaneando",
+  "foodEscanerEan13": "Escanear código",
+  "foodDestino": "Destino: {slot}",
+  "@foodDestino": {
+    "placeholders": {
+      "slot": {
+        "type": "String"
+      }
+    }
+  },
+  "foodLinterna": "Linterna",
+  "foodCambiarCamara": "Cambiar cámara",
+  "foodEscribirEan": "Escribir código",
+  "foodCrearManual": "Crear manual",
+  "foodEscanearTablaNutricionalOcr": "Leer la tabla nutricional",
+  "foodEscribirCodigoEanUpc": "Escribe el código de barras",
+  "foodEj8480000123456": "Ej. 8480000123456",
+  "foodBuscandoEnCatalogoLocalY": "Buscando {cleanCode} en catálogo local y Open Food Facts...",
+  "@foodBuscandoEnCatalogoLocalY": {
+    "placeholders": {
+      "cleanCode": {
+        "type": "String"
+      }
+    }
+  },
+  "foodSinConexionOTiempoAgotado": "Sin conexión o tiempo agotado. Usa entrada manual o crea el producto.",
+  "foodEnfocaElCodigoDeBarras": "Enfoca el código de barras del envase. Si ya lo escaneaste antes, cargará al instante sin internet.",
+  "foodAnalizandoTablaNutricionalConOcr": "Leyendo la tabla nutricional… 🔍",
+  "foodMacronutrientesDetectadosYRellenados": "¡Macronutrientes detectados y rellenados! 🎯",
+  "foodNoSeDetectaronValoresClaros": "No se detectaron valores claros. Intenta con mejor iluminación o encuadre.",
+  "foodErrorAlEscanear": "Error al escanear: {e}",
+  "@foodErrorAlEscanear": {
+    "placeholders": {
+      "e": {
+        "type": "String"
+      }
+    }
+  },
+  "foodNoSePudoGuardarEl": "No se pudo guardar el alimento: {e}",
+  "@foodNoSePudoGuardarEl": {
+    "placeholders": {
+      "e": {
+        "type": "String"
+      }
+    }
+  },
+  "foodSeGuardaComoFavoritoEn": "Se guarda como favorito en tu catálogo offline",
+  "foodKcal100G": "{effectiveKcal} kcal / 100 g",
+  "@foodKcal100G": {
+    "placeholders": {
+      "effectiveKcal": {
+        "type": "String"
+      }
+    }
+  },
+  "foodPGCGG": "P {liveProtein}g · C {liveCarbs}g · G {liveFat}g",
+  "@foodPGCGG": {
+    "placeholders": {
+      "liveProtein": {
+        "type": "String"
+      },
+      "liveCarbs": {
+        "type": "String"
+      },
+      "liveFat": {
+        "type": "String"
+      }
+    }
+  },
+  "foodAutoKcal": "Calculado: {formula449Kcal} kcal",
+  "@foodAutoKcal": {
+    "placeholders": {
+      "formula449Kcal": {
+        "type": "String"
+      }
+    }
+  },
+  "foodNombreDelAlimentoOReceta": "Nombre del alimento o receta *",
+  "foodEjArepaDeMaizAsada": "Ej. Arepa de maíz asada",
+  "foodMarcaOpcional": "Marca (opcional)",
+  "foodEjCasero": "Ej. Casero",
+  "foodPorcionBaseG": "Porción base (g)",
+  "foodEtiquetaDePorcion": "Etiqueta de porción",
+  "foodEj1Unidad1Taza": "Ej. 1 unidad, 1 taza",
+  "foodCodigoEan": "Código de barras",
+  "foodValoresPorCada100G": "Valores por cada 100 g",
+  "foodSiDejasCaloriasVacioSe": "Si dejas las calorías vacías, las calculamos con los macros (4 kcal por gramo de proteína o carbohidrato y 9 por gramo de grasa).",
+  "foodCaloriasKcal": "Calorías (kcal)",
+  "foodProteinaG": "Proteína (g)",
+  "foodCarbohidratosG": "Carbohidratos (g)",
+  "foodGrasasG": "Grasas (g)",
+  "foodFibraG": "Fibra (g)",
+  "foodAzucaresG": "Azúcares (g)",
+  "foodElectrolitosEanYNutriScore": "Minerales, código de barras y Nutri-Score (opcional)",
+  "foodSodioMg100g": "Sodio (mg / 100g)",
+  "foodPotasioMg100g": "Potasio (mg / 100g)",
+  "foodMagnesioMg100g": "Magnesio (mg / 100g)",
+  "foodCodigoEanOpcional": "Código de barras (opcional)",
+  "foodNutriScoreSiApareceEn": "Nutri-Score (si aparece en el envase)",
+  "foodGrado": "Grado {grade}",
+  "@foodGrado": {
+    "placeholders": {
+      "grade": {
+        "type": "String"
+      }
+    }
+  },
+  "foodAnalizandoTablaConOcr": "Leyendo la tabla…",
+  "foodEscanearTablaNutricionalConCamara": "Leer la tabla nutricional con la cámara",
+  "foodEscribeUnNombreDescriptivo": "Escribe un nombre descriptivo",
+  "foodGuardandoAlimento": "Guardando alimento...",
+  "foodGuardarEnMiCatalogo": "Guardar en mi catálogo",
+  "foodCantidadDe": "Cantidad de {food}",
+  "@foodCantidadDe": {
+    "placeholders": {
+      "food": {
+        "type": "String"
+      }
+    }
+  },
+  "foodGramosCrudos": "Gramos crudos",
+  "foodAnadeAlMenosUnIngrediente": "Añade al menos un ingrediente a la receta.",
+  "foodRecetaGuardadaExitosamente": "¡Receta \"{nameCtrl}\" guardada exitosamente! 🍲",
+  "@foodRecetaGuardadaExitosamente": {
+    "placeholders": {
+      "nameCtrl": {
+        "type": "String"
+      }
+    }
+  },
+  "foodErrorAlGuardarLaReceta": "Error al guardar la receta: {e}",
+  "@foodErrorAlGuardarLaReceta": {
+    "placeholders": {
+      "e": {
+        "type": "String"
+      }
+    }
+  },
+  "foodNuevaRecetaBatchCooking": "Nueva receta",
+  "foodNombreDeLaRecetaEj": "Nombre de la receta (ej. Arroz con Pollo)",
+  "foodRendimientoYRaciones": "Raciones",
+  "foodNumeroDeRacionesIguales": "Número de raciones iguales",
+  "foodRacionesEstimadas": "Raciones estimadas",
+  "foodPesoTotalCocinado": "Peso total cocinado",
+  "foodIngredientesCrudos": "Ingredientes en crudo ({ingredients})",
+  "@foodIngredientesCrudos": {
+    "placeholders": {
+      "ingredients": {
+        "type": "String"
+      }
+    }
+  },
+  "foodIngrediente": "Ingrediente",
+  "foodTocaIngredienteParaAnadirAlimentos": "Toca \"+ Ingrediente\" para añadir alimentos crudos del catálogo.",
+  "foodGKcalPGC2": "{item}g • {item2} kcal (P: {item3}g | C: {item4}g | G: {item5}g)",
+  "@foodGKcalPGC2": {
+    "placeholders": {
+      "item": {
+        "type": "String"
+      },
+      "item2": {
+        "type": "String"
+      },
+      "item3": {
+        "type": "String"
+      },
+      "item4": {
+        "type": "String"
+      },
+      "item5": {
+        "type": "String"
+      }
+    }
+  },
+  "foodNutricionPorRacion1De": "Por ración (1 de {servings})",
+  "@foodNutricionPorRacion1De": {
+    "placeholders": {
+      "servings": {
+        "type": "String"
+      }
+    }
+  },
+  "foodCalorias": "Calorías",
+  "foodProteinas": "Proteínas",
+  "foodTotalDeLaOllaKcal": "Total de la olla: {totalKcal} kcal • Peso crudo: {totalRawWeight}g",
+  "@foodTotalDeLaOllaKcal": {
+    "placeholders": {
+      "totalKcal": {
+        "type": "String"
+      },
+      "totalRawWeight": {
+        "type": "String"
+      }
+    }
+  },
+  "foodRegistrar1RacionEnEl": "Registrar 1 ración en el diario de hoy",
+  "foodSeleccionarIngrediente": "Seleccionar Ingrediente",
+  "foodBuscarIngredienteEjPolloArroz": "Buscar ingrediente (ej. Pollo, Arroz, Aceite...)",
+  "foodNoSeEncontraronAlimentos": "No se encontraron alimentos.",
+  "foodKcal100gPCG": "{f} kcal / 100g • P:{f2} C:{f3} G:{f4}",
+  "@foodKcal100gPCG": {
+    "placeholders": {
+      "f": {
+        "type": "String"
+      },
+      "f2": {
+        "type": "String"
+      },
+      "f3": {
+        "type": "String"
+      },
+      "f4": {
+        "type": "String"
+      }
+    }
+  },
+  "food1RacionDeRegistradaEn": "¡1 ración de \"{recipe}\" registrada en {mealSlotMeta}! 🍲",
+  "@food1RacionDeRegistradaEn": {
+    "placeholders": {
+      "recipe": {
+        "type": "String"
+      },
+      "mealSlotMeta": {
+        "type": "String"
+      }
+    }
+  },
+  "foodMisRecetasCaseras": "Mis recetas",
+  "foodBatchCookingYRecetasMultiracion": "Cocina una vez y reparte en raciones: calculamos cada porción por ti.",
+  "foodCrearNuevaRecetaMultiracion": "Crear receta",
+  "foodAunNoHasCreadoRecetas": "Aún no has creado recetas caseras",
+  "foodCreaPlatosMultiracionParaPorcionar": "Crea platos de varias raciones y registra una porción con un toque.",
+  "foodKcalRindeRaciones": "{r} kcal • Rinde {r2} raciones",
+  "@foodKcalRindeRaciones": {
+    "placeholders": {
+      "r": {
+        "type": "String"
+      },
+      "r2": {
+        "type": "String"
+      }
+    }
+  },
+  "foodPGCGG2": "P: {r}g | C: {r2}g | G: {r3}g",
+  "@foodPGCGG2": {
+    "placeholders": {
+      "r": {
+        "type": "String"
+      },
+      "r2": {
+        "type": "String"
+      },
+      "r3": {
+        "type": "String"
+      }
+    }
+  },
+  "food1Racion": "+ 1 ración",
+  "foodError": "Error: {e}",
+  "@foodError": {
+    "placeholders": {
+      "e": {
+        "type": "String"
+      }
+    }
+  },
+  "foodIntroduceUnNombreParaLa": "Introduce un nombre para la receta",
+  "foodPorPeso": "Por peso",
+  "foodPorPlatos": "Por platos",
+  "foodDebeSerAlMenos1": "Debe ser al menos 1",
+  "foodKcal2": "{servingKcal} kcal",
+  "@foodKcal2": {
+    "placeholders": {
+      "servingKcal": {
+        "type": "String"
+      }
+    }
+  },
+  "foodG7": "{servingProtein} g",
+  "@foodG7": {
+    "placeholders": {
+      "servingProtein": {
+        "type": "String"
+      }
+    }
+  },
+  "foodG8": "{servingCarbs} g",
+  "@foodG8": {
+    "placeholders": {
+      "servingCarbs": {
+        "type": "String"
+      }
+    }
+  },
+  "foodG9": "{servingFat} g",
+  "@foodG9": {
+    "placeholders": {
+      "servingFat": {
+        "type": "String"
+      }
+    }
+  },
+  "foodGuardando": "Guardando...",
+  "foodGuardarRecetaEnCatalogo": "Guardar receta",
+  "foodAjustaLaCantidadConsumidaO": "Ajusta la cantidad consumida o cámbialo de comida",
+  "foodKcal3": "{previewKcal} kcal",
+  "@foodKcal3": {
+    "placeholders": {
+      "previewKcal": {
+        "type": "String"
+      }
+    }
+  },
+  "foodProteinaGCarbosGGrasas": "Proteína {previewP} g · Carbos {previewC} g · Grasas {previewF} g",
+  "@foodProteinaGCarbosGGrasas": {
+    "placeholders": {
+      "previewP": {
+        "type": "String"
+      },
+      "previewC": {
+        "type": "String"
+      },
+      "previewF": {
+        "type": "String"
+      }
+    }
+  },
+  "foodGramosConsumidos": "Gramos consumidos",
+  "food25G": "-25 g",
+  "food25G2": "+25 g",
+  "foodG10": "{grams} g",
+  "@foodG10": {
+    "placeholders": {
+      "grams": {
+        "type": "String"
+      }
+    }
+  },
+  "foodMoverAOtroMomento": "Mover a otro momento",
+  "foodGuardarCambios": "Guardar cambios",
+  "foodAlimentosAnadidosEn": "{logged} alimentos añadidos en {slot}",
+  "@foodAlimentosAnadidosEn": {
+    "placeholders": {
+      "logged": {
+        "type": "String"
+      },
+      "slot": {
+        "type": "String"
+      }
+    }
+  },
+  "foodDescribeTuPlatoOUsa": "Describe tu plato o díctalo. Todo se procesa en tu teléfono, sin conexión.",
+  "foodG11": "{previewItems} g",
+  "@foodG11": {
+    "placeholders": {
+      "previewItems": {
+        "type": "String"
+      }
+    }
+  },
+  "foodQuitarIngrediente": "Quitar ingrediente",
+  "foodRevisarPorciones": "Revisar porciones",
+  "foodMisCombosCaseros": "Mis combos",
+  "foodAunNoHasGuardadoCombos": "Aún no has guardado combos",
+  "foodCuandoRegistres2OMas": "Cuando registres 2 o más alimentos en Desayuno, Almuerzo, Cena o Snacks, aparecerá el botón \"Guardar combo\" debajo de esa comida para reutilizarla en 1 toque con cualquier tamaño de porción.",
+  "foodEligeElMomentoDelDia": "Elige el momento del día y escala la porción de todos los ingredientes a la vez:",
+  "foodTamanoDeLaPorcion": "Tamaño de la porción",
+  "foodComboAnadidoA": "Combo \"{item}\" ({formatMultiplier}) añadido a {slot}",
+  "@foodComboAnadidoA": {
+    "placeholders": {
+      "item": {
+        "type": "String"
+      },
+      "formatMultiplier": {
+        "type": "String"
+      },
+      "slot": {
+        "type": "String"
+      }
+    }
+  },
+  "foodUsadoVeces": "Usado {detail} veces",
+  "@foodUsadoVeces": {
+    "placeholders": {
+      "detail": {
+        "type": "String"
+      }
+    }
+  },
+  "foodKcal4": "{scaledKcal} kcal",
+  "@foodKcal4": {
+    "placeholders": {
+      "scaledKcal": {
+        "type": "String"
+      }
+    }
+  },
+  "foodPGCGG3": "P {scaledP}g · C {scaledC}g · G {scaledF}g",
+  "@foodPGCGG3": {
+    "placeholders": {
+      "scaledP": {
+        "type": "String"
+      },
+      "scaledC": {
+        "type": "String"
+      },
+      "scaledF": {
+        "type": "String"
+      }
+    }
+  },
+  "foodEliminarCombo": "Eliminar combo",
+  "foodRegistrar": "Registrar ({multiplierText})",
+  "@foodRegistrar": {
+    "placeholders": {
+      "multiplierText": {
+        "type": "String"
+      }
+    }
+  },
+  "foodGuardarComoCombo": "Guardar como combo",
+  "foodSeGuardaranLosAlimentosActuales": "Se guardarán los {widget} alimentos actuales como plantilla reutilizable.",
+  "@foodSeGuardaranLosAlimentosActuales": {
+    "placeholders": {
+      "widget": {
+        "type": "String"
+      }
+    }
+  },
+  "foodNombreDelCombo": "Nombre del combo",
+  "foodEjDesayunoProteicoHabitual": "Ej. Desayuno proteico habitual",
+  "foodTazaPequena": "Taza pequeña",
+  "foodVasoCorto": "Vaso corto",
+  "foodBotellin": "Botellín",
+  "foodTermo": "Termo",
+  "foodCaramanola": "Caramañola",
+  "foodBotella1L": "Botella 1 L",
+  "foodVasoOBotellaAMedida": "Vaso o botella a medida",
+  "foodMl": "{item} ml",
+  "@foodMl": {
+    "placeholders": {
+      "item": {
+        "type": "String"
+      }
+    }
+  },
+  "foodVolumenExactoEnMililitros": "Volumen exacto en mililitros",
+  "foodAlimentoRegistrado": "Alimento registrado",
+  "food2Huevos80gAvenaY": "2 huevos, 80g avena y 1 plátano",
+  "food200gPechugaDePollo150g": "200g pechuga de pollo, 150g arroz y brócoli",
+  "food150gYogurGriegoY30g": "150g yogur griego y 30g almendras",
+  "foodTexto": "{prefix}, {text}",
+  "@foodTexto": {
+    "placeholders": {
+      "prefix": {
+        "type": "String"
+      },
+      "text": {
+        "type": "String"
+      }
+    }
+  },
+  "foodTeEscuchoDiLoQue": "Te escucho… di lo que comiste",
+  "foodEj200gPechugaDePollo": "Ej. 200g pechuga de pollo, 150g arroz blanco y 1 aguacate",
+  "foodDetenerDictado": "Detener dictado",
+  "foodDictarSinConexion": "Dictar (sin conexión)",
+  "foodNoSeDetectaronAlimentosClaros": "No se detectaron alimentos claros. Prueba indicando cantidades (ej. 150g arroz).",
+  "foodIngredientesDetectados": "Ingredientes detectados ({previewItems}):",
+  "@foodIngredientesDetectados": {
+    "placeholders": {
+      "previewItems": {
+        "type": "String"
+      }
+    }
+  },
+  "foodG12": "{ing} ({value}g)",
+  "@foodG12": {
+    "placeholders": {
+      "ing": {
+        "type": "String"
+      },
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "foodRegistrarMl": "Registrar +{currentMl} ml",
+  "@foodRegistrarMl": {
+    "placeholders": {
+      "currentMl": {
+        "type": "String"
+      }
+    }
+  },
+  "foodIntroduceUnVolumenValido": "Introduce un volumen válido",
+  "foodEstiloActivado": "¡Estilo {dietArchetypeInfo} activado!",
+  "@foodEstiloActivado": {
+    "placeholders": {
+      "dietArchetypeInfo": {
+        "type": "String"
+      }
+    }
+  },
+  "foodArquetiposDieteticos": "Tipo de dieta",
+  "foodSeleccionaTuEnfoqueNutricionalEl": "Elige cómo prefieres comer. Ajustaremos el reparto de proteína, carbohidratos y grasa y las porciones sugeridas.",
+  "foodP": "P: {arch}%",
+  "@foodP": {
+    "placeholders": {
+      "arch": {
+        "type": "String"
+      }
+    }
+  },
+  "foodC": "C: {arch}%",
+  "@foodC": {
+    "placeholders": {
+      "arch": {
+        "type": "String"
+      }
+    }
+  },
+  "foodG13": "G: {arch}%",
+  "@foodG13": {
+    "placeholders": {
+      "arch": {
+        "type": "String"
+      }
+    }
+  },
+  "foodComidaRegistradaEnConPorciones": "¡Comida registrada en {mealSlotMeta} con porciones exactas! 🍽️",
+  "@foodComidaRegistradaEnConPorciones": {
+    "placeholders": {
+      "mealSlotMeta": {
+        "type": "String"
+      }
+    }
+  },
+  "foodMenuSugeridoInteligente": "Menú sugerido",
+  "foodEstiloKcalMetaDiariaCalculada": "Estilo {menu} · {menu2} kcal, con porciones al gramo.",
+  "@foodEstiloKcalMetaDiariaCalculada": {
+    "placeholders": {
+      "menu": {
+        "type": "String"
+      },
+      "menu2": {
+        "type": "String"
+      }
+    }
+  },
+  "foodNoHayDatosDisponibles": "No hay datos disponibles.",
+  "foodKcal5": "{slotTitle} ({slotKcal} kcal)",
+  "@foodKcal5": {
+    "placeholders": {
+      "slotTitle": {
+        "type": "String"
+      },
+      "slotKcal": {
+        "type": "String"
+      }
+    }
+  },
+  "foodG14": "{item} • {item2}g",
+  "@foodG14": {
+    "placeholders": {
+      "item": {
+        "type": "String"
+      },
+      "item2": {
+        "type": "String"
+      }
+    }
+  },
+  "foodKcal6": "{item} kcal",
+  "@foodKcal6": {
+    "placeholders": {
+      "item": {
+        "type": "String"
+      }
+    }
+  },
+  "foodOraculoDeNutrientes": "Qué comer ahora",
+  "foodTeFaltanKcalPG": "Te faltan {remainingKcal} kcal (P {remainingProteinG} g · C {remainingCarbsG} g · G {remainingFatG} g). Opciones de tu catálogo para completarlas:",
+  "@foodTeFaltanKcalPG": {
+    "placeholders": {
+      "remainingKcal": {
+        "type": "String"
+      },
+      "remainingProteinG": {
+        "type": "String"
+      },
+      "remainingCarbsG": {
+        "type": "String"
+      },
+      "remainingFatG": {
+        "type": "String"
+      }
+    }
+  },
+  "foodTusMetasEstanPracticamenteCubiertas": "¡Tus metas están prácticamente cubiertas o no hay alimentos compatibles!",
+  "foodServirGKcal": "Servir {item}g • {item2} kcal",
+  "@foodServirGKcal": {
+    "placeholders": {
+      "item": {
+        "type": "String"
+      },
+      "item2": {
+        "type": "String"
+      }
+    }
+  },
+  "foodPGCGG4": "P: {item}g | C: {item2}g | G: {item3}g",
+  "@foodPGCGG4": {
+    "placeholders": {
+      "item": {
+        "type": "String"
+      },
+      "item2": {
+        "type": "String"
+      },
+      "item3": {
+        "type": "String"
+      }
+    }
+  },
+  "foodGDeRegistrados": "¡{item}g de {item2} registrados!",
+  "@foodGDeRegistrados": {
+    "placeholders": {
+      "item": {
+        "type": "String"
+      },
+      "item2": {
+        "type": "String"
+      }
+    }
+  },
+  "foodComer": "Comer",
+  "foodDesayuno": "Desayuno",
+  "foodAlmuerzo": "Almuerzo",
+  "foodCena": "Cena",
+  "foodSnacks": "Snacks",
+  "foodNutriScore": "Nutri-Score {normalized}",
+  "@foodNutriScore": {
+    "placeholders": {
+      "normalized": {
+        "type": "String"
+      }
+    }
+  },
+  "foodEntreComidas": "Entre comidas",
+  "foodUsdaBase": "USDA",
+  "foodOpenFoodFacts": "Open Food Facts",
+  "foodMiReceta": "Mi receta",
+  "foodEstimacion": "Estimación",
+  "bodySomatoBalanced": "Equilibrado",
+  "bodySomatoBalancedMuscular": "Atlético",
+  "bodySomatoSkinnyMuscular": "Definido",
+  "bodySomatoBalancedSkinny": "Delgado equilibrado",
+  "bodySomatoSkinny": "Constitución ligera",
+  "bodySomatoThickSet": "Complexión fuerte",
+  "bodySomatoLackExercise": "Ganando músculo",
+  "bodySomatoOverweight": "Reserva energética moderada",
+  "bodySomatoObese": "Reserva energética alta",
+  "bodySomatoPending": "Pendiente de pesaje",
+  "bodySourceBia": "Medido por la báscula",
+  "bodySourceEstimate": "Estimado (sin bioimpedancia)",
+  "bodySourceNone": "Sin registro aún",
+  "bodyNoData": "Sin dato",
+  "bodyStatusHealthyRange": "Rango saludable",
+  "bodyStatusLowReserve": "Reserva baja",
+  "bodyStatusAboveRange": "Por encima del rango",
+  "bodyMetricFat": "Grasa corporal",
+  "bodyMetricTapeFat": "Grasa con cinta",
+  "bodyTapeMeasure": "Medir",
+  "bodyTapeHint": "Báscula + cinta métrica",
+  "bodyTapeValidated": "Contrastada",
+  "bodyTapeEvery2Weeks": "Cada 2 semanas",
+  "bodyMetricMuscle": "Masa muscular",
+  "bodyMuscleTotal": "Músculo total",
+  "bodyStatusSolid": "Buen nivel",
+  "bodyStatusBuilding": "En construcción",
+  "bodyMetricLean": "Masa magra",
+  "bodyLeanSubtitle": "Todo menos la grasa",
+  "bodyLeanStatus": "Motor del metabolismo",
+  "bodyMetricWater": "Agua corporal",
+  "bodyWaterSubtitle": "Hidratación de los tejidos",
+  "bodyStatusHydrated": "Bien hidratado",
+  "bodyStatusDrinkMore": "Bebe un poco más",
+  "bodyMetricProtein": "Proteína corporal",
+  "bodyProteinSubtitle": "Reserva estructural",
+  "bodyStatusOptimal": "Óptimo",
+  "bodyStatusStable": "Estable",
+  "bodyMetricVisceral": "Grasa visceral",
+  "bodyVisceralSubtitle": "Ideal: niveles 1 a 9",
+  "bodyStatusHealthy": "Saludable",
+  "bodyStatusModerate": "Moderado",
+  "bodyStatusMoveMore": "Más movimiento diario",
+  "bodyMetricBone": "Masa ósea",
+  "bodyBoneSubtitle": "Mineral óseo estimado",
+  "bodyMetricBmr": "Metabolismo basal",
+  "bodyBmrSubtitle": "Lo que gastas en reposo",
+  "bodyBmrStatus": "Según tu masa magra",
+  "bodyMetricMetabolicAge": "Edad metabólica",
+  "bodyStatusYoung": "Vitalidad alta",
+  "bodyStatusRoomToImprove": "Margen de mejora",
+  "bodyMetricBmi": "IMC",
+  "bodyBmiSubtitle": "Peso según estatura",
+  "bodyStatusStandard": "Rango estándar",
+  "bodyStatusBmiContext": "Valóralo junto al músculo",
+  "bodyMetricScore": "Puntuación corporal",
+  "bodyScoreSubtitle": "Resumen de tu composición",
+  "bodyStatusExcellent": "Sobresaliente",
+  "bodyStatusBalanced": "Equilibrado",
+  "bodyStatusInProgress": "En progreso",
+  "bodyMetricSomatotype": "Tipo de cuerpo",
+  "bodySomatoSubtitle": "Según tu grasa y tu músculo",
+  "bodySomatoStatus": "Cambia con tus hábitos",
+  "bodySomatoStatusPending": "Pendiente",
+  "bodyTapeWaist": "Cintura {cm} cm",
+  "@bodyTapeWaist": {
+    "placeholders": {
+      "cm": {
+        "type": "String"
+      }
+    }
+  },
+  "bodyPctOfWeight": "{pct}% de tu peso",
+  "@bodyPctOfWeight": {
+    "placeholders": {
+      "pct": {
+        "type": "String"
+      }
+    }
+  },
+  "bodyVisceralLevel": "Nivel {level}",
+  "@bodyVisceralLevel": {
+    "placeholders": {
+      "level": {
+        "type": "String"
+      }
+    }
+  },
+  "bodyYears": "{years} años",
+  "@bodyYears": {
+    "placeholders": {
+      "years": {
+        "type": "String"
+      }
+    }
+  },
+  "bodyCurrentAge": "Tu edad: {age} años",
+  "@bodyCurrentAge": {
+    "placeholders": {
+      "age": {
+        "type": "int"
+      }
+    }
+  },
+  "cuerpoTitle": "Cuerpo",
+  "cuerpoSourceScale": "báscula",
+  "cuerpoSourceHealthConnect": "Health Connect",
+  "cuerpoSourceManual": "manual",
+  "cuerpoSourceTape": "cinta métrica",
+  "cuerpoCurrentWeight": "Peso actual",
+  "cuerpoNoWeighIn": "Aún no hay pesajes",
+  "cuerpoWeighInMeta": "{date} · {source}",
+  "@cuerpoWeighInMeta": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      },
+      "source": {
+        "type": "String"
+      }
+    }
+  },
+  "cuerpoGoalReached": "¡Meta alcanzada!",
+  "cuerpoToGoal": "{kg} kg para tu meta",
+  "@cuerpoToGoal": {
+    "placeholders": {
+      "kg": {
+        "type": "String"
+      }
+    }
+  },
+  "cuerpoTrend": "Tendencia",
+  "cuerpoGoal": "Meta",
+  "cuerpoTrendExplainer": "La tendencia suaviza los altibajos de agua del día a día: es la cifra que de verdad sigue tu progreso.",
+  "cuerpoWaterTitle": "Variación de líquidos",
+  "cuerpoWaterFallback": "Es agua retenida (sal o glucógeno), no grasa. En unos días vuelve a su sitio.",
+  "cuerpoScaleTitle": "Báscula Xiaomi Mi Scale 2",
+  "cuerpoScaleSettings": "Ajustes de la báscula",
+  "cuerpoScaleSearching": "Buscando la báscula… súbete descalzo.",
+  "cuerpoScaleMeasuring": "Midiendo… quédate quieto.",
+  "cuerpoScaleAwaitingImpedance": "Peso listo. Midiendo composición corporal, sigue descalzo.",
+  "cuerpoScaleError": "No se pudo usar el Bluetooth. Revisa que esté activado y vuelve a intentarlo.",
+  "cuerpoScaleIdle": "Se conecta sola por Bluetooth, sin apps del fabricante.",
+  "cuerpoScaleIdleBound": "Vinculada a tu báscula. Pulsa «Pesarme» y súbete.",
+  "cuerpoScaleIdleWeightOnly": "Modo solo peso (sin corriente de bioimpedancia).",
+  "cuerpoScaleLastReading": "Última lectura: {kg} kg",
+  "@cuerpoScaleLastReading": {
+    "placeholders": {
+      "kg": {
+        "type": "String"
+      }
+    }
+  },
+  "cuerpoScaleStart": "Pesarme",
+  "cuerpoScaleStop": "Detener",
+  "cuerpoManualWeighIn": "Manual",
+  "cuerpoTapeButton": "Cinta métrica",
+  "cuerpoSaveWeightOnly": "Guardar solo el peso",
+  "cuerpoGuestDiscarded": "Pesaje descartado (no eras tú).",
+  "cuerpoGuestTitle": "¿Eres tú?",
+  "cuerpoGuestBody": "{kg} kg se aleja un {pct} % de tu tendencia. ¿Lo guardamos en tu perfil?",
+  "@cuerpoGuestBody": {
+    "placeholders": {
+      "kg": {
+        "type": "String"
+      },
+      "pct": {
+        "type": "String"
+      }
+    }
+  },
+  "cuerpoGuestNo": "No, es otra persona",
+  "cuerpoGuestYes": "Sí, soy yo",
+  "cuerpoWeighInSaved": "Pesaje guardado: {kg} kg",
+  "@cuerpoWeighInSaved": {
+    "placeholders": {
+      "kg": {
+        "type": "String"
+      }
+    }
+  },
+  "cuerpoWeighInSavedCoins": "Pesaje guardado: {kg} kg · +{coins} monedas",
+  "@cuerpoWeighInSavedCoins": {
+    "placeholders": {
+      "kg": {
+        "type": "String"
+      },
+      "coins": {
+        "type": "int"
+      }
+    }
+  },
+  "cuerpoBindScale": "Vincular báscula",
+  "cuerpoWeighInDeleted": "Pesaje de {kg} kg ({date}) eliminado",
+  "@cuerpoWeighInDeleted": {
+    "placeholders": {
+      "kg": {
+        "type": "String"
+      },
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "cuerpoWorkoutDeleted": "Entrenamiento eliminado",
+  "cuerpoTapeSaved": "Medidas guardadas · grasa por cinta {tape} % · combinada {combined} %",
+  "@cuerpoTapeSaved": {
+    "placeholders": {
+      "tape": {
+        "type": "String"
+      },
+      "combined": {
+        "type": "String"
+      }
+    }
+  },
+  "cuerpoTapeNeedsWeighIn": "Primero pésate: la cinta se combina con tu peso real.",
+  "cuerpoScaleAuto": "Báscula en modo automático",
+  "cuerpoScaleBound": "Báscula vinculada ({mac})",
+  "@cuerpoScaleBound": {
+    "placeholders": {
+      "mac": {
+        "type": "String"
+      }
+    }
+  },
+  "cuerpoCompositionTitle": "Composición corporal",
+  "cuerpoCompositionSubtitle": "De tu último pesaje",
+  "cuerpoEstimatedNotice": "Tu último pesaje no midió la bioimpedancia: estos valores son estimados. Súbete descalzo para una lectura completa.",
+  "cuerpoMovementTitle": "Movimiento",
+  "cuerpoStepsTitle": "Pasos de hoy",
+  "cuerpoStepsSummary": "{steps} de {goal} pasos · ~{kcal} kcal",
+  "@cuerpoStepsSummary": {
+    "placeholders": {
+      "steps": {
+        "type": "int"
+      },
+      "goal": {
+        "type": "int"
+      },
+      "kcal": {
+        "type": "int"
+      }
+    }
+  },
+  "cuerpoWorkoutsTitle": "Entrenamientos de hoy",
+  "cuerpoWorkoutsEmpty": "Registra cómo te esforzaste en segundos, sin contar series.",
+  "cuerpoWorkoutsSummary": "{count, plural, =1{1 sesión} other{{count} sesiones}} · +{kcal} kcal",
+  "@cuerpoWorkoutsSummary": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "kcal": {
+        "type": "int"
+      }
+    }
+  },
+  "cuerpoWorkoutLine": "{minutes} min · {intensity}",
+  "@cuerpoWorkoutLine": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      },
+      "intensity": {
+        "type": "String"
+      }
+    }
+  },
+  "cuerpoDeleteWorkout": "Eliminar entrenamiento",
+  "cuerpoLogWorkout": "Registrar entrenamiento",
+  "workoutWeights": "Pesas / fuerza",
+  "workoutCalisthenics": "Funcional / calistenia",
+  "workoutCardio": "Cardio",
+  "workoutSports": "Deporte",
+  "workoutLight": "suave",
+  "workoutModerate": "moderado",
+  "workoutIntense": "intenso",
+  "chartGoal": "Meta",
+  "chartTrend": "Tendencia",
+  "chartWeighIns": "Pesajes",
+  "bodyPesajeManual": "Pesaje manual",
+  "bodyActualizaTus13MetricasY": "Se actualizan al instante tu tendencia y tu composición",
+  "body05Kg": "-0.5 kg",
+  "body01Kg": "-0.1 kg",
+  "body01Kg2": "+0.1 kg",
+  "body05Kg2": "+0.5 kg",
+  "bodyPesoEnKilogramos": "Peso en kilogramos",
+  "bodyImpedanciaBiaOpcional1003000": "Bioimpedancia (opcional, 100–3000 Ω)",
+  "bodyVacioSiTuBasculaSolo": "Déjalo vacío si tu báscula solo mide peso",
+  "bodyTendenciaEma": "Tendencia",
+  "bodyImcCalculado": "IMC calculado",
+  "bodyVsAnterior": "Vs. anterior",
+  "bodyValidacionUsNavyCinta": "Medidas con cinta",
+  "bodyControlQuincenalSinSesgoPor": "Cada 2 semanas: confirma tu progreso sin el ruido del agua",
+  "bodyCircunferenciaDeCintura": "Circunferencia de cintura",
+  "bodyCircunferenciaDeCuello": "Circunferencia de cuello",
+  "bodyCircunferenciaDeCadera": "Circunferencia de cadera",
+  "bodyUsNavyCinta": "Por cinta",
+  "bodyGrasaValidada6040": "Combinada con la báscula",
+  "bodyIndiceCinturaEstatura": "Índice cintura/estatura: {waistToHeight} ({waistToHeight2})",
+  "@bodyIndiceCinturaEstatura": {
+    "placeholders": {
+      "waistToHeight": {
+        "type": "String"
+      },
+      "waistToHeight2": {
+        "type": "String"
+      }
+    }
+  },
+  "bodyGuardarValidacion": "Guardar medidas",
+  "bodyVinculoXiaomiMiScale2": "Báscula Xiaomi Mi Scale 2",
+  "bodyLecturaPasivaBle0x181b100": "Lectura directa por Bluetooth, sin apps del fabricante",
+  "bodySiDejasElCampoVacio": "Si lo dejas vacío, la app reconoce cualquier Mi Scale 2 cercana. Fija una dirección solo si en casa hay varias básculas Bluetooth.",
+  "bodyDireccionMacOpcional": "Dirección de la báscula (opcional)",
+  "bodyEjA4C13812": "Ej. A4:C1:38:12:34:56 (vacío = automático)",
+  "bodyModoAutomatico": "Modo automático",
+  "bodyGuardarAjuste": "Guardar ajuste",
+  "bodyValorActual": "Valor actual",
+  "bodyQueRepresenta": "¿Qué representa?",
+  "bodyKg": "{liveEma} kg",
+  "@bodyKg": {
+    "placeholders": {
+      "liveEma": {
+        "type": "String"
+      }
+    }
+  },
+  "bodyPrimerDato": "Primer dato",
+  "bodyMideEnAyunasSinComprimir": "Mide en ayunas sin comprimir la piel: cintura a nivel umbilical, cuello bajo la laringe y cadera en su contorno más amplio.",
+  "bodyMideEnAyunasSinComprimir2": "Mide en ayunas sin comprimir la piel: cintura a nivel umbilical al espirar suave y cuello justo debajo de la laringe.",
+  "bodyEvolucionTemporal": "Evolución",
+  "bodyTodo": "Todo",
+  "bodyNoHayPesajesRegistradosTodavia": "No hay pesajes registrados todavía.",
+  "bodyEmaKg": "Tendencia: {m} kg",
+  "@bodyEmaKg": {
+    "placeholders": {
+      "m": {
+        "type": "String"
+      }
+    }
+  },
+  "bodyGrasa": "Grasa: {m}%",
+  "@bodyGrasa": {
+    "placeholders": {
+      "m": {
+        "type": "String"
+      }
+    }
+  },
+  "bodyCambio": "Cambio",
+  "bodyPromedio": "Promedio",
+  "bodyMinimo": "Mínimo",
+  "bodyMaximo": "Máximo",
+  "bodyPesoTendencia": "Peso",
+  "bodyGrasa2": "Grasa",
+  "bodyMasaMuscular": "Músculo",
+  "bodyAguaCorporal": "Agua",
+  "bodyGrasaVisceral": "Grasa visceral",
+  "bodyPuntajeCorporal": "Puntuación",
+  "bodyGrasaValidada": "Grasa con cinta",
+  "bodyNivel": "Nivel",
+  "bodyHistorialDePesajesOrdenadoDel": "Tus pesajes, del más reciente al más antiguo",
+  "bodyTocaODeslizaSobreLa": "Toca o desliza sobre la curva para ver cada día",
+  "bodyGrafica": "Gráfica",
+  "bodyHistorial": "Historial",
+  "bodyNavy": "Cinta",
+  "bodySinDatosSuficientesParaGraficar": "Sin datos suficientes para graficar {metricName}.",
+  "@bodySinDatosSuficientesParaGraficar": {
+    "placeholders": {
+      "metricName": {
+        "type": "String"
+      }
+    }
+  },
+  "bodyUltimoValorRegistraUnSegundo": "Último valor: {values} {metricUnit}. Registra un segundo pesaje para trazar la tendencia.",
+  "@bodyUltimoValorRegistraUnSegundo": {
+    "placeholders": {
+      "values": {
+        "type": "String"
+      },
+      "metricUnit": {
+        "type": "String"
+      }
+    }
+  },
+  "bodyTexto": "{avgVal} {metricUnit}",
+  "@bodyTexto": {
+    "placeholders": {
+      "avgVal": {
+        "type": "String"
+      },
+      "metricUnit": {
+        "type": "String"
+      }
+    }
+  },
+  "bodyTexto2": "{minVal} {metricUnit}",
+  "@bodyTexto2": {
+    "placeholders": {
+      "minVal": {
+        "type": "String"
+      },
+      "metricUnit": {
+        "type": "String"
+      }
+    }
+  },
+  "bodyTexto3": "{maxVal} {metricUnit}",
+  "@bodyTexto3": {
+    "placeholders": {
+      "maxVal": {
+        "type": "String"
+      },
+      "metricUnit": {
+        "type": "String"
+      }
+    }
+  },
+  "bodyMiniHitosPsicologicos": "Metas intermedias",
+  "bodyDescomponTuMetaEnTramos": "Divide tu meta en tramos de 1,5 kg, más fáciles de celebrar",
+  "bodyGenerar": "Crear",
+  "bodyMiniHitoDe": "Tramo {completedCount} de {totalCount}",
+  "@bodyMiniHitoDe": {
+    "placeholders": {
+      "completedCount": {
+        "type": "String"
+      },
+      "totalCount": {
+        "type": "String"
+      }
+    }
+  },
+  "bodyRecalibrarTramosDe15": "Recalcular tramos de 1,5 kg",
+  "bodyObjetivoInmediatoKg": "Próximo objetivo: {activeMilestone} kg",
+  "@bodyObjetivoInmediatoKg": {
+    "placeholders": {
+      "activeMilestone": {
+        "type": "String"
+      }
+    }
+  },
+  "bodyFaltanKg": "Faltan {remainingKgToActive} kg",
+  "@bodyFaltanKg": {
+    "placeholders": {
+      "remainingKgToActive": {
+        "type": "String"
+      }
+    }
+  },
+  "bodyCompletado": "{value}% completado",
+  "@bodyCompletado": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "bodyFelicitacionesHasCompletadoTodosLos": "¡Felicidades! Completaste todos los tramos y alcanzaste tu meta.",
+  "bodyHitoKg": "Tramo {m}: {m2} kg",
+  "@bodyHitoKg": {
+    "placeholders": {
+      "m": {
+        "type": "String"
+      },
+      "m2": {
+        "type": "String"
+      }
+    }
+  },
+  "bodyLogrado25": "¡Logrado! +25 🪙",
+  "bodyEnCurso": "En curso",
+  "bodyATiroDePiedra": "¡A tiro de piedra!",
+  "bodyDiasRestantes": "~ {daysRemaining} días restantes",
+  "@bodyDiasRestantes": {
+    "placeholders": {
+      "daysRemaining": {
+        "type": "String"
+      }
+    }
+  },
+  "bodySemanasRestantes": "~ {weeks} semanas restantes",
+  "@bodySemanasRestantes": {
+    "placeholders": {
+      "weeks": {
+        "type": "String"
+      }
+    }
+  },
+  "bodyEntrenamientoEn5Segundos": "Registrar entrenamiento",
+  "bodyGastoNetoRealSinContar": "Sin contar series ni repeticiones",
+  "body1Disciplina": "1. Tipo",
+  "bodyPesasFuerza": "Pesas / Fuerza",
+  "bodyFuncional": "Funcional",
+  "body2DuracionEfectiva": "2. Duración:",
+  "bodyMin": "{durationMinutes} min",
+  "@bodyMin": {
+    "placeholders": {
+      "durationMinutes": {
+        "type": "String"
+      }
+    }
+  },
+  "body3EsfuerzoPercibidoRpe": "3. ¿Cuánto te costó?",
+  "bodyLigero": "Suave",
+  "bodyIntenso": "Intenso",
+  "bodyGastoNetoEstimadoDescontandoReposo": "Gasto extra estimado (sin contar el reposo):",
+  "bodyKcalNetas": "{netKcal} kcal",
+  "@bodyKcalNetas": {
+    "placeholders": {
+      "netKcal": {
+        "type": "String"
+      }
+    }
+  },
+  "bodyMet": "MET {met}",
+  "@bodyMet": {
+    "placeholders": {
+      "met": {
+        "type": "String"
+      }
+    }
+  },
+  "bodyBloqueRegistradoKcalNetas": "Entrenamiento registrado: +{result} kcal{coins}",
+  "@bodyBloqueRegistradoKcalNetas": {
+    "placeholders": {
+      "result": {
+        "type": "String"
+      },
+      "coins": {
+        "type": "String"
+      }
+    }
+  },
+  "bodyRegistrarEn5Segundos": "Guardar",
+  "bodyMet3560": "MET 3.5 – 6.0",
+  "bodyMet3880": "MET 3.8 – 8.0",
+  "bodyMet50105": "MET 5.0 – 10.5",
+  "bodyMet4085": "MET 4.0 – 8.5",
+  "bodyRpe14": "Esfuerzo 1–4",
+  "bodyConversacionFluida": "Puedes conversar",
+  "bodyRpe57": "Esfuerzo 5–7",
+  "bodyFrasesCortas": "Hablas con frases cortas",
+  "bodyRpe810": "Esfuerzo 8–10",
+  "bodyLimiteMetabolico": "No puedes hablar",
+  "bodyMonedas": " (+{result} monedas) 🪙",
+  "@bodyMonedas": {
+    "placeholders": {
+      "result": {
+        "type": "String"
+      }
+    }
+  },
+  "bodyChartInspect": "{date} · {value} {unit}",
+  "@bodyChartInspect": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      },
+      "value": {
+        "type": "String"
+      },
+      "unit": {
+        "type": "String"
+      }
+    }
+  },
+  "bodyChartInspectTrend": "{date} · {value} {unit} (tendencia {trend} kg)",
+  "@bodyChartInspectTrend": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      },
+      "value": {
+        "type": "String"
+      },
+      "unit": {
+        "type": "String"
+      },
+      "trend": {
+        "type": "String"
+      }
+    }
+  },
+  "fastTitle": "Ayuno",
+  "fastSubtitle": "Descanso digestivo a tu ritmo",
+  "fastingPhaseAnabolicInfo": "Tu cuerpo digiere y aprovecha la última comida.",
+  "fastingPhaseGlycogenolysisInfo": "Baja la insulina y usas las reservas de glucógeno del hígado.",
+  "fastingPhaseFatBurningInfo": "La grasa pasa a ser una fuente de energía importante.",
+  "fastingPhaseKetosisInfo": "El hígado produce cuerpos cetónicos; mucha gente nota la mente más despejada.",
+  "fastingPhaseAutophagyInfo": "Aumenta el reciclaje celular. Ayunos así de largos, mejor con supervisión.",
+  "fastPhaseRange": "{from}–{to} h",
+  "@fastPhaseRange": {
+    "placeholders": {
+      "from": {
+        "type": "int"
+      },
+      "to": {
+        "type": "int"
+      }
+    }
+  },
+  "fastPhaseFrom": "Desde {from} h",
+  "@fastPhaseFrom": {
+    "placeholders": {
+      "from": {
+        "type": "int"
+      }
+    }
+  },
+  "fastYesterdayAt": "ayer {time}",
+  "@fastYesterdayAt": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "fastTomorrowAt": "mañana {time}",
+  "@fastTomorrowAt": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "fastElapsedSemantics": "Llevas {hours} horas y {minutes} minutos de ayuno, meta {target} horas",
+  "@fastElapsedSemantics": {
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      },
+      "minutes": {
+        "type": "int"
+      },
+      "target": {
+        "type": "int"
+      }
+    }
+  },
+  "fastGoalProgress": "Meta {hours} h · {pct} %",
+  "@fastGoalProgress": {
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      },
+      "pct": {
+        "type": "int"
+      }
+    }
+  },
+  "fastStart": "Inicio",
+  "fastAdjustStart": "Cambiar hora de inicio",
+  "fastProtocol": "Protocolo",
+  "fastPlannedEnd": "Fin previsto",
+  "fastFinish": "Terminar ayuno",
+  "fastProtocol14": "Suave y fácil de mantener",
+  "fastProtocol16": "El más popular y equilibrado",
+  "fastProtocol18": "Más tiempo quemando grasa",
+  "fastProtocol20": "Una sola ventana de comidas",
+  "fastProtocolCustom": "Elige tus horas exactas",
+  "fastProtocolCustomTitle": "Personalizado",
+  "fastHours": "{hours} h",
+  "@fastHours": {
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      }
+    }
+  },
+  "fastReady": "Listo para tu ayuno {protocol}",
+  "@fastReady": {
+    "placeholders": {
+      "protocol": {
+        "type": "String"
+      }
+    }
+  },
+  "fastStartsNow": "Empieza en cuanto pulses el botón.",
+  "fastStartsAt": "Empezó {time}.",
+  "@fastStartsAt": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "fastStartNow": "Empezar ahora",
+  "fastPickStart": "Ya empecé antes",
+  "fastStartButton": "Empezar ayuno {protocol}",
+  "@fastStartButton": {
+    "placeholders": {
+      "protocol": {
+        "type": "String"
+      }
+    }
+  },
+  "fastSafetyTitle": "Antes de empezar",
+  "fastSafetyContinue": "Continuar igualmente",
+  "fastSafetyAdjust": "Ajustar a {hours} h (recomendado)",
+  "@fastSafetyAdjust": {
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      }
+    }
+  },
+  "fastFinishTitle": "¿Terminar el ayuno?",
+  "fastFinishBody": "Tu ayuno de {hours} h se guardará en el historial.",
+  "@fastFinishBody": {
+    "placeholders": {
+      "hours": {
+        "type": "String"
+      }
+    }
+  },
+  "fastFinishBodyReward": "¡Completaste {hours} h! Nibi te dará +20 monedas.",
+  "@fastFinishBodyReward": {
+    "placeholders": {
+      "hours": {
+        "type": "String"
+      }
+    }
+  },
+  "fastKeepGoing": "Seguir ayunando",
+  "fastFinishedCoins": "Ayuno de {hours} h completado · +{coins} monedas",
+  "@fastFinishedCoins": {
+    "placeholders": {
+      "hours": {
+        "type": "String"
+      },
+      "coins": {
+        "type": "int"
+      }
+    }
+  },
+  "fastDeleted": "Ayuno eliminado",
+  "fastDelete": "Eliminar ayuno",
+  "fastPhasesTitle": "Fases del ayuno",
+  "fastPhasesSubtitle": "Orientativas: cada cuerpo va a su ritmo",
+  "fastHistoryTitle": "Historial",
+  "fastHistoryLine": "{protocol} · {hours} h {minutes} min",
+  "@fastHistoryLine": {
+    "placeholders": {
+      "protocol": {
+        "type": "String"
+      },
+      "hours": {
+        "type": "int"
+      },
+      "minutes": {
+        "type": "String"
+      }
+    }
+  },
+  "fastHistoryWhen": "{date} · {from} → {to}",
+  "@fastHistoryWhen": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      },
+      "from": {
+        "type": "String"
+      },
+      "to": {
+        "type": "String"
+      }
+    }
+  },
+  "fastingRupturaSeguraDeAyuno": "Cómo romper el ayuno",
+  "fastingCompletasteHorasDeAyunoMetabolico": "Completaste {actualHours} horas de ayuno",
+  "@fastingCompletasteHorasDeAyunoMetabolico": {
+    "placeholders": {
+      "actualHours": {
+        "type": "String"
+      }
+    }
+  },
+  "fastingTrasUnReposoDigestivoProlongado": "Después de tantas horas sin comer, tu estómago agradece volver poco a poco: así evitas pesadez y picos de azúcar.",
+  "fastingEntendidoADisfrutarConSalud": "Entendido",
+  "appPressBackToExit": "Pulsa atrás otra vez para salir",
+  "fastBarTitle": "Ayuno {protocol} · {hours} h {minutes} min",
+  "@fastBarTitle": {
+    "placeholders": {
+      "protocol": {
+        "type": "String"
+      },
+      "hours": {
+        "type": "int"
+      },
+      "minutes": {
+        "type": "String"
+      }
+    }
+  },
+  "perfilTitle": "Perfil",
+  "perfilSettings": "Ajustes",
+  "perfilPhotoUpdated": "Foto de perfil actualizada",
+  "perfilPhotoError": "No se pudo cargar la imagen: {error}",
+  "@perfilPhotoError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "perfilTdeeUpdated": "Gasto diario recalculado: {before} → {after} kcal",
+  "@perfilTdeeUpdated": {
+    "placeholders": {
+      "before": {
+        "type": "int"
+      },
+      "after": {
+        "type": "int"
+      }
+    }
+  },
+  "perfilTdeeUpdatedClamped": "Gasto diario recalculado: {before} → {after} kcal (cambio suavizado por seguridad)",
+  "@perfilTdeeUpdatedClamped": {
+    "placeholders": {
+      "before": {
+        "type": "int"
+      },
+      "after": {
+        "type": "int"
+      }
+    }
+  },
+  "perfilTdeeNeedsData": "Aún faltan datos de los últimos 14 días: {food} de {foodMin} días con comidas y {weighIns} de {weighInMin} pesajes.",
+  "@perfilTdeeNeedsData": {
+    "placeholders": {
+      "food": {
+        "type": "int"
+      },
+      "foodMin": {
+        "type": "int"
+      },
+      "weighIns": {
+        "type": "int"
+      },
+      "weighInMin": {
+        "type": "int"
+      }
+    }
+  },
+  "perfilPdfGenerating": "Preparando tu informe en PDF…",
+  "perfilPdfError": "No se pudo generar el PDF: {error}",
+  "@perfilPdfError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "perfilHealthTitle": "Salud y seguimiento",
+  "perfilSupplements": "Suplementos",
+  "perfilSupplementsHint": "Marca tus tomas del día",
+  "perfilDigestion": "Digestión",
+  "perfilDigestionHint": "Registra cómo te sienta la comida",
+  "perfilProtocol": "Mi protocolo",
+  "perfilProtocolHint": "Tu plan semanal",
+  "perfilReport": "Informe PDF",
+  "perfilReportHint": "Para compartir con tu médico",
+  "perfilInsightsTitle": "Descubrimientos",
+  "perfilInsightsSubtitle": "Patrones entre lo que comes, duermes y sientes",
+  "perfilAnos": "{ageYears} años",
+  "@perfilAnos": {
+    "placeholders": {
+      "ageYears": {
+        "type": "String"
+      }
+    }
+  },
+  "perfilCm": "{profile} cm",
+  "@perfilCm": {
+    "placeholders": {
+      "profile": {
+        "type": "String"
+      }
+    }
+  },
+  "perfilKgMeta": "{profile} kg meta",
+  "@perfilKgMeta": {
+    "placeholders": {
+      "profile": {
+        "type": "String"
+      }
+    }
+  },
+  "perfilEditarPerfil": "Editar perfil",
+  "perfilHombre": "Hombre",
+  "perfilMujer": "Mujer",
+  "perfilMetasYGastoCalorico": "Metas y gasto diario",
+  "perfilCienciaDelCalculoCalorico": "Ciencia del cálculo calórico",
+  "perfilKcalDia": "kcal / día",
+  "perfilProteinaG": "Proteína {targets}g ({pPct}%)",
+  "@perfilProteinaG": {
+    "placeholders": {
+      "targets": {
+        "type": "String"
+      },
+      "pPct": {
+        "type": "String"
+      }
+    }
+  },
+  "perfilCarbosG": "Carbos {targets}g ({cPct}%)",
+  "@perfilCarbosG": {
+    "placeholders": {
+      "targets": {
+        "type": "String"
+      },
+      "cPct": {
+        "type": "String"
+      }
+    }
+  },
+  "perfilGrasasG": "Grasas {targets}g ({fPct}%)",
+  "@perfilGrasasG": {
+    "placeholders": {
+      "targets": {
+        "type": "String"
+      },
+      "fPct": {
+        "type": "String"
+      }
+    }
+  },
+  "perfilTdeeAdaptativo": "Gasto diario",
+  "perfilMetaDePeso": "Meta de peso",
+  "perfilMetaHidratacion": "Agua",
+  "perfilPasosYSueno": "Pasos y sueño",
+  "perfilAjustarMetasNutricionalesYCaloricas": "Ajustar metas",
+  "perfilModoManualPrescripcionMedica": "Modo manual (pauta profesional)",
+  "perfilCalibracionAdaptativaEnVentanaDe": "Se ajusta solo con tus últimos 14 días",
+  "perfilKcal": "{profile} kcal",
+  "@perfilKcal": {
+    "placeholders": {
+      "profile": {
+        "type": "String"
+      }
+    }
+  },
+  "perfilCalibrado": "Calibrado {latestCalibration}",
+  "@perfilCalibrado": {
+    "placeholders": {
+      "latestCalibration": {
+        "type": "String"
+      }
+    }
+  },
+  "perfilEstimacionInicial": "Estimación inicial",
+  "perfilKg": "{profile} kg",
+  "@perfilKg": {
+    "placeholders": {
+      "profile": {
+        "type": "String"
+      }
+    }
+  },
+  "perfilObjetivoCorporal": "Objetivo corporal",
+  "perfilMl": "{profile} ml",
+  "@perfilMl": {
+    "placeholders": {
+      "profile": {
+        "type": "String"
+      }
+    }
+  },
+  "perfilVasosRecomendados": "{value} vasos recomendados",
+  "@perfilVasosRecomendados": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "perfilPasos": "{profile} pasos",
+  "@perfilPasos": {
+    "placeholders": {
+      "profile": {
+        "type": "String"
+      }
+    }
+  },
+  "perfilHDescansoMeta": "{profile} h de sueño",
+  "@perfilHDescansoMeta": {
+    "placeholders": {
+      "profile": {
+        "type": "String"
+      }
+    }
+  },
+  "perfilEvaluandoUltimos14Dias": "Evaluando últimos 14 días...",
+  "perfilCalibrarTdeeAdaptativo14Dias": "Recalcular mi gasto (14 días)",
+  "perfilCicloHormonalYGastoCalorico": "Ciclo y gasto calórico",
+  "perfilSeleccionaLaFechaDeInicio": "Selecciona la fecha de inicio del período",
+  "perfilInicioDeCicloRegistradoCon": "¡Inicio de ciclo registrado con éxito! 🌸",
+  "perfilSaludFemeninaYCiclo": "Ciclo menstrual",
+  "perfilCienciaDelCicloHormonal": "Ciencia del ciclo hormonal",
+  "perfilRegistraElInicioDeTu": "Registra el inicio de tu ciclo actual",
+  "perfilPermiteCalibrarElGastoMetabolico": "Así ajustamos tus calorías en la fase lútea (+150 kcal/día) y entiendes las subidas de agua normales del ciclo.",
+  "perfilRegistrarInicioDePeriodo": "Registrar inicio de período",
+  "perfilDiaDe": "{phaseName} • Día {currentCycleDay} de {cycleLength}",
+  "@perfilDiaDe": {
+    "placeholders": {
+      "phaseName": {
+        "type": "String"
+      },
+      "currentCycleDay": {
+        "type": "String"
+      },
+      "cycleLength": {
+        "type": "String"
+      }
+    }
+  },
+  "perfilNuevoCiclo": "Nuevo ciclo",
+  "perfilAjusteMetabolicoActivo150Kcal": "Ajuste metabólico activo: +150 kcal añadidas a tu meta diaria para sostener la termogénesis lútea.",
+  "perfilNoSePudoCargarEl": "No se pudo cargar el ciclo: {e}",
+  "@perfilNoSePudoCargarEl": {
+    "placeholders": {
+      "e": {
+        "type": "String"
+      }
+    }
+  },
+  "perfilProgesteronaFaseLuteaYRetencion": "Progesterona, Fase Lútea y Retención",
+  "perfilDuranteLaFaseLuteaEntre": "Durante la fase lútea (entre la ovulación y el inicio del período), el aumento de progesterona eleva la temperatura corporal y acelera el gasto basal.",
+  "perfilEnLaFaseLuteaEl": "En la fase lútea el gasto energético en reposo sube entre 100 y 300 kcal/día. Simultáneamente, el alza hormonal retiene sodio y agua (+1 a +2 kg), reflejándose en la báscula sin que exista aumento de grasa corporal.",
+  "perfilGastoLuteoBmr100300": "Gasto Lúteo = BMR + 100~300 kcal/día | Retención = +1~2 kg H₂O",
+  "perfilWebbP198624Hour": "Webb, P. (1986). 24-hour energy expenditure and the menstrual cycle.",
+  "perfilBarrSIEtAl": "Barr, S. I. et al. (1995). Rest energy expenditure increases in the luteal phase.",
+  "perfilSiTuPesoSubeDurante": "Si tu peso sube durante la segunda mitad de tu ciclo, ¡es agua transitoria! NB Selfcare ajusta automáticamente tus calorías diarias para acompañarte.",
+  "perfilFaseMenstrual": "Fase menstrual",
+  "perfilDiasDeRenovacionPriorizaDescanso": "Días de renovación. Prioriza descanso e hidratación.",
+  "perfilFaseFolicular": "Fase folicular",
+  "perfilSensibilidadALaInsulinaOptima": "Sensibilidad a la insulina óptima y mayor energía física.",
+  "perfilFaseDeOvulacion": "Ovulación",
+  "perfilPicoDeEstrogenosFuerzaY": "Pico de estrógenos. Fuerza y capacidad de trabajo máxima.",
+  "perfilFaseLuteaPremenstrual": "Fase lútea (premenstrual)",
+  "perfilAumentoDeProgesteronaGastoBasal": "Aumento de progesterona. Gasto basal aumentado (+150 kcal/día) y posible retención hídrica en báscula.",
+  "perfilCorrelacionesEstadisticasPearsonR": "Tus patrones",
+  "perfilRecalcularCorrelaciones": "Volver a calcular",
+  "perfilCalibrandoCorrelacionesMultivariables": "Aún reuniendo datos",
+  "perfilElMotorOfflineRequiereAl": "Con al menos 10 días de diario y comidas podremos mostrarte qué hábitos se relacionan con tu energía, tu sueño y tu ánimo.",
+  "perfil100OfflineCeroTelemetriaComputacion": "Se calcula en tu teléfono, sin internet",
+  "perfilDescubrimientosMatematicosCruzandoTusMetricas": "Lo que dicen tus registros:",
+  "perfilR": "relación {ins}",
+  "@perfilR": {
+    "placeholders": {
+      "ins": {
+        "type": "String"
+      }
+    }
+  },
+  "perfilEditarDatosPersonales": "Editar datos personales",
+  "perfilNombreOAlias": "Nombre",
+  "perfilFechaDeNacimiento": "Fecha de nacimiento",
+  "perfilAnosCalculados": "{birthDate}/{birthDate2}/{birthDate3} ({dynamicAge} años)",
+  "@perfilAnosCalculados": {
+    "placeholders": {
+      "birthDate": {
+        "type": "String"
+      },
+      "birthDate2": {
+        "type": "String"
+      },
+      "birthDate3": {
+        "type": "String"
+      },
+      "dynamicAge": {
+        "type": "String"
+      }
+    }
+  },
+  "perfilAltura": "Estatura",
+  "perfilPesoMeta": "Peso meta",
+  "perfilGuardarCambios": "Guardar cambios",
+  "perfilAjustarMetasNutricionales": "Ajustar metas",
+  "perfilModoAdaptativo": "Automático",
+  "perfilModoManual": "Manual",
+  "perfilPrescripcionManualDeMacronutrientes": "Macros a mano",
+  "perfilSobrescribeElAlgoritmoAdaptativoCon": "Usa tus propios valores o los que te indicó tu profesional de salud.",
+  "perfilFaseMetabolicaActiva": "Fase actual:",
+  "perfilDeficitCaloricoPerdidaDeGrasa": "Déficit (perder grasa)",
+  "perfilMantenimientoConsolidacion": "Mantenimiento",
+  "perfilDescansoDieteticoRefeedTdeeCompleto": "Descanso de dieta (comer a mantenimiento)",
+  "perfilDietaInversaRecuperacion100Kcal": "Salida de dieta (+100 kcal)",
+  "perfilConfigurarArquetipoYCalorieCycling": "Tipo de dieta y reparto semanal",
+  "perfilRitmoSemanal": "Ritmo semanal:",
+  "perfilKgSem": "{weeklyRateKg} kg/semana",
+  "@perfilKgSem": {
+    "placeholders": {
+      "weeklyRateKg": {
+        "type": "String"
+      }
+    }
+  },
+  "perfilPesoObjetivo": "Peso meta",
+  "perfilAguaDiaria": "Agua diaria",
+  "perfilMetaPasos": "Pasos diarios",
+  "perfilSuenoMeta": "Horas de sueño",
+  "perfilGuardarMetas": "Guardar metas",
+  "perfilMantenimiento": "Mantenimiento",
+  "perfilKgSem2": "{weeklyRateKg}{weeklyRateKg2} kg/semana",
+  "@perfilKgSem2": {
+    "placeholders": {
+      "weeklyRateKg": {
+        "type": "String"
+      },
+      "weeklyRateKg2": {
+        "type": "String"
+      }
+    }
+  },
+  "perfilNuevoSuplemento": "Nuevo suplemento",
+  "perfilNombre": "Nombre",
+  "perfilEjCreatinaCreapureOmega3": "Ej. Creatina Creapure, Omega 3, Magnesio",
+  "perfilDosisDiaria": "Dosis diaria",
+  "perfilEj5G2Capsulas": "Ej. 5 g, 2 cápsulas, 400 mg",
+  "perfilAfectaRetencionHidrica": "¿Retiene líquidos?",
+  "perfilActivaloParaCreatinaEvitaFalsas": "Actívalo para la creatina: así la báscula no confunde agua con grasa.",
+  "perfilSuplementoAnadido": "Suplemento \"{nameCtrl}\" añadido",
+  "@perfilSuplementoAnadido": {
+    "placeholders": {
+      "nameCtrl": {
+        "type": "String"
+      }
+    }
+  },
+  "perfilSuplementacionSalud": "Suplementos",
+  "perfilDeTomadosHoy": "{takenIds} de {supplements} tomados hoy ({widget})",
+  "@perfilDeTomadosHoy": {
+    "placeholders": {
+      "takenIds": {
+        "type": "String"
+      },
+      "supplements": {
+        "type": "String"
+      },
+      "widget": {
+        "type": "String"
+      }
+    }
+  },
+  "perfilAunNoTienesSuplementosConfigurados": "Aún no tienes suplementos configurados",
+  "perfilAnadeCreatinaVitaminasOMinerales": "Añade creatina, vitaminas o minerales para marcar tus tomas cada día.",
+  "perfilAguaBia": "Retiene agua",
+  "perfilAnadirSuplementoOFarmaco": "Añadir suplemento o medicamento",
+  "perfil1Dosis": "1 dosis",
+  "settingsThemesPaper": "Modo papel (pantalla NXTPAPER)",
+  "settingsThemesColor": "Color",
+  "settingsRestaurarRespaldoSqlite": "Restaurar copia de seguridad",
+  "settingsSeVerificaraLaIntegridadAtomica": "Comprobaremos que el archivo es una copia válida y reemplazará tus datos actuales. ¿Elegimos el archivo?",
+  "settingsElegirArchivo": "Elegir archivo",
+  "settingsAjustesDeLaAplicacion": "Ajustes",
+  "settingsAspectoYPantalla": "Apariencia",
+  "settings22TemasVisualesDeAlta": "22 temas, incluidos los de modo papel",
+  "settingsRecordatoriosDelSantuario": "Recordatorios",
+  "settingsHorariosLocalesAjustablesParaTus": "Toca la hora para cambiarla",
+  "settingsActivaTus4RutinasSugeridas": "Activa los recordatorios sugeridos: pesaje, agua, ayuno y diario.",
+  "settingsActivar": "Activar",
+  "settingsHorarioTocarParaCambiar": "{formatMinutesAsTime} · toca para cambiar",
+  "@settingsHorarioTocarParaCambiar": {
+    "placeholders": {
+      "formatMinutesAsTime": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsPausasActivas": "Pausas activas",
+  "settingsDispositivosYConectividad": "Dispositivos",
+  "settingsBasculaXiaomiBleYPuente": "Báscula y Health Connect",
+  "settingsXiaomiMiBodyCompositionScale": "Báscula Xiaomi Mi Scale 2",
+  "settingsOlvidar": "Olvidar",
+  "settingsBleListo": "Lista",
+  "settingsAndroidHealthConnect": "Health Connect",
+  "settingsModulosYEnfoque": "Secciones",
+  "settingsAdaptaLosPilaresVisiblesA": "Muestra solo lo que usas",
+  "settingsAyunoIntermitente": "Ayuno",
+  "settingsSaludFemeninaYCicloMenstrual": "Ciclo menstrual",
+  "settingsPermisosDelSistema": "Permisos",
+  "settingsEvaluacionVivaParaPrevenirDesincronizaciones": "Se comprueban al volver a la app",
+  "settingsReevaluar": "Comprobar",
+  "settingsBluetoothYEscaneo": "Bluetooth",
+  "settingsParaRecibirPesajesDeLa": "Para recibir pesajes de la báscula Mi Scale 2",
+  "settingsCamara": "Cámara",
+  "settingsParaEscanearCodigosDeBarras": "Para escanear códigos de barras de alimentos",
+  "settingsIntercambioSeguroDeMetricasEn": "Sueño, pasos y peso, sin salir del teléfono",
+  "settingsNotificacionesLocales": "Notificaciones",
+  "settingsAlertasDeAyunoYRutinas": "Avisos de ayuno y recordatorios",
+  "settingsAlarmasExactas": "Alarmas exactas",
+  "settingsRecordatoriosPuntualesSinEllosLlegan": "Para que los recordatorios lleguen a su hora exacta",
+  "settingsAbrirAjustesDelTelefono": "Abrir ajustes del teléfono",
+  "settingsPoliticaDePrivacidad": "Política de privacidad",
+  "settingsPortabilidadYRespaldoLocal": "Tus datos",
+  "settingsTusDatosSon100Tuyos": "Solo en tu teléfono, nunca en la nube",
+  "settingsCopiaAtomicaSqliteVacuumInto": "Copia de seguridad",
+  "settingsGeneraUnaCopiaIntegraY": "Guarda una copia completa de tus datos para llevarla a otro teléfono, o recupera una anterior.",
+  "settingsExportarYCompartirSqlite": "Crear y compartir copia",
+  "settingsConcedido": "Concedido",
+  "settingsPermitir": "Permitir",
+  "settingsActualizaHealthConnectDesdeGoogle": "Actualiza Health Connect desde Google Play para conectarlo.",
+  "settingsInstalaHealthConnectDesdeGoogle": "Instala Health Connect desde Google Play para importar sueño y pasos.",
+  "settingsHealthConnectNoEstaDisponible": "Health Connect no está disponible en este dispositivo.",
+  "settingsBaseDeDatosRestauradaCon": "Copia restaurada. Todo está al día.",
+  "settingsElArchivoSeleccionadoNoEs": "Ese archivo no es una copia de seguridad de NB Selfcare.",
+  "settingsPesajeMatutinoEnAyunas": "Pesaje en ayunas",
+  "settingsPausaDeHidratacionActiva": "Un vaso de agua",
+  "settingsAperturaDeVentanaAlimenticia": "Abrir ventana de comidas",
+  "settingsCierreDeVentanaAlimenticia": "Cerrar ventana de comidas",
+  "settingsReflexionNocturnaSinPantallas": "Diario de la noche",
+  "settingsControlQuincenalUsNavy": "Medidas con cinta (cada 2 semanas)",
+  "settingsTeInvitaremosAMoverteTras": "Te invitaremos a moverte tras ~1 h sin pasos (09:00–21:00).",
+  "settingsConcedeAHealthConnectLa": "Concede a Health Connect la lectura en segundo plano.",
+  "settingsRequiereHealthConnectConLectura": "Requiere Health Connect con lectura en segundo plano.",
+  "settingsUnaInvitacionAmableAEstirarte": "Una invitación amable a estirarte cuando llevas mucho tiempo sentado.",
+  "settingsVinculada": "Vinculada: {profile}",
+  "@settingsVinculada": {
+    "placeholders": {
+      "profile": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsEscaneoPasivoDisponibleEnCuerpo": "Pésate desde la pestaña Cuerpo",
+  "settingsSincronizadoPesoGrasaPasosY": "Sincronizado: peso, grasa, pasos y agua",
+  "settingsPuenteLocalNoConectadoAun": "Sin conectar",
+  "settingsGestionar": "Gestionar",
+  "settingsConectar": "Conectar",
+  "settingsCronometroYFasesCelularesActivos": "Cronómetro y fases visibles",
+  "settingsModuloReplegadoParaSimplificarLa": "Oculto",
+  "settingsSincronizacionHormonalConTdeeY": "Ajusta calorías y báscula a tu ciclo",
+  "settingsDesactivado": "Desactivado",
+  "protocolTitle": "Mi protocolo",
+  "protocolSubtitle": "Tu plan de la semana",
+  "protocolPhaseDeficit": "déficit",
+  "protocolPhaseMaintenance": "mantenimiento",
+  "protocolPhaseBreak": "descanso de dieta",
+  "protocolPhaseReverse": "salida de dieta",
+  "protocolPlanName": "Protocolo {diet}",
+  "@protocolPlanName": {
+    "placeholders": {
+      "diet": {
+        "type": "String"
+      }
+    }
+  },
+  "protocolSaved": "Plan semanal guardado",
+  "protocolDietTitle": "Alimentación",
+  "protocolDietSummary": "{diet} · fase de {phase}",
+  "@protocolDietSummary": {
+    "placeholders": {
+      "diet": {
+        "type": "String"
+      },
+      "phase": {
+        "type": "String"
+      }
+    }
+  },
+  "protocolFastingTitle": "Ayuno",
+  "protocolFastingDays": "Días en que ayunas",
+  "protocolFastingHours": "Horas de ayuno",
+  "protocolWorkoutTitle": "Entrenamiento",
+  "protocolWorkoutDays": "Días en que entrenas",
+  "protocolWorkoutTime": "Momento del día",
+  "protocolMorning": "Mañana",
+  "protocolAfternoon": "Tarde",
+  "protocolEvening": "Noche",
+  "protocolSupplementsTitle": "{count, plural, =0{Suplementos} =1{1 suplemento} other{{count} suplementos}}",
+  "@protocolSupplementsTitle": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "protocolSupplementsEmpty": "Aún no tienes suplementos. Puedes añadir creatina, omega 3 o vitaminas.",
+  "protocolSave": "Guardar plan",
+  "protocolBalancedTitle": "Plan equilibrado",
+  "protocolBalancedBody": "{workouts, plural, =1{1 día de entreno} other{{workouts} días de entreno}} y {fasts, plural, =1{1 de ayuno} other{{fasts} de ayuno}}: dejas margen para comer bien y recuperarte.",
+  "@protocolBalancedBody": {
+    "placeholders": {
+      "workouts": {
+        "type": "int"
+      },
+      "fasts": {
+        "type": "int"
+      }
+    }
+  },
+  "protocolRecoveryTitle": "Deja espacio para recuperarte",
+  "protocolRecoveryBody": "Con 5 o más días de entreno, 6 de ayuno y déficit, conviene reservar al menos 2 días para comer a mantenimiento y proteger el músculo.",
+  "digestiveDeleted": "Registro digestivo eliminado",
+  "caffeineDeleted": "Eliminado: {name}",
+  "@caffeineDeleted": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "journalMgDeCafeinaRegistrados": "+{mg} mg de cafeína registrados ({name})",
+  "@journalMgDeCafeinaRegistrados": {
+    "placeholders": {
+      "mg": {
+        "type": "String"
+      },
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "journalCronobiologiaDeLaCafeina": "Cafeína y sueño",
+  "journalFarmacocineticaYProteccionDelSueno": "Cuánta queda en tu cuerpo y cuándo parar",
+  "journalNivelActivoEnSangre": "Activa ahora:",
+  "journalMg": "{status} mg",
+  "@journalMg": {
+    "placeholders": {
+      "status": {
+        "type": "String"
+      }
+    }
+  },
+  "journalProyeccionAlDormir2300": "Al acostarte (23:00):",
+  "journalHoraLimiteRecomendadaCurfew": "Último café recomendado:",
+  "journalRegistrarIngesta": "Añadir:",
+  "journalEspresso65mg": "Espresso (65 mg)",
+  "journalCafeFiltro100mg": "Café de filtro (100 mg)",
+  "journalDobleAmericano130mg": "Doble / americano (130 mg)",
+  "journalTeVerdeNegro45mg": "Té verde o negro (45 mg)",
+  "journalBebidaEnergetica80mg": "Bebida energética (80 mg)",
+  "journalBebidaOSuplemento": "Bebida o suplemento",
+  "journalEjMatchaLatte": "Ej. Matcha latte",
+  "journalMg3": "mg",
+  "journalTomasDeHoy": "Tomas de hoy ({logs}):",
+  "@journalTomasDeHoy": {
+    "placeholders": {
+      "logs": {
+        "type": "String"
+      }
+    }
+  },
+  "journalNoHayTomasRegistradasHoy": "Hoy no has tomado cafeína.",
+  "journalMg4": "{log} mg",
+  "@journalMg4": {
+    "placeholders": {
+      "log": {
+        "type": "String"
+      }
+    }
+  },
+  "journalPorQueImportaLaCafeina": "¿Por qué importa la cafeína para dormir bien?",
+  "journalAlertaSueno": "puede afectar tu sueño",
+  "journalEspresso": "Espresso",
+  "journalCafeFiltro": "Café de filtro",
+  "journalCafeAmericanoDoble": "Americano doble",
+  "journalTe": "Té",
+  "journalBebidaEnergetica": "Bebida energética",
+  "journalPersonalizado": "+ Otra",
+  "journalTrozosDurosSeparadosDificilesDe": "Trozos duros separados, difíciles de expulsar (estreñimiento severo)",
+  "journalConFormaDeSalchichaPero": "Con forma de salchicha pero unida con protuberancias (estreñimiento leve)",
+  "journalFormaCilindricaConGrietasEn": "Forma cilíndrica con grietas en la superficie (normal)",
+  "journalComoUnaSerpienteOSalchicha": "Como una serpiente o salchicha, suave y tersa (óptimo fisiológico)",
+  "journalTrozosDeBordesDefinidosQue": "Trozos de bordes definidos que se expulsan fácil (falta leve de fibra)",
+  "journalBlandosConBordesIrregularesTextura": "Blandos con bordes irregulares, textura pastosa (tránsito rápido / inflamación)",
+  "journalSinTrozosSolidosEnteramenteLiquida": "Sin trozos sólidos, enteramente líquida (diarrea / gastroenteritis)",
+  "journalEventoDigestivoTipoRegistrado": "Registro guardado (tipo {selectedBristol})",
+  "@journalEventoDigestivoTipoRegistrado": {
+    "placeholders": {
+      "selectedBristol": {
+        "type": "String"
+      }
+    }
+  },
+  "journalSaludDigestivaEscalaDeBristol": "Digestión",
+  "journalTransitoIntestinalYCorrelacionCon": "Cómo te sienta lo que comes",
+  "journalTipoEnLaEscalaDe": "Tipo de deposición (escala de Bristol):",
+  "journalNivelDeMolestiaHinchazon": "Molestia o hinchazón:",
+  "journalSintomasAdicionales": "Otros síntomas:",
+  "journalGuardarRegistroDigestivo": "Guardar",
+  "journalRegistrosDeHoy": "Registros de hoy ({todayLogs}):",
+  "@journalRegistrosDeHoy": {
+    "placeholders": {
+      "todayLogs": {
+        "type": "String"
+      }
+    }
+  },
+  "journalTipo": "Tipo {log}",
+  "@journalTipo": {
+    "placeholders": {
+      "log": {
+        "type": "String"
+      }
+    }
+  },
+  "journalTipo1TerronesDuros": "Tipo 1: Terrones duros",
+  "journalTipo2SalchichaGrumosa": "Tipo 2: Salchicha grumosa",
+  "journalTipo3SalchichaConGrietas": "Tipo 3: Salchicha con grietas",
+  "journalTipo4SuaveYLisa": "Tipo 4: Suave y lisa",
+  "journalTipo5TrozosPastososSuaves": "Tipo 5: Trozos pastosos suaves",
+  "journalTipo6FragmentosEsponjosos": "Tipo 6: Fragmentos esponjosos",
+  "journalTipo7AcuosaLiquida": "Tipo 7: Líquida",
+  "journalHinchazonDistension": "Hinchazón / Distensión",
+  "journalGasesFrecuentes": "Gases frecuentes",
+  "journalReflujoOAcidez": "Reflujo o acidez",
+  "journalDolorOColicos": "Dolor o cólicos",
+  "journalPesadezGastrica": "Pesadez gástrica",
+  "journal1CeroMolestia": "1 · ninguna",
+  "journalLeveModerada": "{discomfortLevel} · leve o moderada",
+  "@journalLeveModerada": {
+    "placeholders": {
+      "discomfortLevel": {
+        "type": "String"
+      }
+    }
+  },
+  "journalMolestiaMarcada": "{discomfortLevel} · molestia marcada",
+  "@journalMolestiaMarcada": {
+    "placeholders": {
+      "discomfortLevel": {
+        "type": "String"
+      }
+    }
+  },
+  "journalDiscomfortLine": "Molestia {level}/5",
+  "@journalDiscomfortLine": {
+    "placeholders": {
+      "level": {
+        "type": "int"
+      }
+    }
+  },
+  "journalBedtimeResidual": "Al dormir: {mg} mg ({verdict})",
+  "@journalBedtimeResidual": {
+    "placeholders": {
+      "mg": {
+        "type": "String"
+      },
+      "verdict": {
+        "type": "String"
+      }
+    }
+  },
+  "journalSleepSafe": "no afectará tu sueño",
+  "onbBirthDatePicker": "Tu fecha de nacimiento",
+  "onbSaveError": "No se pudo crear el perfil: {error}",
+  "@onbSaveError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "onbBack": "Atrás",
+  "onbStepOf": "Paso {step} de {total}",
+  "@onbStepOf": {
+    "placeholders": {
+      "step": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "onbNext": "Siguiente",
+  "onbStart": "Empezar",
+  "onbAboutTitle": "Sobre ti",
+  "onbAboutBody": "Lo usamos para calcular tus calorías y tu composición corporal. Todo se queda en tu teléfono.",
+  "onbName": "¿Cómo te llamas?",
+  "onbNameRequired": "Escribe tu nombre",
+  "onbNameTooLong": "Máximo 60 caracteres",
+  "onbBirthDate": "Fecha de nacimiento",
+  "onbBirthDateValue": "{date} · {age} años",
+  "@onbBirthDateValue": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      },
+      "age": {
+        "type": "int"
+      }
+    }
+  },
+  "onbSex": "Sexo biológico",
+  "onbSexWhy": "Las fórmulas de metabolismo y de la báscula lo necesitan.",
+  "onbMale": "Masculino",
+  "onbFemale": "Femenino",
+  "onbHeight": "Estatura",
+  "onbHeightError": "Entre 100 y 250 cm",
+  "onbCurrentWeight": "Peso actual",
+  "onbTargetWeight": "Peso meta",
+  "onbWeightError": "Entre 30 y 300 kg",
+  "onbGoalsTitle": "Tus metas",
+  "onbGoalsBody": "Puedes cambiarlas cuando quieras desde Perfil.",
+  "onbPaceMaintain": "Ritmo: mantener tu peso actual",
+  "onbPaceLose": "Ritmo: perder {kg} kg por semana",
+  "@onbPaceLose": {
+    "placeholders": {
+      "kg": {
+        "type": "String"
+      }
+    }
+  },
+  "onbPaceGain": "Ritmo: ganar {kg} kg por semana",
+  "@onbPaceGain": {
+    "placeholders": {
+      "kg": {
+        "type": "String"
+      }
+    }
+  },
+  "onbWater": "Agua: {ml} ml ({glasses} vasos)",
+  "@onbWater": {
+    "placeholders": {
+      "ml": {
+        "type": "int"
+      },
+      "glasses": {
+        "type": "int"
+      }
+    }
+  },
+  "onbSteps": "Pasos: {steps} al día",
+  "@onbSteps": {
+    "placeholders": {
+      "steps": {
+        "type": "int"
+      }
+    }
+  },
+  "onbSleep": "Sueño: {hours} horas",
+  "@onbSleep": {
+    "placeholders": {
+      "hours": {
+        "type": "String"
+      }
+    }
+  },
+  "onbEstimateTitle": "Tu punto de partida",
+  "onbEstimateBody": "Gasto estimado: {kcal} kcal. Se ajusta solo cada 14 días según tu evolución.",
+  "@onbEstimateBody": {
+    "placeholders": {
+      "kcal": {
+        "type": "int"
+      }
+    }
+  },
+  "onbKcalPerDay": "kcal al día",
+  "onbSafetyTitle": "Tu seguridad primero",
+  "onbSafetyBody": "NB Selfcare no es un dispositivo médico: la bioimpedancia y las fases del ayuno son estimaciones orientativas. Estas respuestas solo se guardan en tu teléfono.",
+  "onbImplants": "Marcapasos, implantes electrónicos o embarazo",
+  "onbImplantsHint": "La báscula medirá solo tu peso, sin corriente de bioimpedancia.",
+  "onbEatingDisorder": "Antecedentes de trastornos de la conducta alimentaria",
+  "onbEatingDisorderHint": "Usaremos un ritmo suave y propondremos ayunos de hasta 16 h.",
+  "onbGlucose": "Diabetes o medicación que baja la glucosa",
+  "onbGlucoseHint": "Te avisaremos antes de cada ayuno.",
+  "onbWelcomeTitle": "Bienvenido a NB Selfcare",
+  "onbWelcomeBody": "Tu comida, tu cuerpo, tu descanso y tu ayuno en un solo lugar. Sin cuentas y sin nube: todo se guarda en tu teléfono.",
+  "onbScreenTitle": "Tu pantalla",
+  "onbScreenBody": "Elige \"Papel\" si tu teléfono tiene pantalla tipo papel (TCL NXTPAPER).",
+  "onbScreenColor": "Color",
+  "onbScreenPaper": "Papel",
+  "settingsDynamicTheme": "Colores de tu fondo",
+  "settingsDynamicThemeHint": "Toma el color de tu fondo de pantalla y sigue el modo claro u oscuro del sistema (Android 12+).",
+  "todayOpenPet": "Abrir a {name}",
+  "@todayOpenPet": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
   }
 }
-

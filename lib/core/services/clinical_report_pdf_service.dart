@@ -1,14 +1,22 @@
 import 'dart:typed_data';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 
 import '../../shared/utils/biometric_formulas.dart';
+import '../clock/clock.dart';
 import '../database/app_database.dart';
+import '../domain/enums.dart';
+import 'smart_meal_suggester.dart';
 
 /// Servicio de generación de informes clínicos en formato PDF 100% offline.
 class ClinicalReportPdfService {
+  ClinicalReportPdfService({this._clock = const Clock()});
+
+  final Clock _clock;
+
   /// Genera un documento PDF formal (A4) con las métricas de composición corporal,
   /// nutrición, cronobiología y adherencia a suplementos.
   Future<Uint8List> generateReportBytes({
@@ -21,15 +29,16 @@ class ClinicalReportPdfService {
     required double averageFatG,
     required double averageSleepHours,
     required List<SupplementsTrackerData> activeSupplements,
-    required int readinessScore,
+    required int? readinessScore,
   }) async {
     final pw.Document pdf = pw.Document(
       title: 'NB Selfcare - Reporte Clinico y Fisiologico',
       author: 'NB Selfcare Offline Health Engine',
     );
 
-    final double age = BiometricFormulas.calculateDynamicAge(profile.birthDate);
-    final String dateStr = DateTime.now().toIso8601String().split('T').first;
+    final DateTime now = _clock.now();
+    final double age = BiometricFormulas.calculateDynamicAge(profile.birthDate, now);
+    final String dateStr = now.toIso8601String().split('T').first;
 
     pdf.addPage(
       pw.Page(
@@ -89,7 +98,7 @@ class ClinicalReportPdfService {
                   children: <pw.Widget>[
                     _pdfField('Usuario', profile.name),
                     _pdfField('Edad', '${age.toStringAsFixed(1)} años'),
-                    _pdfField('Sexo biológico', profile.biologicalSex == 'female' ? 'Femenino' : 'Masculino'),
+                    _pdfField('Sexo biológico', profile.biologicalSex == BiologicalSex.female ? 'Femenino' : 'Masculino'),
                     _pdfField('Altura', '${profile.heightCm.toStringAsFixed(1)} cm'),
                     _pdfField('Meta de Peso', '${profile.targetWeightKg.toStringAsFixed(1)} kg'),
                   ],
@@ -168,7 +177,7 @@ class ClinicalReportPdfService {
                     _pdfField('Proteína', '${averageProteinG.toStringAsFixed(0)} g/día'),
                     _pdfField('Carbohidratos', '${averageCarbsG.toStringAsFixed(0)} g/día'),
                     _pdfField('Grasas', '${averageFatG.toStringAsFixed(0)} g/día'),
-                    _pdfField('Arquetipo', profile.activeDietArchetype.toUpperCase()),
+                    _pdfField('Arquetipo', DietArchetypeInfo.getById(profile.activeDietArchetype).name),
                   ],
                 ),
               ),
@@ -192,9 +201,9 @@ class ClinicalReportPdfService {
                     pw.Row(
                       mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                       children: <pw.Widget>[
-                        _pdfField('Sueño Promedio', '${averageSleepHours.toStringAsFixed(1)} horas/noche'),
-                        _pdfField('Disposición (Readiness)', '$readinessScore / 100 pts'),
-                        _pdfField('Ciclo Femenino', profile.biologicalSex == 'female' ? (profile.isCycleTrackingEnabled ? 'Activo' : 'Inactivo') : 'N/A'),
+                        _pdfField('Sueño Promedio', averageSleepHours > 0 ? '${averageSleepHours.toStringAsFixed(1)} horas/noche' : 'Sin registros'),
+                        _pdfField('Disposición (Readiness)', readinessScore == null ? 'Sin sueño registrado' : '$readinessScore / 100 pts'),
+                        _pdfField('Ciclo Femenino', profile.biologicalSex == BiologicalSex.female ? (profile.isCycleTrackingEnabled ? 'Activo' : 'Inactivo') : 'N/A'),
                       ],
                     ),
                     pw.SizedBox(height: 8),
@@ -253,7 +262,7 @@ class ClinicalReportPdfService {
     required double averageFatG,
     required double averageSleepHours,
     required List<SupplementsTrackerData> activeSupplements,
-    required int readinessScore,
+    required int? readinessScore,
   }) async {
     final Uint8List pdfBytes = await generateReportBytes(
       profile: profile,
@@ -270,7 +279,7 @@ class ClinicalReportPdfService {
 
     await Printing.sharePdf(
       bytes: pdfBytes,
-      filename: 'reporte_clinico_${profile.name.replaceAll(" ", "_").toLowerCase()}_${DateTime.now().toIso8601String().split("T").first}.pdf',
+      filename: 'reporte_clinico_${profile.name.replaceAll(" ", "_").toLowerCase()}_${_clock.now().toIso8601String().split("T").first}.pdf',
     );
   }
 
@@ -322,5 +331,5 @@ class ClinicalReportPdfService {
 /// Provider de Riverpod para ClinicalReportPdfService.
 final clinicalReportPdfServiceProvider =
     Provider<ClinicalReportPdfService>((ref) {
-  return ClinicalReportPdfService();
+  return ClinicalReportPdfService(clock: ref.watch(clockProvider));
 });

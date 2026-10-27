@@ -1,7 +1,9 @@
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:nb_selfcare/core/constants/met_constants.dart';
 import 'package:nb_selfcare/core/database/app_database.dart';
+import 'package:nb_selfcare/core/domain/enums.dart';
 import 'package:nb_selfcare/core/hardware/drivers/xiaomi_miscale2_driver.dart';
 import 'package:nb_selfcare/shared/utils/biometric_formulas.dart';
 import 'package:nb_selfcare/shared/utils/daily_targets_calculator.dart';
@@ -25,7 +27,7 @@ void main() {
         0xA4, 0x38, // 14500 (72.5 kg)
       ]);
 
-      final event = XiaomiMiScale2Driver.parseRawAdvertisement(rawBytes, 'AA:BB:CC:DD:EE:FF');
+      final event = XiaomiMiScale2Driver.parseRawAdvertisement(rawBytes, 'AA:BB:CC:DD:EE:FF', receivedAt: DateTime(2026, 10, 26));
 
       expect(event, isNotNull);
       expect(event!.weightKg, closeTo(72.5, 0.01));
@@ -49,12 +51,12 @@ void main() {
         0xA4, 0x38,
       ]);
 
-      final event = XiaomiMiScale2Driver.parseRawAdvertisement(historicalBytes, 'AA:BB:CC:DD:EE:FF');
+      final event = XiaomiMiScale2Driver.parseRawAdvertisement(historicalBytes, 'AA:BB:CC:DD:EE:FF', receivedAt: DateTime(2026, 10, 26));
       expect(event, isNull);
 
       // Trama truncada (< 13 bytes)
       final truncatedBytes = Uint8List.fromList([0x02, 0x22, 0xEA]);
-      expect(XiaomiMiScale2Driver.parseRawAdvertisement(truncatedBytes, 'AA:BB:CC:DD:EE:FF'), isNull);
+      expect(XiaomiMiScale2Driver.parseRawAdvertisement(truncatedBytes, 'AA:BB:CC:DD:EE:FF', receivedAt: DateTime(2026, 10, 26)), isNull);
     });
 
     test('Filtra estrictamente periféricos BLE ajenos y acepta 0x181B / 0x181D / Huami 0x0157', () {
@@ -119,7 +121,8 @@ void main() {
         weightKg: 75.0,
         heightCm: 178.0,
         birthDate: birthDate,
-        biologicalSex: 'male',
+        biologicalSex: BiologicalSex.male,
+        now: DateTime(2026, 10, 26),
         dailyStepsGoal: 9000,
       );
       expect(initialTdee, inInclusiveRange(2200, 2700));
@@ -128,7 +131,7 @@ void main() {
         id: 1,
         name: 'Nathan',
         birthDate: birthDate,
-        biologicalSex: 'male',
+        biologicalSex: BiologicalSex.male,
         heightCm: 178.0,
         targetWeightKg: 72.0,
         weeklyGoalRateKg: -0.5, // Déficit ~ -550 kcal/día
@@ -141,20 +144,25 @@ void main() {
         isCycleTrackingEnabled: false,
         isFastingEnabled: true,
         isManualMacroMode: false,
-        activeDietArchetype: 'flexible',
-        activeDietPhase: 'deficit',
+        activeDietArchetype: DietArchetype.flexible,
+        activeDietPhase: DietPhase.deficit,
         calorieCyclingScheduleJson: '{}',
         caffeineBedtimeCutoffHours: 8.0,
+        hasImpedanceContraindication: false,
+        hasEatingDisorderHistory: false,
+        takesHypoglycemicMedication: false,
         createdAt: DateTime(2026, 1, 1),
       );
 
       final restDay = DailyTargetsCalculator.compute(
         profile: profile,
+        now: DateTime(2026, 10, 26),
         currentWeightKg: 74.0,
         netWorkoutKcal: 0,
       );
       final workoutDay = DailyTargetsCalculator.compute(
         profile: profile,
+        now: DateTime(2026, 10, 26),
         currentWeightKg: 74.0,
         netWorkoutKcal: 300,
       );
@@ -276,14 +284,32 @@ void main() {
     });
 
     test('Gasto Calórico Neto de Ejercicio (METs con descuento 1.0 MET basal)', () {
-      // Fuerza/Pesas (MET = 5.0). Peso 75 kg. 60 minutos.
-      // Kcal netas = (5.0 - 1.0) * 75 * 1.0 = 300.0 kcal
-      final netKcal = BiometricFormulas.calculateNetExerciseCalories(
-        met: 5.0,
-        weightKg: 75.0,
+      // Fuerza/Pesas moderada (MET = 5.0). Peso 75 kg. 60 minutos.
+      // Kcal netas = (5.0 - 1.0) × 3.5 × 75 / 200 × 60 = 315 kcal (docs/06 §3)
+      final int netKcal = MetConstants.calculateNetCalories(
+        met: MetConstants.getMet(WorkoutCategory.weights, RpeIntensity.moderate),
+        userWeightKg: 75.0,
         durationMinutes: 60,
       );
-      expect(netKcal, equals(300.0));
+      expect(netKcal, equals(315));
+      expect(
+        MetConstants.calculateNetCalories(met: 0.8, userWeightKg: 75, durationMinutes: 60),
+        equals(0),
+        reason: 'Un MET por debajo del reposo nunca resta calorías',
+      );
+    });
+
+    test('La proteína corporal cae en el rango fisiológico (16–22 %), no en el tope', () {
+      for (final int? ohms in <int?>[null, 480]) {
+        final metrics = BiometricFormulas.deriveMetrics(
+          weightKg: 82.7,
+          heightCm: 178.0,
+          ageYears: 30.4,
+          isMale: true,
+          impedanceOhms: ohms,
+        );
+        expect(metrics.proteinPercentage, inInclusiveRange(14.0, 22.0), reason: 'impedancia: $ohms');
+      }
     });
 
     test('Derivación de las 13 métricas con impedancia nula (Fallback Antropométrico)', () {

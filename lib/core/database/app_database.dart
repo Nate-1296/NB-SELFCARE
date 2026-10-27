@@ -4,6 +4,9 @@ import 'package:drift/drift.dart';
 import 'package:drift_flutter/drift_flutter.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../domain/enums.dart';
+import 'app_database.steps.dart';
+import 'converters.dart';
 import 'seeder/database_seeder.dart';
 import 'tables.dart';
 
@@ -41,6 +44,7 @@ part 'app_database.g.dart';
     CaffeineLogs,
     ProtocolPlans,
     MilestoneGoals,
+    UiPreferences,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -51,7 +55,7 @@ class AppDatabase extends _$AppDatabase {
   final bool _autoSeed;
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 4;
 
   static QueryExecutor _openConnection() {
     return driftDatabase(
@@ -67,131 +71,111 @@ class AppDatabase extends _$AppDatabase {
         beforeOpen: (OpeningDetails details) async {
           await customStatement('PRAGMA foreign_keys = ON;');
           await customStatement('PRAGMA journal_mode = WAL;');
-          await customStatement('''
-            CREATE TABLE IF NOT EXISTS ui_preferences (
-              pref_key TEXT PRIMARY KEY NOT NULL,
-              pref_value TEXT NOT NULL
-            );
-          ''');
           if (_autoSeed) {
             await DatabaseSeeder.seedIfEmpty(this);
           }
         },
         onCreate: (Migrator m) async {
           await m.createAll();
-
-          // Tabla virtual FTS5 para búsqueda insensible a acentos/tildes en alimentos
-          await customStatement('''
-            CREATE VIRTUAL TABLE food_items_fts USING fts5(
-              name,
-              brand,
-              content='food_items',
-              content_rowid='id',
-              tokenize='unicode61 remove_diacritics 2'
-            );
-          ''');
-
-          // Triggers de sincronización automática entre food_items y food_items_fts
-          await customStatement('''
-            CREATE TRIGGER food_items_ai AFTER INSERT ON food_items BEGIN
-              INSERT INTO food_items_fts(rowid, name, brand) VALUES (new.id, new.name, new.brand);
-            END;
-          ''');
-
-          await customStatement('''
-            CREATE TRIGGER food_items_ad AFTER DELETE ON food_items BEGIN
-              INSERT INTO food_items_fts(food_items_fts, rowid, name, brand) VALUES('delete', old.id, old.name, old.brand);
-            END;
-          ''');
-
-          await customStatement('''
-            CREATE TRIGGER food_items_au AFTER UPDATE ON food_items BEGIN
-              INSERT INTO food_items_fts(food_items_fts, rowid, name, brand) VALUES('delete', old.id, old.name, old.brand);
-              INSERT INTO food_items_fts(rowid, name, brand) VALUES (new.id, new.name, new.brand);
-            END;
-          ''');
-
-          // Índices de alto rendimiento para joins y series temporales
-          await customStatement(
-            'CREATE INDEX idx_body_measurements_date ON body_measurements(date_key DESC, measured_at DESC);',
-          );
-          await customStatement(
-            'CREATE INDEX idx_hydration_logs_date ON hydration_logs(date_key, logged_at);',
-          );
-          await customStatement(
-            'CREATE INDEX idx_food_logs_date_meal ON food_logs(date_key, meal_type);',
-          );
-          await customStatement(
-            'CREATE INDEX idx_workout_blocks_date ON workout_blocks(date_key);',
-          );
-          await customStatement(
-            "CREATE UNIQUE INDEX idx_coin_ledger_daily_unique ON coin_ledger(date_key, action_type) WHERE action_type != 'shop_buy';",
-          );
-          await customStatement(
-            'CREATE INDEX idx_recipes_name ON recipes(name);',
-          );
-          await customStatement(
-            'CREATE INDEX idx_supplement_logs_date ON supplement_logs(date_key);',
-          );
-          await customStatement(
-            'CREATE INDEX idx_digestive_logs_date ON digestive_logs(date_key);',
-          );
-          await customStatement(
-            'CREATE INDEX idx_caffeine_logs_date ON caffeine_logs(date_key);',
-          );
+          await _createFoodSearchIndex();
         },
-        onUpgrade: (Migrator m, int from, int to) async {
-          if (from < 2) {
-            // 1. Nuevas columnas en UserProfiles
-            await m.addColumn(userProfiles, userProfiles.isCycleTrackingEnabled);
-            await m.addColumn(userProfiles, userProfiles.isFastingEnabled);
-            await m.addColumn(userProfiles, userProfiles.isManualMacroMode);
-            await m.addColumn(userProfiles, userProfiles.manualKcalTarget);
-            await m.addColumn(userProfiles, userProfiles.manualProteinG);
-            await m.addColumn(userProfiles, userProfiles.manualCarbsG);
-            await m.addColumn(userProfiles, userProfiles.manualFatG);
-            await m.addColumn(userProfiles, userProfiles.activeDietArchetype);
-            await m.addColumn(userProfiles, userProfiles.activeDietPhase);
-            await m.addColumn(userProfiles, userProfiles.calorieCyclingScheduleJson);
-            await m.addColumn(userProfiles, userProfiles.caffeineBedtimeCutoffHours);
+        onUpgrade: stepByStep(
+          from1To2: (Migrator m, Schema2 schema) async {
+            await m.addColumn(schema.userProfiles, schema.userProfiles.isCycleTrackingEnabled);
+            await m.addColumn(schema.userProfiles, schema.userProfiles.isFastingEnabled);
+            await m.addColumn(schema.userProfiles, schema.userProfiles.isManualMacroMode);
+            await m.addColumn(schema.userProfiles, schema.userProfiles.manualKcalTarget);
+            await m.addColumn(schema.userProfiles, schema.userProfiles.manualProteinG);
+            await m.addColumn(schema.userProfiles, schema.userProfiles.manualCarbsG);
+            await m.addColumn(schema.userProfiles, schema.userProfiles.manualFatG);
+            await m.addColumn(schema.userProfiles, schema.userProfiles.activeDietArchetype);
+            await m.addColumn(schema.userProfiles, schema.userProfiles.activeDietPhase);
+            await m.addColumn(schema.userProfiles, schema.userProfiles.calorieCyclingScheduleJson);
+            await m.addColumn(schema.userProfiles, schema.userProfiles.caffeineBedtimeCutoffHours);
+            await m.addColumn(schema.foodItems, schema.foodItems.novaGroup);
 
-            // 2. Columna NOVA en FoodItems
-            await m.addColumn(foodItems, foodItems.novaGroup);
+            await m.createTable(schema.recipes);
+            await m.createTable(schema.recipeIngredients);
+            await m.createTable(schema.supplementsTracker);
+            await m.createTable(schema.supplementLogs);
+            await m.createTable(schema.femaleCycleLogs);
+            await m.createTable(schema.digestiveLogs);
+            await m.createTable(schema.caffeineLogs);
+            await m.createTable(schema.protocolPlans);
+            await m.createTable(schema.milestoneGoals);
+          },
+          from2To3: (Migrator m, Schema3 schema) async {
+            // ui_preferences existía fuera del esquema (CREATE TABLE IF NOT EXISTS en
+            // beforeOpen). Se recrea con la definición de Drift conservando las filas.
+            final bool hadLegacy = (await customSelect(
+              "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'ui_preferences'",
+            ).get())
+                .isNotEmpty;
+            if (hadLegacy) {
+              await customStatement('ALTER TABLE ui_preferences RENAME TO ui_preferences_legacy;');
+            }
+            await m.createTable(schema.uiPreferences);
+            if (hadLegacy) {
+              await customStatement(
+                'INSERT INTO ui_preferences (pref_key, pref_value) '
+                'SELECT pref_key, pref_value FROM ui_preferences_legacy;',
+              );
+              await customStatement('DROP TABLE ui_preferences_legacy;');
+            }
 
-            // 3. Crear las 7 tablas nuevas
-            await m.createTable(recipes);
-            await m.createTable(recipeIngredients);
-            await m.createTable(supplementsTracker);
-            await m.createTable(supplementLogs);
-            await m.createTable(femaleCycleLogs);
-            await m.createTable(digestiveLogs);
-            await m.createTable(caffeineLogs);
-            await m.createTable(protocolPlans);
-            await m.createTable(milestoneGoals);
-
-            // 4. Nuevos índices
-            await customStatement(
-              'CREATE INDEX IF NOT EXISTS idx_recipes_name ON recipes(name);',
-            );
-            await customStatement(
-              'CREATE INDEX IF NOT EXISTS idx_supplement_logs_date ON supplement_logs(date_key);',
-            );
-            await customStatement(
-              'CREATE INDEX IF NOT EXISTS idx_digestive_logs_date ON digestive_logs(date_key);',
-            );
-            await customStatement(
-              'CREATE INDEX IF NOT EXISTS idx_caffeine_logs_date ON caffeine_logs(date_key);',
-            );
-          }
-        },
+            // Los índices pasan a declararse en Drift: se recrean todos con su
+            // definición canónica (algunos ni existían en bases migradas desde v1).
+            for (final Index index in schema.entities.whereType<Index>()) {
+              await customStatement('DROP INDEX IF EXISTS "${index.entityName}";');
+              await m.create(index);
+            }
+          },
+          from3To4: (Migrator m, Schema4 schema) async {
+            await m.addColumn(schema.userProfiles, schema.userProfiles.activeDietPhaseStartedAt);
+            await m.addColumn(schema.userProfiles, schema.userProfiles.hasImpedanceContraindication);
+            await m.addColumn(schema.userProfiles, schema.userProfiles.hasEatingDisorderHistory);
+            await m.addColumn(schema.userProfiles, schema.userProfiles.takesHypoglycemicMedication);
+          },
+        ),
       );
+
+  /// Tabla virtual FTS5 sin diacríticos y triggers que la sincronizan con `food_items`.
+  Future<void> _createFoodSearchIndex() async {
+    await customStatement('''
+      CREATE VIRTUAL TABLE food_items_fts USING fts5(
+        name,
+        brand,
+        content='food_items',
+        content_rowid='id',
+        tokenize='unicode61 remove_diacritics 2'
+      );
+    ''');
+    await customStatement('''
+      CREATE TRIGGER food_items_ai AFTER INSERT ON food_items BEGIN
+        INSERT INTO food_items_fts(rowid, name, brand) VALUES (new.id, new.name, new.brand);
+      END;
+    ''');
+    await customStatement('''
+      CREATE TRIGGER food_items_ad AFTER DELETE ON food_items BEGIN
+        INSERT INTO food_items_fts(food_items_fts, rowid, name, brand) VALUES('delete', old.id, old.name, old.brand);
+      END;
+    ''');
+    await customStatement('''
+      CREATE TRIGGER food_items_au AFTER UPDATE ON food_items BEGIN
+        INSERT INTO food_items_fts(food_items_fts, rowid, name, brand) VALUES('delete', old.id, old.name, old.brand);
+        INSERT INTO food_items_fts(rowid, name, brand) VALUES (new.id, new.name, new.brand);
+      END;
+    ''');
+  }
 
   /// Exporta una copia atómica e íntegra de la base de datos limpia mediante VACUUM INTO.
   ///
   /// Es inmune a transacciones concurrentes en modo WAL y no bloquea lecturas de la UI.
-  Future<File> exportCleanDatabaseBackup(String targetDirectoryPath) async {
-    final String dateStr =
-        DateTime.now().toIso8601String().split('T').first.replaceAll('-', '');
+  Future<File> exportCleanDatabaseBackup(
+    String targetDirectoryPath, {
+    required DateTime stamp,
+  }) async {
+    final String dateStr = stamp.toIso8601String().split('T').first.replaceAll('-', '');
     final String backupPath = '$targetDirectoryPath/nb_selfcare_backup_$dateStr.sqlite';
     final File file = File(backupPath);
     if (file.existsSync()) {
@@ -204,20 +188,16 @@ class AppDatabase extends _$AppDatabase {
 
   /// Lee una preferencia local de interfaz persistida en SQLite (ej. layout de widgets en Hoy).
   Future<String?> readUiPreference(String key) async {
-    final rows = await customSelect(
-      'SELECT pref_value FROM ui_preferences WHERE pref_key = ? LIMIT 1',
-      variables: [Variable.withString(key)],
-    ).get();
-    if (rows.isEmpty) return null;
-    return rows.first.read<String>('pref_value');
+    final UiPreference? row = await (select(uiPreferences)
+          ..where((UiPreferences t) => t.prefKey.equals(key)))
+        .getSingleOrNull();
+    return row?.prefValue;
   }
 
   /// Persiste de forma atómica una preferencia local de interfaz en SQLite.
   Future<void> writeUiPreference(String key, String value) async {
-    await customStatement(
-      'INSERT INTO ui_preferences (pref_key, pref_value) VALUES (?, ?) '
-      'ON CONFLICT(pref_key) DO UPDATE SET pref_value = excluded.pref_value;',
-      <Object>[key, value],
+    await into(uiPreferences).insertOnConflictUpdate(
+      UiPreferencesCompanion.insert(prefKey: key, prefValue: value),
     );
   }
 }

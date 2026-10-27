@@ -1,14 +1,20 @@
 import 'dart:async';
 import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../../../core/database/app_database.dart';
+import '../../../../core/domain/enums.dart';
+import '../../../../core/l10n/l10n.dart';
 import '../../../../shared/theme/sc_colors.dart';
 import '../../../../shared/theme/sc_theme.dart';
+import '../../../../shared/utils/date_formats.dart';
 import '../../../../shared/widgets/app_icons.dart';
 import '../../../../shared/widgets/chip_pill.dart';
 import '../../../../shared/widgets/health_card.dart';
+import 'trend_chart_painter.dart';
+import 'trend_chart_parts.dart';
 
 enum ChartMetric {
   weight,
@@ -32,10 +38,12 @@ class WeightTrendChartCard extends StatefulWidget {
     super.key,
     required this.measurements,
     required this.targetWeightKg,
+    required this.now,
     this.onDeleteMeasurement,
   });
 
   final List<BodyMeasurement> measurements;
+  final DateTime now;
   final double targetWeightKg;
   final Future<void> Function(BodyMeasurement measurement)? onDeleteMeasurement;
 
@@ -52,7 +60,7 @@ class _WeightTrendChartCardState extends State<WeightTrendChartCard> {
   List<BodyMeasurement> get _filteredMeasurements {
     if (widget.measurements.isEmpty) return [];
 
-    final now = DateTime.now();
+    final DateTime now = widget.now;
     final int days;
     switch (_selectedPeriod) {
       case ChartPeriod.sevenDays:
@@ -79,19 +87,19 @@ class _WeightTrendChartCardState extends State<WeightTrendChartCard> {
   String _metricName(ChartMetric metric) {
     switch (metric) {
       case ChartMetric.weight:
-        return 'Peso & Tendencia';
+        return context.l10n.bodyPesoTendencia;
       case ChartMetric.bodyFat:
-        return '% Grasa';
+        return context.l10n.bodyGrasa2;
       case ChartMetric.muscleMass:
-        return 'Masa Muscular';
+        return context.l10n.bodyMasaMuscular;
       case ChartMetric.water:
-        return 'Agua Corporal';
+        return context.l10n.bodyAguaCorporal;
       case ChartMetric.visceralFat:
-        return 'Grasa Visceral';
+        return context.l10n.bodyGrasaVisceral;
       case ChartMetric.bodyScore:
-        return 'Puntaje Corporal';
+        return context.l10n.bodyPuntajeCorporal;
       case ChartMetric.validatedFat:
-        return 'Grasa Validada';
+        return context.l10n.bodyGrasaValidada;
     }
   }
 
@@ -105,7 +113,7 @@ class _WeightTrendChartCardState extends State<WeightTrendChartCard> {
       case ChartMetric.validatedFat:
         return '%';
       case ChartMetric.visceralFat:
-        return 'Nivel';
+        return context.l10n.bodyNivel;
       case ChartMetric.bodyScore:
         return '/100';
     }
@@ -130,21 +138,31 @@ class _WeightTrendChartCardState extends State<WeightTrendChartCard> {
     }
   }
 
+  String _formatValue(BodyMeasurement m) => _getValue(m, _selectedMetric)!.toStringAsFixed(
+        _selectedMetric == ChartMetric.visceralFat || _selectedMetric == ChartMetric.bodyScore ? 0 : 1,
+      );
+
   void _handleChartTouch(
     Offset localPosition,
     double totalWidth,
-    int pointCount,
+    List<BodyMeasurement> series,
   ) {
-    if (pointCount < 2) return;
+    if (series.length < 2) return;
     const double leftMargin = 38.0;
     const double rightMargin = 12.0;
     final double chartWidth = totalWidth - leftMargin - rightMargin;
     if (chartWidth <= 0) return;
 
-    final double relX =
-        ((localPosition.dx - leftMargin) / chartWidth).clamp(0.0, 1.0);
-    final int nearestIdx =
-        (relX * (pointCount - 1)).round().clamp(0, pointCount - 1);
+    final double relX = ((localPosition.dx - leftMargin) / chartWidth).clamp(0.0, 1.0);
+    int nearestIdx = 0;
+    double best = double.infinity;
+    for (int i = 0; i < series.length; i++) {
+      final double d = (timeFraction(series, i) - relX).abs();
+      if (d < best) {
+        best = d;
+        nearestIdx = i;
+      }
+    }
 
     if (_inspectedIndex != nearestIdx) {
       unawaited(HapticFeedback.selectionClick());
@@ -196,7 +214,7 @@ class _WeightTrendChartCardState extends State<WeightTrendChartCard> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Evolución Temporal',
+                      context.l10n.bodyEvolucionTemporal,
                       style: TextStyle(
                         fontFamily: ScFonts.display,
                         fontSize: 17,
@@ -208,8 +226,7 @@ class _WeightTrendChartCardState extends State<WeightTrendChartCard> {
                     const SizedBox(height: 2),
                     Text(
                       _showHistoryList
-                          ? 'Historial de pesajes ordenado del más reciente'
-                          : 'Toca o desliza sobre la curva para inspeccionar',
+                          ? context.l10n.bodyHistorialDePesajesOrdenadoDel: context.l10n.bodyTocaODeslizaSobreLa,
                       style: TextStyle(
                         fontFamily: ScFonts.ui,
                         fontSize: 12,
@@ -239,7 +256,7 @@ class _WeightTrendChartCardState extends State<WeightTrendChartCard> {
                   color: c.accent,
                 ),
                 label: Text(
-                  _showHistoryList ? 'Gráfica' : 'Historial',
+                  _showHistoryList ? context.l10n.bodyGrafica: context.l10n.bodyHistorial,
                   style: TextStyle(
                     fontFamily: ScFonts.ui,
                     fontSize: 11.5,
@@ -278,23 +295,23 @@ class _WeightTrendChartCardState extends State<WeightTrendChartCard> {
           const SizedBox(height: 10),
 
           // Selector de Período y Leyenda informativa
+          if (_selectedMetric == ChartMetric.weight && !_showHistoryList) ...[
+            Wrap(
+              spacing: 12,
+              runSpacing: 4,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [
+                ChartLegendDot(label: context.l10n.chartWeighIns, color: c.text3),
+                ChartLegendDot(label: context.l10n.chartTrend, color: c.accent),
+                ChartLegendDot(label: context.l10n.chartGoal, color: c.text2),
+              ],
+            ),
+            const SizedBox(height: 8),
+          ],
           Row(
+            mainAxisAlignment: MainAxisAlignment.end,
             children: [
-              if (_selectedMetric == ChartMetric.weight && !_showHistoryList)
-                Expanded(
-                  child: Wrap(
-                    spacing: 8,
-                    crossAxisAlignment: WrapCrossAlignment.center,
-                    children: [
-                      _LegendDot(label: 'Peso', color: c.accent),
-                      _LegendDot(label: 'EMA', color: c.protein),
-                      _LegendDot(label: 'Meta', color: c.success),
-                    ],
-                  ),
-                )
-              else
-                const Spacer(),
-              _PeriodButton(
+              ChartPeriodButton(
                 label: '7D',
                 isSelected: _selectedPeriod == ChartPeriod.sevenDays,
                 onTap: () => setState(() {
@@ -302,7 +319,7 @@ class _WeightTrendChartCardState extends State<WeightTrendChartCard> {
                   _inspectedIndex = null;
                 }),
               ),
-              _PeriodButton(
+              ChartPeriodButton(
                 label: '30D',
                 isSelected: _selectedPeriod == ChartPeriod.thirtyDays,
                 onTap: () => setState(() {
@@ -310,7 +327,7 @@ class _WeightTrendChartCardState extends State<WeightTrendChartCard> {
                   _inspectedIndex = null;
                 }),
               ),
-              _PeriodButton(
+              ChartPeriodButton(
                 label: '90D',
                 isSelected: _selectedPeriod == ChartPeriod.ninetyDays,
                 onTap: () => setState(() {
@@ -318,8 +335,8 @@ class _WeightTrendChartCardState extends State<WeightTrendChartCard> {
                   _inspectedIndex = null;
                 }),
               ),
-              _PeriodButton(
-                label: 'Todo',
+              ChartPeriodButton(
+                label: context.l10n.bodyTodo,
                 isSelected: _selectedPeriod == ChartPeriod.allTime,
                 onTap: () => setState(() {
                   _selectedPeriod = ChartPeriod.allTime;
@@ -336,7 +353,7 @@ class _WeightTrendChartCardState extends State<WeightTrendChartCard> {
                 padding: const EdgeInsets.symmetric(vertical: 24),
                 child: Center(
                   child: Text(
-                    'No hay pesajes registrados todavía.',
+                    context.l10n.bodyNoHayPesajesRegistradosTodavia,
                     style: TextStyle(color: c.text3),
                   ),
                 ),
@@ -355,7 +372,7 @@ class _WeightTrendChartCardState extends State<WeightTrendChartCard> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          '${m.weightKg.toStringAsFixed(1)} kg',
+                          context.l10n.todayKg2(m.weightKg.toStringAsFixed(1).toString()),
                           style: TextStyle(
                             fontFamily: ScFonts.display,
                             fontSize: 16,
@@ -377,12 +394,12 @@ class _WeightTrendChartCardState extends State<WeightTrendChartCard> {
                       spacing: 8,
                       children: [
                         Text(
-                          'EMA: ${m.trendWeightKg.toStringAsFixed(1)} kg',
+                          context.l10n.bodyEmaKg(m.trendWeightKg.toStringAsFixed(1).toString()),
                           style: TextStyle(fontSize: 12, color: c.text2),
                         ),
                         if (m.bodyFatPercentage != null)
                           Text(
-                            'Grasa: ${m.bodyFatPercentage!.toStringAsFixed(1)}%',
+                            context.l10n.bodyGrasa(m.bodyFatPercentage!.toStringAsFixed(1).toString()),
                             style: TextStyle(fontSize: 12, color: c.accent),
                           ),
                         if (m.impedanceOhms != null)
@@ -408,11 +425,10 @@ class _WeightTrendChartCardState extends State<WeightTrendChartCard> {
                                 : null,
                           ),
                           child: Text(
-                            m.source == 'mi_scale_2_ble'
+                            m.source == MeasurementSource.miScale2Ble
                                 ? 'BLE'
-                                : (m.source == 'manual_navy_tape'
-                                    ? 'Navy'
-                                    : 'Manual'),
+                                : (m.source == MeasurementSource.navyTape
+                                    ? context.l10n.bodyNavy: context.l10n.cuerpoManualWeighIn),
                             style: TextStyle(
                               fontSize: 10.5,
                               fontWeight: FontWeight.bold,
@@ -423,7 +439,7 @@ class _WeightTrendChartCardState extends State<WeightTrendChartCard> {
                         if (widget.onDeleteMeasurement != null)
                           IconButton(
                             visualDensity: VisualDensity.compact,
-                            tooltip: 'Eliminar registro',
+                            tooltip: context.l10n.comerEliminarRegistro,
                             icon: Icon(
                               AppIcons.delete,
                               size: 16,
@@ -455,9 +471,18 @@ class _WeightTrendChartCardState extends State<WeightTrendChartCard> {
                   children: [
                     Expanded(
                       child: Text(
-                        '${inspectedItem.dateKey} · '
-                        '${_getValue(inspectedItem, _selectedMetric)!.toStringAsFixed(_selectedMetric == ChartMetric.visceralFat || _selectedMetric == ChartMetric.bodyScore ? 0 : 1)} ${_metricUnit(_selectedMetric)}'
-                        '${_selectedMetric == ChartMetric.weight ? " (EMA ${inspectedItem.trendWeightKg.toStringAsFixed(1)} kg)" : ""}',
+                        _selectedMetric == ChartMetric.weight
+                            ? context.l10n.bodyChartInspectTrend(
+                                DateFormats.shortDate(inspectedItem.measuredAt, context.l10n.localeName),
+                                _formatValue(inspectedItem),
+                                _metricUnit(_selectedMetric),
+                                inspectedItem.trendWeightKg.toStringAsFixed(1),
+                              )
+                            : context.l10n.bodyChartInspect(
+                                DateFormats.shortDate(inspectedItem.measuredAt, context.l10n.localeName),
+                                _formatValue(inspectedItem),
+                                _metricUnit(_selectedMetric),
+                              ),
                         style: TextStyle(
                           fontFamily: ScFonts.display,
                           fontSize: 12.5,
@@ -497,8 +522,7 @@ class _WeightTrendChartCardState extends State<WeightTrendChartCard> {
                       const SizedBox(height: 8),
                       Text(
                         values.isEmpty
-                            ? 'Sin datos suficientes para graficar ${_metricName(_selectedMetric).toLowerCase()}.'
-                            : 'Último valor: ${values.last.toStringAsFixed(1)} ${_metricUnit(_selectedMetric)}. Registra un segundo pesaje para trazar la tendencia.',
+                            ? context.l10n.bodySinDatosSuficientesParaGraficar(_metricName(_selectedMetric).toLowerCase().toString()): context.l10n.bodyUltimoValorRegistraUnSegundo(values.last.toStringAsFixed(1).toString(), _metricUnit(_selectedMetric).toString()),
                         style: TextStyle(
                           fontFamily: ScFonts.ui,
                           fontSize: 12.5,
@@ -518,18 +542,18 @@ class _WeightTrendChartCardState extends State<WeightTrendChartCard> {
                     onTapDown: (details) => _handleChartTouch(
                       details.localPosition,
                       constraints.maxWidth,
-                      validSeries.length,
+                      validSeries,
                     ),
                     onHorizontalDragUpdate: (details) => _handleChartTouch(
                       details.localPosition,
                       constraints.maxWidth,
-                      validSeries.length,
+                      validSeries,
                     ),
                     child: SizedBox(
                       height: 180,
                       width: double.infinity,
                       child: CustomPaint(
-                        painter: _TrendChartPainter(
+                        painter: TrendChartPainter(
                           measurements: validSeries,
                           metric: _selectedMetric,
                           targetValue: _selectedMetric == ChartMetric.weight
@@ -537,11 +561,13 @@ class _WeightTrendChartCardState extends State<WeightTrendChartCard> {
                               : null,
                           inspectedIndex: safeInspectedIdx,
                           isFlat: c.isFlat,
-                          lineColor: c.accent,
-                          trendColor: c.protein,
-                          targetColor: c.success,
+                          lineColor: _selectedMetric == ChartMetric.weight ? c.text3 : c.accent,
+                          trendColor: c.accent,
+                          targetColor: c.text2,
                           textColor: c.text3,
                           gridColor: c.line,
+                          goalLabel: context.l10n.chartGoal,
+                          localeName: context.l10n.localeName,
                         ),
                       ),
                     ),
@@ -555,8 +581,8 @@ class _WeightTrendChartCardState extends State<WeightTrendChartCard> {
             Row(
               children: [
                 Expanded(
-                  child: _StatBox(
-                    label: 'Cambio',
+                  child: ChartStatBox(
+                    label: context.l10n.bodyCambio,
                     value: delta != null
                         ? '${delta >= 0 ? '+' : ''}${delta.toStringAsFixed(1)} ${_metricUnit(_selectedMetric)}'
                         : '--',
@@ -571,11 +597,10 @@ class _WeightTrendChartCardState extends State<WeightTrendChartCard> {
                 ),
                 const SizedBox(width: 8),
                 Expanded(
-                  child: _StatBox(
-                    label: 'Promedio',
+                  child: ChartStatBox(
+                    label: context.l10n.bodyPromedio,
                     value: values.isNotEmpty
-                        ? '${avgVal.toStringAsFixed(1)} ${_metricUnit(_selectedMetric)}'
-                        : '--',
+                        ? context.l10n.bodyTexto(avgVal.toStringAsFixed(1).toString(), _metricUnit(_selectedMetric).toString()): '--',
                   ),
                 ),
               ],
@@ -584,20 +609,18 @@ class _WeightTrendChartCardState extends State<WeightTrendChartCard> {
             Row(
               children: [
                 Expanded(
-                  child: _StatBox(
-                    label: 'Mínimo',
+                  child: ChartStatBox(
+                    label: context.l10n.bodyMinimo,
                     value: values.isNotEmpty
-                        ? '${minVal.toStringAsFixed(1)} ${_metricUnit(_selectedMetric)}'
-                        : '--',
+                        ? context.l10n.bodyTexto2(minVal.toStringAsFixed(1).toString(), _metricUnit(_selectedMetric).toString()): '--',
                   ),
                 ),
                 const SizedBox(width: 8),
                 Expanded(
-                  child: _StatBox(
-                    label: 'Máximo',
+                  child: ChartStatBox(
+                    label: context.l10n.bodyMaximo,
                     value: values.isNotEmpty
-                        ? '${maxVal.toStringAsFixed(1)} ${_metricUnit(_selectedMetric)}'
-                        : '--',
+                        ? context.l10n.bodyTexto3(maxVal.toStringAsFixed(1).toString(), _metricUnit(_selectedMetric).toString()): '--',
                   ),
                 ),
               ],
@@ -609,394 +632,3 @@ class _WeightTrendChartCardState extends State<WeightTrendChartCard> {
   }
 }
 
-class _LegendDot extends StatelessWidget {
-  const _LegendDot({required this.label, required this.color});
-
-  final String label;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    final ScColors c = context.sc;
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          width: 7,
-          height: 7,
-          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-        ),
-        const SizedBox(width: 4),
-        Text(
-          label,
-          style: TextStyle(
-            fontFamily: ScFonts.ui,
-            fontSize: 10.5,
-            color: c.text3,
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _PeriodButton extends StatelessWidget {
-  const _PeriodButton({
-    required this.label,
-    required this.isSelected,
-    required this.onTap,
-  });
-
-  final String label;
-  final bool isSelected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final ScColors c = context.sc;
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-        margin: const EdgeInsets.only(left: 4),
-        decoration: BoxDecoration(
-          color: isSelected ? c.accent : c.bg3,
-          borderRadius: BorderRadius.circular(10),
-          border: isSelected && c.isFlat
-              ? Border.all(color: c.text, width: 1.5)
-              : null,
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            fontFamily: ScFonts.ui,
-            fontSize: 11,
-            fontWeight: FontWeight.bold,
-            color: isSelected ? c.ink : c.text2,
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _StatBox extends StatelessWidget {
-  const _StatBox({
-    required this.label,
-    required this.value,
-    this.color,
-  });
-
-  final String label;
-  final String value;
-  final Color? color;
-
-  @override
-  Widget build(BuildContext context) {
-    final ScColors c = context.sc;
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 10),
-      decoration: BoxDecoration(
-        color: c.bg3,
-        borderRadius: BorderRadius.circular(12),
-        border: c.isFlat ? Border.all(color: c.line2, width: 1.2) : null,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            label,
-            style: TextStyle(
-              fontFamily: ScFonts.ui,
-              fontSize: 11,
-              fontWeight: FontWeight.w700,
-              color: c.text3,
-            ),
-          ),
-          const SizedBox(height: 2),
-          Text(
-            value,
-            style: TextStyle(
-              fontFamily: ScFonts.display,
-              fontSize: 14.5,
-              fontWeight: FontWeight.w800,
-              color: color ?? c.text,
-            ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _TrendChartPainter extends CustomPainter {
-  _TrendChartPainter({
-    required this.measurements,
-    required this.metric,
-    this.targetValue,
-    this.inspectedIndex,
-    required this.isFlat,
-    required this.lineColor,
-    required this.trendColor,
-    required this.targetColor,
-    required this.textColor,
-    required this.gridColor,
-  });
-
-  final List<BodyMeasurement> measurements;
-  final ChartMetric metric;
-  final double? targetValue;
-  final int? inspectedIndex;
-  final bool isFlat;
-  final Color lineColor;
-  final Color trendColor;
-  final Color targetColor;
-  final Color textColor;
-  final Color gridColor;
-
-  double? _extractVal(BodyMeasurement m) {
-    switch (metric) {
-      case ChartMetric.weight:
-        return m.weightKg;
-      case ChartMetric.bodyFat:
-        return m.bodyFatPercentage;
-      case ChartMetric.muscleMass:
-        return m.muscleMassKg;
-      case ChartMetric.water:
-        return m.waterPercentage;
-      case ChartMetric.visceralFat:
-        return m.visceralFatIndex?.toDouble();
-      case ChartMetric.bodyScore:
-        return m.bodyScore?.toDouble();
-      case ChartMetric.validatedFat:
-        return m.validatedBodyFatPercentage;
-    }
-  }
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final validPoints = <Offset>[];
-    final trendPoints = <Offset>[];
-
-    final values = measurements.map(_extractVal).whereType<double>().toList();
-    if (values.length < 2) return;
-
-    double minV = values.reduce(math.min);
-    double maxV = values.reduce(math.max);
-
-    if (targetValue != null) {
-      minV = math.min(minV, targetValue!);
-      maxV = math.max(maxV, targetValue!);
-    }
-    if (metric == ChartMetric.weight) {
-      for (final m in measurements) {
-        minV = math.min(minV, m.trendWeightKg);
-        maxV = math.max(maxV, m.trendWeightKg);
-      }
-    }
-
-    final double padding = (maxV - minV) * 0.15;
-    minV -= (padding > 0.5 ? padding : 1.0);
-    maxV += (padding > 0.5 ? padding : 1.0);
-    final double range = (maxV - minV) > 0 ? (maxV - minV) : 1.0;
-
-    const double leftMargin = 38.0;
-    const double bottomMargin = 22.0;
-    const double topMargin = 12.0;
-    const double rightMargin = 12.0;
-
-    final double chartWidth = size.width - leftMargin - rightMargin;
-    final double chartHeight = size.height - bottomMargin - topMargin;
-
-    final gridPaint = Paint()
-      ..color = gridColor
-      ..strokeWidth = 1.0;
-
-    final textPainter = TextPainter(textDirection: TextDirection.ltr);
-
-    for (int i = 0; i <= 3; i++) {
-      final double ratio = i / 3.0;
-      final double y = topMargin + chartHeight * (1.0 - ratio);
-      final double val = minV + range * ratio;
-
-      canvas.drawLine(
-        Offset(leftMargin, y),
-        Offset(size.width - rightMargin, y),
-        gridPaint,
-      );
-
-      textPainter.text = TextSpan(
-        text: val.toStringAsFixed(metric == ChartMetric.visceralFat || metric == ChartMetric.bodyScore ? 0 : 1),
-        style: TextStyle(fontSize: 10, color: textColor),
-      );
-      textPainter.layout();
-      textPainter.paint(
-        canvas,
-        Offset(leftMargin - textPainter.width - 6, y - textPainter.height / 2),
-      );
-    }
-
-    if (targetValue != null && targetValue! >= minV && targetValue! <= maxV) {
-      final double targetY =
-          topMargin + chartHeight * (1.0 - (targetValue! - minV) / range);
-      final targetPaint = Paint()
-        ..color = targetColor
-        ..strokeWidth = 1.5
-        ..style = PaintingStyle.stroke;
-
-      double curX = leftMargin;
-      while (curX < size.width - rightMargin) {
-        canvas.drawLine(
-          Offset(curX, targetY),
-          Offset(math.min(curX + 6, size.width - rightMargin), targetY),
-          targetPaint,
-        );
-        curX += 10;
-      }
-
-      textPainter.text = TextSpan(
-        text: 'Meta',
-        style: TextStyle(
-          fontSize: 9,
-          fontWeight: FontWeight.bold,
-          color: targetColor,
-        ),
-      );
-      textPainter.layout();
-      textPainter.paint(
-        canvas,
-        Offset(size.width - rightMargin - 30, targetY - 14),
-      );
-    }
-
-    final int count = measurements.length;
-    for (int i = 0; i < count; i++) {
-      final m = measurements[i];
-      final double? v = _extractVal(m);
-      if (v != null) {
-        final double x = leftMargin + (chartWidth * i / (count - 1));
-        final double y = topMargin + chartHeight * (1.0 - (v - minV) / range);
-        validPoints.add(Offset(x, y));
-
-        if (metric == ChartMetric.weight) {
-          final double trendY =
-              topMargin + chartHeight * (1.0 - (m.trendWeightKg - minV) / range);
-          trendPoints.add(Offset(x, trendY));
-        }
-      }
-    }
-
-    if (validPoints.length < 2) return;
-
-    if (!isFlat) {
-      final fillPath = Path()
-        ..moveTo(validPoints.first.dx, size.height - bottomMargin);
-      for (final pt in validPoints) {
-        fillPath.lineTo(pt.dx, pt.dy);
-      }
-      fillPath.lineTo(validPoints.last.dx, size.height - bottomMargin);
-      fillPath.close();
-
-      final fillPaint = Paint()
-        ..shader = LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            lineColor.withValues(alpha: 0.25),
-            lineColor.withValues(alpha: 0.0),
-          ],
-        ).createShader(Rect.fromLTWH(0, 0, size.width, size.height));
-
-      canvas.drawPath(fillPath, fillPaint);
-    }
-
-    if (metric == ChartMetric.weight && trendPoints.length >= 2) {
-      final trendPath = Path()
-        ..moveTo(trendPoints.first.dx, trendPoints.first.dy);
-      for (int i = 1; i < trendPoints.length; i++) {
-        trendPath.lineTo(trendPoints[i].dx, trendPoints[i].dy);
-      }
-      final trendPaint = Paint()
-        ..color = isFlat ? textColor : trendColor.withValues(alpha: 0.85)
-        ..strokeWidth = isFlat ? 1.5 : 2.0
-        ..style = PaintingStyle.stroke;
-      canvas.drawPath(trendPath, trendPaint);
-    }
-
-    final path = Path()..moveTo(validPoints.first.dx, validPoints.first.dy);
-    for (int i = 1; i < validPoints.length; i++) {
-      path.lineTo(validPoints[i].dx, validPoints[i].dy);
-    }
-
-    final linePaint = Paint()
-      ..color = lineColor
-      ..strokeWidth = isFlat ? 2.0 : 2.8
-      ..strokeCap = StrokeCap.round
-      ..strokeJoin = StrokeJoin.round
-      ..style = PaintingStyle.stroke;
-
-    canvas.drawPath(path, linePaint);
-
-    final dotPaint = Paint()
-      ..color = lineColor
-      ..style = PaintingStyle.fill;
-
-    for (final pt in validPoints) {
-      canvas.drawCircle(pt, isFlat ? 3.0 : 3.8, dotPaint);
-    }
-
-    // Cursor vertical de inspección
-    if (inspectedIndex != null &&
-        inspectedIndex! >= 0 &&
-        inspectedIndex! < validPoints.length) {
-      final Offset selPt = validPoints[inspectedIndex!];
-      final Paint cursorPaint = Paint()
-        ..color = textColor
-        ..strokeWidth = 1.2;
-      canvas.drawLine(
-        Offset(selPt.dx, topMargin),
-        Offset(selPt.dx, size.height - bottomMargin),
-        cursorPaint,
-      );
-      canvas.drawCircle(selPt, isFlat ? 5.5 : 6.0, dotPaint);
-    }
-
-    if (measurements.isNotEmpty) {
-      textPainter.text = TextSpan(
-        text: measurements.first.dateKey.substring(5),
-        style: TextStyle(fontSize: 10, color: textColor),
-      );
-      textPainter.layout();
-      textPainter.paint(
-        canvas,
-        Offset(leftMargin, size.height - bottomMargin + 6),
-      );
-
-      textPainter.text = TextSpan(
-        text: measurements.last.dateKey.substring(5),
-        style: TextStyle(fontSize: 10, color: textColor),
-      );
-      textPainter.layout();
-      textPainter.paint(
-        canvas,
-        Offset(
-          size.width - rightMargin - textPainter.width,
-          size.height - bottomMargin + 6,
-        ),
-      );
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant _TrendChartPainter oldDelegate) {
-    return oldDelegate.measurements != measurements ||
-        oldDelegate.metric != metric ||
-        oldDelegate.targetValue != targetValue ||
-        oldDelegate.inspectedIndex != inspectedIndex ||
-        oldDelegate.lineColor != lineColor ||
-        oldDelegate.trendColor != trendColor ||
-        oldDelegate.isFlat != isFlat;
-  }
-}

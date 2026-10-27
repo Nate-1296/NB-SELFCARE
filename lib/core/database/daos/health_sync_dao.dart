@@ -45,10 +45,44 @@ class HealthSyncDao {
         .getSingleOrNull();
   }
 
-  /// Inserta o actualiza el resumen diario proveniente de Health Connect o recálculos.
-  Future<void> upsertDailySummary(DailySummariesCompanion companion) async {
-    await _db.into(_db.dailySummaries).insertOnConflictUpdate(companion);
+  /// Resúmenes diarios entre dos fechas (inclusive), en orden cronológico.
+  Stream<List<DailySummary>> watchSummariesBetween(String fromDateKey, String toDateKey) =>
+      _summariesBetween(fromDateKey, toDateKey).watch();
+
+  Future<List<DailySummary>> getSummariesBetween(String fromDateKey, String toDateKey) =>
+      _summariesBetween(fromDateKey, toDateKey).get();
+
+  SimpleSelectStatement<$DailySummariesTable, DailySummary> _summariesBetween(String from, String to) {
+    return _db.select(_db.dailySummaries)
+      ..where((tbl) => tbl.dateKey.isBetweenValues(from, to))
+      ..orderBy([(tbl) => OrderingTerm.asc(tbl.dateKey)]);
   }
+
+  /// Inserta o actualiza el resumen diario proveniente de Health Connect o del registro manual.
+  ///
+  /// Solo se escriben las columnas presentes en [companion]; si el día aún no
+  /// existe, las metas del día se inicializan en 0 hasta que se tome su snapshot.
+  Future<void> upsertDailySummary(DailySummariesCompanion companion) async {
+    final String dateKey = companion.dateKey.value;
+    await _db.transaction(() async {
+      final DailySummary? existing = await getSummaryForDate(dateKey);
+      if (existing != null) {
+        await (_db.update(_db.dailySummaries)..where((tbl) => tbl.dateKey.equals(dateKey)))
+            .write(companion);
+        return;
+      }
+      await _db.into(_db.dailySummaries).insert(
+            companion.copyWith(
+              calorieTargetKcal: _orZero(companion.calorieTargetKcal),
+              proteinTargetG: _orZero(companion.proteinTargetG),
+              carbsTargetG: _orZero(companion.carbsTargetG),
+              fatTargetG: _orZero(companion.fatTargetG),
+            ),
+          );
+    });
+  }
+
+  static Value<int> _orZero(Value<int> value) => value.present ? value : const Value(0);
 }
 
 /// Provider de Riverpod para inyectar HealthSyncDao.

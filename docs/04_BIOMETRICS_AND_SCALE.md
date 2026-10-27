@@ -67,7 +67,9 @@ $$\text{WaterRaw} = (100.0 - \text{BF}\%) \times 0.70$$
 $$\text{Water}\% = \text{clamp}(\text{WaterRaw} < 50.0 \, ? \, \text{WaterRaw} \times 1.02 : \text{WaterRaw} \times 0.98, \, 35.0, \, 75.0)$$
 
 ### 7. Porcentaje de Proteína Corporal ($\text{Protein}\%$)
-$$\text{Protein}\% = \text{clamp}\left(\left(\frac{\text{MuscleMassKg}}{W}\right) \times 100 - (\text{Water}\% \times 0.52), \, 10.0, \, 26.0\right)$$
+$$\text{Protein}\% = \text{clamp}\left(\left(\frac{\text{MuscleMassKg}}{W}\right) \times 100 - \text{Water}\%, \, 10.0, \, 26.0\right)$$
+
+> Corrección (auditoría AAA, Fase 4): la versión anterior restaba `Water% × 0.52`, lo que dejaba casi a cualquier persona en el tope del 26 %. Restar el agua completa reproduce el algoritmo de openScale para la Mi Scale 2 y da valores típicos del 16–20 %.
 
 ### 8. Grasa Visceral (Índice 1–30)
 Ecuación bilineal según altura y peso:

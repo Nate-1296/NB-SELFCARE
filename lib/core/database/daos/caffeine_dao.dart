@@ -3,11 +3,14 @@ import 'dart:math' as math;
 import 'package:drift/drift.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../clock/clock.dart';
 import '../app_database.dart';
 
 /// DAO para seguimiento farmacocinético de la cafeína y su impacto en el sueño.
 class CaffeineDao {
-  CaffeineDao(this._db);
+  CaffeineDao(this._db, {this._clock = const Clock()});
+
+  final Clock _clock;
 
   final AppDatabase _db;
 
@@ -46,10 +49,13 @@ class CaffeineDao {
             dateKey: Value(dateKey),
             sourceName: Value(sourceName),
             caffeineMg: Value(caffeineMg),
-            loggedAt: Value(loggedAt ?? DateTime.now()),
+            loggedAt: Value(loggedAt ?? _clock.now()),
           ),
         );
   }
+
+  /// Reinserta un registro borrado (flujo Deshacer).
+  Future<void> restoreLog(CaffeineLog log) => _db.into(_db.caffeineLogs).insertOnConflictUpdate(log);
 
   /// Elimina un registro de cafeína.
   Future<int> deleteLog(int id) {
@@ -87,6 +93,6 @@ class CaffeineDao {
 /// Provider de Riverpod para inyectar CaffeineDao.
 final caffeineDaoProvider = Provider<CaffeineDao>((ref) {
   final AppDatabase db = ref.watch(appDatabaseProvider);
-  return CaffeineDao(db);
+  return CaffeineDao(db, clock: ref.watch(clockProvider));
 });
 

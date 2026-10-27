@@ -1,17 +1,16 @@
 import 'package:drift/drift.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../shared/utils/date_time_extensions.dart';
-import '../../constants/app_constants.dart';
+import '../../clock/clock.dart';
 import '../app_database.dart';
-import 'pet_dao.dart';
 
 /// DAO especializado en sesiones de ayuno intermitente y fases metabólicas.
 class FastingDao {
-  FastingDao(this._db, this._petDao);
+  FastingDao(this._db, {this._clock = const Clock()});
+
+  final Clock _clock;
 
   final AppDatabase _db;
-  final PetDao _petDao;
 
   /// Emite la sesión de ayuno que se encuentra actualmente en curso (sin hora de finalización).
   Stream<FastingSession?> watchActiveSession() {
@@ -50,17 +49,19 @@ class FastingDao {
         );
   }
 
-  /// Finaliza la sesión de ayuno activa y recompensa al usuario si cumplió ≥ 14 horas.
-  Future<bool> endFast({
+  /// Finaliza la sesión de ayuno y devuelve la sesión cerrada (o `null` si no existe).
+  ///
+  /// `isCompleted` indica si se alcanzó la meta de horas del protocolo.
+  Future<FastingSession?> endFast({
     required int sessionId,
     String? notes,
   }) async {
-    final now = DateTime.now();
+    final now = _clock.now();
 
     return _db.transaction(() async {
       final sessionQuery = _db.select(_db.fastingSessions)..where((tbl) => tbl.id.equals(sessionId));
       final FastingSession? session = await sessionQuery.getSingleOrNull();
-      if (session == null) return false;
+      if (session == null) return null;
 
       final double durationHours = now.difference(session.startedAt).inMinutes / 60.0;
       final bool completed = durationHours >= session.targetHours;
@@ -74,16 +75,11 @@ class FastingDao {
         ),
       );
 
-      // Si ayunó ≥ 14 horas, otorgar recompensa de +20 monedas
-      if (durationHours >= 14.0) {
-        await _petDao.grantDailyReward(
-          dateKey: now.dateKey,
-          actionType: 'fast_done',
-          baseAmount: AppConstants.coinsFastDone,
-        );
-      }
-
-      return true;
+      return session.copyWith(
+        actualEndedAt: Value(now),
+        isCompleted: completed,
+        notes: Value(notes),
+      );
     });
   }
 
@@ -111,6 +107,11 @@ class FastingDao {
   }
 
   /// Elimina una sesión histórica de ayuno por su ID.
+  /// Reinserta una sesión borrada (flujo Deshacer).
+  Future<void> restoreSession(FastingSession session) {
+    return _db.into(_db.fastingSessions).insertOnConflictUpdate(session);
+  }
+
   Future<int> deleteSession(int sessionId) {
     return (_db.delete(_db.fastingSessions)
           ..where((tbl) => tbl.id.equals(sessionId)))
@@ -139,12 +140,5 @@ class FastingDao {
 /// Provider de Riverpod para inyectar FastingDao.
 final fastingDaoProvider = Provider<FastingDao>((ref) {
   final AppDatabase db = ref.watch(appDatabaseProvider);
-  final PetDao petDao = ref.watch(petDaoProvider);
-  return FastingDao(db, petDao);
-});
-
-/// StreamProvider con la sesión de ayuno activa en tiempo real.
-final activeFastingSessionStreamProvider = StreamProvider<FastingSession?>((ref) {
-  final FastingDao dao = ref.watch(fastingDaoProvider);
-  return dao.watchActiveSession();
+  return FastingDao(db, clock: ref.watch(clockProvider));
 });

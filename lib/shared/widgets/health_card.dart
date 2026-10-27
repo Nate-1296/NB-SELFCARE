@@ -11,7 +11,7 @@ class HealthCard extends StatelessWidget {
     super.key,
     required this.child,
     this.padding = const EdgeInsets.all(18.0),
-    this.margin = const EdgeInsets.symmetric(horizontal: 18.0, vertical: 6.0),
+    this.margin = const EdgeInsets.symmetric(horizontal: 16.0, vertical: 6.0),
     this.onTap,
     this.backgroundColor,
     this.borderColor,

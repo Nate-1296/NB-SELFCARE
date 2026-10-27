@@ -54,7 +54,8 @@ abstract final class AppIcons {
   static const IconData repeat = Icons.replay_rounded;
   static const IconData combos = Icons.layers_outlined;
   static const IconData search = Icons.search_rounded;
-  static const IconData ai = Icons.auto_awesome_rounded;
+  static const IconData textEntry = Icons.edit_note_rounded;
+  static const IconData suggest = Icons.tips_and_updates_rounded;
   static const IconData chispa = Icons.auto_awesome_rounded;
 
   // Gamificación & Nibi

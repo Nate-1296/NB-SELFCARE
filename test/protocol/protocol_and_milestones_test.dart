@@ -1,10 +1,12 @@
 import 'dart:typed_data';
+
 import 'package:drift/drift.dart' hide isNull, isNotNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nb_selfcare/core/database/app_database.dart';
 import 'package:nb_selfcare/core/database/daos/milestone_dao.dart';
 import 'package:nb_selfcare/core/database/daos/protocol_dao.dart';
+import 'package:nb_selfcare/core/domain/enums.dart';
 import 'package:nb_selfcare/core/services/clinical_report_pdf_service.dart';
 
 void main() {
@@ -102,7 +104,7 @@ void main() {
         id: 1,
         name: 'Carlos Ruiz',
         birthDate: DateTime(1992, 5, 14),
-        biologicalSex: 'male',
+        biologicalSex: BiologicalSex.male,
         heightCm: 178.0,
         targetWeightKg: 74.0,
         weeklyGoalRateKg: -0.4,
@@ -115,10 +117,13 @@ void main() {
         isCycleTrackingEnabled: false,
         isFastingEnabled: true,
         isManualMacroMode: false,
-        activeDietArchetype: 'mediterranean',
-        activeDietPhase: 'deficit',
+        activeDietArchetype: DietArchetype.mediterranean,
+        activeDietPhase: DietPhase.deficit,
         calorieCyclingScheduleJson: '',
         caffeineBedtimeCutoffHours: 8.0,
+        hasImpedanceContraindication: false,
+        hasEatingDisorderHistory: false,
+        takesHypoglycemicMedication: false,
         createdAt: DateTime.now(),
       );
 
@@ -126,7 +131,7 @@ void main() {
         id: 1,
         measuredAt: DateTime.now(),
         dateKey: '2026-10-26',
-        source: 'scale',
+        source: MeasurementSource.miScale2Ble,
         weightKg: 76.8,
         trendWeightKg: 77.1,
         bmi: 24.2,

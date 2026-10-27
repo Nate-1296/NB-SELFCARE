@@ -1,23 +1,19 @@
 import 'dart:async';
 
-import 'package:drift/drift.dart' as drift;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../../core/constants/app_constants.dart';
-import '../../../../core/constants/met_constants.dart';
 import '../../../../core/database/app_database.dart';
-import '../../../../core/database/daos/body_measurements_dao.dart';
-import '../../../../core/database/daos/pet_dao.dart';
-import '../../../../core/database/daos/workout_dao.dart';
+import '../../../../core/domain/enums.dart';
+import '../../../../core/l10n/l10n.dart';
 import '../../../../shared/theme/sc_colors.dart';
 import '../../../../shared/theme/sc_theme.dart';
-import '../../../../shared/utils/biometric_formulas.dart';
-import '../../../../shared/utils/date_time_extensions.dart';
 import '../../../../shared/widgets/app_icons.dart';
 import '../../../../shared/widgets/health_card.dart';
 import '../../../../shared/widgets/sheet.dart';
+import '../../application/body_queries.dart';
+import '../../application/workout_service.dart';
 
 /// Hoja ultrarrápida (< 5 segundos) para registrar bloques de entrenamiento por RPE y METs.
 abstract final class QuickRpeWorkoutSheet {
@@ -57,12 +53,14 @@ class _QuickRpeWorkoutContentState
     final latestMeas = ref.watch(latestMeasurementStreamProvider).value;
     final double userWeight =
         latestMeas?.weightKg ?? widget.profile.targetWeightKg;
-    final double met = MetConstants.getMet(_selectedCategory, _selectedRpe);
-    final double netKcal = BiometricFormulas.calculateNetExerciseCalories(
-      met: met,
-      weightKg: userWeight,
+    final WorkoutEstimate estimate = WorkoutService.estimate(
+      category: _selectedCategory,
+      intensity: _selectedRpe,
       durationMinutes: _durationMinutes,
+      weightKg: userWeight,
     );
+    final double met = estimate.met;
+    final int netKcal = estimate.netKcal;
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 6, 20, 24),
@@ -90,7 +88,7 @@ class _QuickRpeWorkoutContentState
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Entrenamiento en 5 Segundos',
+                      context.l10n.bodyEntrenamientoEn5Segundos,
                       style: TextStyle(
                         fontFamily: ScFonts.display,
                         fontSize: 18.5,
@@ -100,7 +98,7 @@ class _QuickRpeWorkoutContentState
                       softWrap: true,
                     ),
                     Text(
-                      'Gasto neto real sin contar series ni repeticiones',
+                      context.l10n.bodyGastoNetoRealSinContar,
                       style: TextStyle(
                         fontFamily: ScFonts.ui,
                         fontSize: 12.5,
@@ -113,7 +111,7 @@ class _QuickRpeWorkoutContentState
               ),
               IconButton(
                 icon: const Icon(AppIcons.close),
-                tooltip: 'Cerrar',
+                tooltip: context.l10n.commonClose,
                 onPressed: () => Navigator.of(context).pop(),
               ),
             ],
@@ -122,7 +120,7 @@ class _QuickRpeWorkoutContentState
 
           // 1. Selector de Disciplina (Cuadrícula 2x2 para evitar truncamiento horizontal)
           Text(
-            '1. Disciplina',
+            context.l10n.body1Disciplina,
             style: TextStyle(
               fontFamily: ScFonts.ui,
               fontSize: 13,
@@ -135,9 +133,9 @@ class _QuickRpeWorkoutContentState
             children: [
               Expanded(
                 child: _DisciplineCard(
-                  title: 'Pesas / Fuerza',
+                  title: context.l10n.bodyPesasFuerza,
                   icon: AppIcons.pesa,
-                  metRange: 'MET 3.5 – 6.0',
+                  metRange: context.l10n.bodyMet3560,
                   isSelected: _selectedCategory == WorkoutCategory.weights,
                   onTap: () {
                     unawaited(HapticFeedback.selectionClick());
@@ -148,9 +146,9 @@ class _QuickRpeWorkoutContentState
               const SizedBox(width: 10),
               Expanded(
                 child: _DisciplineCard(
-                  title: 'Funcional',
+                  title: context.l10n.bodyFuncional,
                   icon: Icons.sports_gymnastics_rounded,
-                  metRange: 'MET 3.8 – 8.0',
+                  metRange: context.l10n.bodyMet3880,
                   isSelected: _selectedCategory == WorkoutCategory.calisthenics,
                   onTap: () {
                     unawaited(HapticFeedback.selectionClick());
@@ -166,9 +164,9 @@ class _QuickRpeWorkoutContentState
             children: [
               Expanded(
                 child: _DisciplineCard(
-                  title: 'Cardio',
+                  title: context.l10n.workoutCardio,
                   icon: Icons.directions_run_rounded,
-                  metRange: 'MET 5.0 – 10.5',
+                  metRange: context.l10n.bodyMet50105,
                   isSelected: _selectedCategory == WorkoutCategory.cardio,
                   onTap: () {
                     unawaited(HapticFeedback.selectionClick());
@@ -179,9 +177,9 @@ class _QuickRpeWorkoutContentState
               const SizedBox(width: 10),
               Expanded(
                 child: _DisciplineCard(
-                  title: 'Deporte',
+                  title: context.l10n.workoutSports,
                   icon: Icons.sports_soccer_rounded,
-                  metRange: 'MET 4.0 – 8.5',
+                  metRange: context.l10n.bodyMet4085,
                   isSelected: _selectedCategory == WorkoutCategory.sports,
                   onTap: () {
                     unawaited(HapticFeedback.selectionClick());
@@ -199,7 +197,7 @@ class _QuickRpeWorkoutContentState
             children: [
               Expanded(
                 child: Text(
-                  '2. Duración efectiva:',
+                  context.l10n.body2DuracionEfectiva,
                   style: TextStyle(
                     fontFamily: ScFonts.ui,
                     fontSize: 13,
@@ -218,7 +216,7 @@ class _QuickRpeWorkoutContentState
                       : null,
                 ),
                 child: Text(
-                  '$_durationMinutes min',
+                  context.l10n.bodyMin((_durationMinutes).toString()),
                   style: TextStyle(
                     fontFamily: ScFonts.display,
                     fontSize: 14,
@@ -272,7 +270,7 @@ class _QuickRpeWorkoutContentState
             min: 10,
             max: 180,
             divisions: 34,
-            label: '$_durationMinutes min',
+            label: context.l10n.bodyMin((_durationMinutes).toString()),
             onChanged: (val) =>
                 setState(() => _durationMinutes = val.round()),
           ),
@@ -280,7 +278,7 @@ class _QuickRpeWorkoutContentState
 
           // 3. Esfuerzo Percibido (RPE con descripciones fisiológicas)
           Text(
-            '3. Esfuerzo Percibido (RPE)',
+            context.l10n.body3EsfuerzoPercibidoRpe,
             style: TextStyle(
               fontFamily: ScFonts.ui,
               fontSize: 13,
@@ -293,9 +291,9 @@ class _QuickRpeWorkoutContentState
             children: [
               Expanded(
                 child: _RpeCard(
-                  label: 'Ligero',
-                  sublabel: 'RPE 1–4',
-                  cue: 'Conversación fluida',
+                  label: context.l10n.bodyLigero,
+                  sublabel: context.l10n.bodyRpe14,
+                  cue: context.l10n.bodyConversacionFluida,
                   isSelected: _selectedRpe == RpeIntensity.light,
                   onTap: () {
                     unawaited(HapticFeedback.selectionClick());
@@ -306,9 +304,9 @@ class _QuickRpeWorkoutContentState
               const SizedBox(width: 8),
               Expanded(
                 child: _RpeCard(
-                  label: 'Moderado',
-                  sublabel: 'RPE 5–7',
-                  cue: 'Frases cortas',
+                  label: context.l10n.bodyStatusModerate,
+                  sublabel: context.l10n.bodyRpe57,
+                  cue: context.l10n.bodyFrasesCortas,
                   isSelected: _selectedRpe == RpeIntensity.moderate,
                   onTap: () {
                     unawaited(HapticFeedback.selectionClick());
@@ -319,9 +317,9 @@ class _QuickRpeWorkoutContentState
               const SizedBox(width: 8),
               Expanded(
                 child: _RpeCard(
-                  label: 'Intenso',
-                  sublabel: 'RPE 8–10',
-                  cue: 'Límite metabólico',
+                  label: context.l10n.bodyIntenso,
+                  sublabel: context.l10n.bodyRpe810,
+                  cue: context.l10n.bodyLimiteMetabolico,
                   isSelected: _selectedRpe == RpeIntensity.intense,
                   onTap: () {
                     unawaited(HapticFeedback.selectionClick());
@@ -345,7 +343,7 @@ class _QuickRpeWorkoutContentState
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Gasto neto estimado (descontando reposo):',
+                        context.l10n.bodyGastoNetoEstimadoDescontandoReposo,
                         style: TextStyle(
                           fontFamily: ScFonts.ui,
                           fontSize: 12,
@@ -355,7 +353,7 @@ class _QuickRpeWorkoutContentState
                       ),
                       const SizedBox(height: 3),
                       Text(
-                        '${netKcal.toStringAsFixed(0)} kcal netas',
+                        context.l10n.bodyKcalNetas(netKcal.toStringAsFixed(0).toString()),
                         style: TextStyle(
                           fontFamily: ScFonts.display,
                           fontSize: 22,
@@ -392,7 +390,7 @@ class _QuickRpeWorkoutContentState
                         ),
                       ),
                       Text(
-                        'MET ${met.toStringAsFixed(1)}',
+                        context.l10n.bodyMet(met.toStringAsFixed(1).toString()),
                         style: TextStyle(
                           fontFamily: ScFonts.display,
                           fontSize: 13.5,
@@ -411,38 +409,25 @@ class _QuickRpeWorkoutContentState
           FilledButton.icon(
             onPressed: () async {
               unawaited(HapticFeedback.mediumImpact());
-              final now = DateTime.now();
-              final companion = WorkoutBlocksCompanion(
-                dateKey: drift.Value(now.dateKey),
-                performedAt: drift.Value(now),
-                category: drift.Value(_selectedCategory.name),
-                durationMinutes: drift.Value(_durationMinutes),
-                rpeIntensity: drift.Value(_selectedRpe.name),
-                appliedMet: drift.Value(met),
-                userWeightAtTimeKg: drift.Value(userWeight),
-                netCaloriesBurned: drift.Value(netKcal.round()),
-              );
-
-              await ref.read(workoutDaoProvider).insertWorkout(companion);
-              await ref.read(petDaoProvider).grantDailyReward(
-                    dateKey: now.dateKey,
-                    actionType: 'workout_done',
-                    baseAmount: AppConstants.coinsWorkoutDone,
+              final WorkoutLogResult result = await ref.read(workoutServiceProvider).log(
+                    category: _selectedCategory,
+                    intensity: _selectedRpe,
+                    durationMinutes: _durationMinutes,
                   );
 
               if (context.mounted) {
+                final String coins =
+                    result.reward.granted ? context.l10n.bodyMonedas(result.reward.coins.toString()): '';
                 Navigator.of(context).pop();
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
-                    content: Text(
-                      '¡Bloque registrado: ${netKcal.round()} kcal netas! (+${AppConstants.coinsWorkoutDone} Monedas) 🪙',
-                    ),
+                    content: Text(context.l10n.bodyBloqueRegistradoKcalNetas(result.netKcal.toString(), (coins).toString())),
                   ),
                 );
               }
             },
             icon: const Icon(AppIcons.check, size: 18),
-            label: const Text('Registrar en 5 segundos'),
+            label: Text(context.l10n.bodyRegistrarEn5Segundos),
             style: FilledButton.styleFrom(
               minimumSize: const Size.fromHeight(48),
             ),

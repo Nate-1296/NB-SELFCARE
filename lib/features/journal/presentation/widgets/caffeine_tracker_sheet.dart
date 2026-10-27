@@ -1,16 +1,20 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/database/app_database.dart';
-import '../../../../core/database/daos/caffeine_dao.dart';
+import '../../../../core/l10n/l10n.dart';
 import '../../../../core/services/caffeine_pharmacokinetics_service.dart';
 import '../../../../shared/theme/sc_colors.dart';
 import '../../../../shared/theme/sc_theme.dart';
+import '../../../../shared/utils/date_formats.dart';
 import '../../../../shared/widgets/app_icons.dart';
 import '../../../../shared/widgets/science_on_demand_sheet.dart';
 import '../../../../shared/widgets/sheet.dart';
+import '../../../../shared/widgets/undo_snackbar.dart';
+import '../../application/caffeine_queries.dart';
 
 /// Modal interactivo de registro y curva de decaimiento de cafeína.
 class CaffeineTrackerSheet extends ConsumerStatefulWidget {
@@ -50,60 +54,48 @@ class _CaffeineTrackerSheetState extends ConsumerState<CaffeineTrackerSheet> {
     required double mg,
   }) async {
     unawaited(HapticFeedback.lightImpact());
-    await ref.read(caffeineDaoProvider).logCaffeine(
-          dateKey: widget.dateKey,
-          sourceName: name,
-          caffeineMg: mg,
-        );
+    await ref.read(caffeineServiceProvider).log(dateKey: widget.dateKey, sourceName: name, mg: mg);
 
     if (!mounted) return;
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
       ..showSnackBar(
         SnackBar(
-          content: Text('+$mg mg de cafeína registrados ($name)'),
+          content: Text(context.l10n.journalMgDeCafeinaRegistrados((mg).toString(), (name).toString())),
           duration: const Duration(seconds: 2),
         ),
       );
   }
 
-  Future<void> _deleteDose(int id, String name) async {
+  Future<void> _deleteDose(CaffeineLog log) async {
     unawaited(HapticFeedback.selectionClick());
-    await ref.read(caffeineDaoProvider).deleteLog(id);
+    final CaffeineService service = ref.read(caffeineServiceProvider);
+    await service.delete(log.id);
     if (!mounted) return;
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(
-        SnackBar(
-          content: Text('Eliminado: $name'),
-          duration: const Duration(seconds: 2),
-        ),
-      );
+    showUndoSnackBar(
+      context,
+      message: context.l10n.caffeineDeleted(log.sourceName),
+      onUndo: () => unawaited(service.restore(log)),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     final ScColors c = context.sc;
-    final CaffeineDao caffeineDao = ref.watch(caffeineDaoProvider);
-    final CaffeinePharmacokineticsService service =
-        ref.watch(caffeinePharmacokineticsServiceProvider);
-
-    final DateTime now = DateTime.now();
-    // Hora proyectada de acostarse hoy (23:00)
-    final DateTime targetBedtime = DateTime(now.year, now.month, now.day, 23, 0);
+    final CaffeineDay? day = ref.watch(caffeineDayProvider(widget.dateKey)).value;
+    if (day == null) {
+      return const Padding(
+        padding: EdgeInsets.all(32),
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
+    final List<CaffeineLog> logs = day.logs;
+    final CaffeineStatus status = day.status;
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
-      child: StreamBuilder<List<CaffeineLog>>(
-        stream: caffeineDao.watchLogsForDate(widget.dateKey),
-        builder: (BuildContext context, AsyncSnapshot<List<CaffeineLog>> snapshot) {
-          final List<CaffeineLog> logs = snapshot.data ?? const <CaffeineLog>[];
-          final CaffeineStatus status = service.evaluateStatus(
-            logs: logs,
-            targetBedtime: targetBedtime,
-            currentTime: now,
-          );
-
+      child: Builder(
+        builder: (BuildContext context) {
           return SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -115,7 +107,7 @@ class _CaffeineTrackerSheetState extends ConsumerState<CaffeineTrackerSheet> {
                     Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: c.isFlat ? c.line2 : c.accent.withValues(alpha: 0.15),
+                        color: c.isFlat ? c.bg3 : c.accent.withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Icon(Icons.coffee_rounded, color: c.accent, size: 22),
@@ -126,7 +118,7 @@ class _CaffeineTrackerSheetState extends ConsumerState<CaffeineTrackerSheet> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: <Widget>[
                           Text(
-                            'Cronobiología de la Cafeína',
+                            context.l10n.journalCronobiologiaDeLaCafeina,
                             style: TextStyle(
                               fontFamily: ScFonts.display,
                               fontSize: 17,
@@ -135,7 +127,7 @@ class _CaffeineTrackerSheetState extends ConsumerState<CaffeineTrackerSheet> {
                             ),
                           ),
                           Text(
-                            'Farmacocinética y protección del sueño profundo N3',
+                            context.l10n.journalFarmacocineticaYProteccionDelSueno,
                             style: TextStyle(
                               fontFamily: ScFonts.ui,
                               fontSize: 12,
@@ -171,7 +163,7 @@ class _CaffeineTrackerSheetState extends ConsumerState<CaffeineTrackerSheet> {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: <Widget>[
                           Text(
-                            'Nivel activo en sangre:',
+                            context.l10n.journalNivelActivoEnSangre,
                             style: TextStyle(
                               fontFamily: ScFonts.ui,
                               fontSize: 13,
@@ -180,7 +172,7 @@ class _CaffeineTrackerSheetState extends ConsumerState<CaffeineTrackerSheet> {
                             ),
                           ),
                           Text(
-                            '${status.currentResidualMg.toStringAsFixed(1)} mg',
+                            context.l10n.journalMg(status.currentResidualMg.toStringAsFixed(1).toString()),
                             style: TextStyle(
                               fontFamily: ScFonts.display,
                               fontSize: 16,
@@ -195,7 +187,7 @@ class _CaffeineTrackerSheetState extends ConsumerState<CaffeineTrackerSheet> {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: <Widget>[
                           Text(
-                            'Proyección al dormir (23:00):',
+                            context.l10n.journalProyeccionAlDormir2300,
                             style: TextStyle(
                               fontFamily: ScFonts.ui,
                               fontSize: 13,
@@ -214,8 +206,10 @@ class _CaffeineTrackerSheetState extends ConsumerState<CaffeineTrackerSheet> {
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: Text(
-                              '${status.bedtimeResidualMg.toStringAsFixed(1)} mg '
-                              '(${status.willDisruptSleep ? 'Alerta Sueño' : 'Óptimo <25mg'})',
+                              context.l10n.journalBedtimeResidual(
+                                status.bedtimeResidualMg.toStringAsFixed(0),
+                                status.willDisruptSleep ? context.l10n.journalAlertaSueno : context.l10n.journalSleepSafe,
+                              ),
                               style: TextStyle(
                                 fontFamily: ScFonts.ui,
                                 fontSize: 11.5,
@@ -233,7 +227,7 @@ class _CaffeineTrackerSheetState extends ConsumerState<CaffeineTrackerSheet> {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: <Widget>[
                           Text(
-                            'Hora límite recomendada (Curfew):',
+                            context.l10n.journalHoraLimiteRecomendadaCurfew,
                             style: TextStyle(
                               fontFamily: ScFonts.ui,
                               fontSize: 13,
@@ -241,7 +235,7 @@ class _CaffeineTrackerSheetState extends ConsumerState<CaffeineTrackerSheet> {
                             ),
                           ),
                           Text(
-                            '${status.recommendedCutoffTime.hour.toString().padLeft(2, '0')}:${status.recommendedCutoffTime.minute.toString().padLeft(2, '0')}',
+                            DateFormats.time(status.recommendedCutoffTime, context.l10n.localeName),
                             style: TextStyle(
                               fontFamily: ScFonts.display,
                               fontSize: 14,
@@ -260,7 +254,7 @@ class _CaffeineTrackerSheetState extends ConsumerState<CaffeineTrackerSheet> {
 
                 // Registro Rápido
                 Text(
-                  'Registrar Ingesta:',
+                  context.l10n.journalRegistrarIngesta,
                   style: TextStyle(
                     fontFamily: ScFonts.ui,
                     fontSize: 13,
@@ -274,27 +268,27 @@ class _CaffeineTrackerSheetState extends ConsumerState<CaffeineTrackerSheet> {
                   runSpacing: 8,
                   children: <Widget>[
                     _QuickCaffeineChip(
-                      label: 'Espresso (65mg)',
-                      onTap: () => _logQuickDose(name: 'Espresso', mg: 65),
+                      label: context.l10n.journalEspresso65mg,
+                      onTap: () => _logQuickDose(name: context.l10n.journalEspresso, mg: 65),
                     ),
                     _QuickCaffeineChip(
-                      label: 'Café Filtro (100mg)',
-                      onTap: () => _logQuickDose(name: 'Café Filtro', mg: 100),
+                      label: context.l10n.journalCafeFiltro100mg,
+                      onTap: () => _logQuickDose(name: context.l10n.journalCafeFiltro, mg: 100),
                     ),
                     _QuickCaffeineChip(
-                      label: 'Doble / Americano (130mg)',
-                      onTap: () => _logQuickDose(name: 'Café Americano Doble', mg: 130),
+                      label: context.l10n.journalDobleAmericano130mg,
+                      onTap: () => _logQuickDose(name: context.l10n.journalCafeAmericanoDoble, mg: 130),
                     ),
                     _QuickCaffeineChip(
-                      label: 'Té Verde / Negro (45mg)',
-                      onTap: () => _logQuickDose(name: 'Té', mg: 45),
+                      label: context.l10n.journalTeVerdeNegro45mg,
+                      onTap: () => _logQuickDose(name: context.l10n.journalTe, mg: 45),
                     ),
                     _QuickCaffeineChip(
-                      label: 'Bebida Energética (80mg)',
-                      onTap: () => _logQuickDose(name: 'Bebida Energética', mg: 80),
+                      label: context.l10n.journalBebidaEnergetica80mg,
+                      onTap: () => _logQuickDose(name: context.l10n.journalBebidaEnergetica, mg: 80),
                     ),
                     ActionChip(
-                      label: Text(_isCustomMode ? 'Cerrar' : '+ Personalizado'),
+                      label: Text(_isCustomMode ? context.l10n.commonClose: context.l10n.journalPersonalizado),
                       onPressed: () {
                         setState(() => _isCustomMode = !_isCustomMode);
                       },
@@ -309,9 +303,9 @@ class _CaffeineTrackerSheetState extends ConsumerState<CaffeineTrackerSheet> {
                       Expanded(
                         child: TextField(
                           controller: _customNameCtrl,
-                          decoration: const InputDecoration(
-                            labelText: 'Bebida o suplemento',
-                            hintText: 'Ej. Matcha latte',
+                          decoration: InputDecoration(
+                            labelText: context.l10n.journalBebidaOSuplemento,
+                            hintText: context.l10n.journalEjMatchaLatte,
                           ),
                         ),
                       ),
@@ -321,8 +315,8 @@ class _CaffeineTrackerSheetState extends ConsumerState<CaffeineTrackerSheet> {
                         child: TextField(
                           controller: _customMgCtrl,
                           keyboardType: TextInputType.number,
-                          decoration: const InputDecoration(
-                            labelText: 'Mg',
+                          decoration: InputDecoration(
+                            labelText: context.l10n.journalMg3,
                             suffixText: 'mg',
                           ),
                         ),
@@ -349,7 +343,7 @@ class _CaffeineTrackerSheetState extends ConsumerState<CaffeineTrackerSheet> {
 
                 // Lista de tomas de hoy
                 Text(
-                  'Tomas de hoy (${logs.length}):',
+                  context.l10n.journalTomasDeHoy(logs.length.toString()),
                   style: TextStyle(
                     fontFamily: ScFonts.ui,
                     fontSize: 13,
@@ -364,7 +358,7 @@ class _CaffeineTrackerSheetState extends ConsumerState<CaffeineTrackerSheet> {
                     padding: const EdgeInsets.symmetric(vertical: 20),
                     alignment: Alignment.center,
                     child: Text(
-                      'No hay tomas registradas hoy. Tu sistema está libre de cafeína.',
+                      context.l10n.journalNoHayTomasRegistradasHoy,
                       style: TextStyle(
                         fontFamily: ScFonts.ui,
                         fontSize: 12.5,
@@ -393,7 +387,7 @@ class _CaffeineTrackerSheetState extends ConsumerState<CaffeineTrackerSheet> {
                           Icon(Icons.access_time_rounded, size: 16, color: c.text2),
                           const SizedBox(width: 6),
                           Text(
-                            '${log.loggedAt.hour.toString().padLeft(2, '0')}:${log.loggedAt.minute.toString().padLeft(2, '0')}',
+                            DateFormats.time(log.loggedAt, context.l10n.localeName),
                             style: TextStyle(
                               fontFamily: ScFonts.ui,
                               fontSize: 12,
@@ -414,7 +408,7 @@ class _CaffeineTrackerSheetState extends ConsumerState<CaffeineTrackerSheet> {
                             ),
                           ),
                           Text(
-                            '${log.caffeineMg.toStringAsFixed(0)} mg',
+                            context.l10n.journalMg4(log.caffeineMg.toStringAsFixed(0).toString()),
                             style: TextStyle(
                               fontFamily: ScFonts.display,
                               fontSize: 13.5,
@@ -424,7 +418,7 @@ class _CaffeineTrackerSheetState extends ConsumerState<CaffeineTrackerSheet> {
                           ),
                           IconButton(
                             icon: Icon(Icons.delete_outline_rounded, size: 18, color: c.text2),
-                            onPressed: () => unawaited(_deleteDose(log.id, log.sourceName)),
+                            onPressed: () => unawaited(_deleteDose(log)),
                           ),
                         ],
                       ),
@@ -441,7 +435,7 @@ class _CaffeineTrackerSheetState extends ConsumerState<CaffeineTrackerSheet> {
                             halfLifeHours:
                                 CaffeinePharmacokineticsService.halfLifeHours,
                             bedtimeCurfewTime:
-                                '${status.recommendedCutoffTime.hour.toString().padLeft(2, '0')}:${status.recommendedCutoffTime.minute.toString().padLeft(2, '0')}',
+                                DateFormats.time(status.recommendedCutoffTime, context.l10n.localeName),
                             residualAtBedtimeMg: status.bedtimeResidualMg,
                           ),
                         ),
@@ -449,7 +443,7 @@ class _CaffeineTrackerSheetState extends ConsumerState<CaffeineTrackerSheet> {
                     },
                     icon: Icon(Icons.science_rounded, size: 16, color: c.accent),
                     label: Text(
-                      '¿Por qué importa la cafeína para el sueño profundo?',
+                      context.l10n.journalPorQueImportaLaCafeina,
                       style: TextStyle(
                         fontFamily: ScFonts.ui,
                         fontSize: 12,

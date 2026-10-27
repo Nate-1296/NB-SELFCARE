@@ -56,6 +56,7 @@
 ### ADR-09: Lienzo Procedural Nativo (`CustomPainter`) sobre Archivos Rive Externos
 * **Contexto:** Depender obligatoriamente de un archivo binario `.riv` en disco provoca excepciones fatales si el archivo se corrompe o no existe en el primer arranque.
 * **Decisión:** Implementar la mascota por defecto como un `CustomPainter` procedural en Flutter con interpolación de curvas y 60 fps nativos. El soporte para archivos `.riv` externos se mantiene como una capa opcional.
+* **Estado (2026-10-26):** la implementación actual usa sprites PNG estáticos (`assets/images/nibi_sprites/`), que solo permiten cambiar de "sticker". Se reemplazará por una mascota animada (Rive empaquetado en `assets/` o `CustomPainter` esqueletal) en la fase final del plan de `15_AUDITORIA_AAA.md`. El riesgo original (archivo ausente) se mitiga empaquetando el `.riv` como asset y conservando un fallback estático.
 
 ---
 
@@ -75,3 +76,14 @@
 * **Contexto:** Las pantallas de papel electrónico o modo tinta del TCL 50 Pro sufren de estelas grises (*ghosting*) ante transiciones animadas fluidas y sombras difusas.
 * **Decisión:** Implementar un tema específico `nxtpaper_eink` con elevación cero, bordes sólidos de $1.5\text{ px}$, paleta blanco hueso/negro tinta y desactivación de animaciones de transición en gráficas (`Duration.zero`).
 
+
+---
+
+### ADR-13: ML Kit on-device para código de barras y OCR (excepción documentada a Zero-Telemetry)
+* **Contexto:** `mobile_scanner` (Android) y `google_mlkit_text_recognition` usan Google ML Kit. Todo el procesamiento de imagen ocurre en el dispositivo, pero ML Kit envía a Google métricas anónimas de uso y rendimiento de la API. Las alternativas evaluadas son zxing-cpp (`flutter_zxing`) para códigos y Tesseract para OCR.
+* **Criterio del dueño del producto:** solo se cambia una pieza si la alternativa funciona igual o mejor; el escáner de códigos y la consulta a Open Food Facts no pueden degradarse.
+* **Decisión:** se mantiene ML Kit para ambos casos. zxing-cpp es competitivo en EAN-13 bien iluminado pero inferior en ángulos, desenfoque y poca luz; Tesseract es claramente inferior a ML Kit leyendo tablas nutricionales.
+* **Consecuencias:**
+  * Ninguna imagen, código escaneado ni dato del usuario sale del dispositivo por ML Kit; solo métricas técnicas de la API.
+  * Ningún otro SDK de Google o de terceros puede añadirse amparándose en esta excepción.
+  * Si aparece una alternativa sin telemetría con calidad equivalente, se reabre esta decisión.

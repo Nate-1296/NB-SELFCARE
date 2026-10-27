@@ -52,6 +52,7 @@ class TopBar extends StatelessWidget {
     } else if (pageIcon != null) {
       leadingWidget = GestureDetector(
         onTap: onProfile,
+        behavior: HitTestBehavior.opaque,
         child: Container(
           width: avatarSize,
           height: avatarSize,

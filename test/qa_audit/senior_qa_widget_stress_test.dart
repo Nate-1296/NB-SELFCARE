@@ -3,12 +3,15 @@ import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-
 import 'package:nb_selfcare/core/database/app_database.dart';
-import 'package:nb_selfcare/core/database/daos/tdee_dao.dart';
 import 'package:nb_selfcare/core/database/daos/user_profile_dao.dart';
+import 'package:nb_selfcare/core/domain/enums.dart';
+import 'package:nb_selfcare/core/l10n/l10n.dart';
+import 'package:nb_selfcare/features/profile_goals/application/profile_queries.dart';
 import 'package:nb_selfcare/features/profile_goals/presentation/perfil_yo_screen.dart';
 import 'package:nb_selfcare/shared/theme/sc_theme.dart';
+
+import '../support/widget_test_helpers.dart';
 
 void main() {
   late AppDatabase db;
@@ -22,7 +25,7 @@ void main() {
       UserProfilesCompanion(
         name: const drift.Value('Nathan QA'),
         birthDate: drift.Value(DateTime(1996, 4, 12)),
-        biologicalSex: const drift.Value('male'),
+        biologicalSex: const drift.Value(BiologicalSex.male),
         heightCm: const drift.Value(178.0),
         targetWeightKg: const drift.Value(72.0),
         weeklyGoalRateKg: const drift.Value(-0.4),
@@ -55,7 +58,7 @@ void main() {
               id: 1,
               name: 'Nathan QA',
               birthDate: DateTime(1996, 4, 12),
-              biologicalSex: 'male',
+              biologicalSex: BiologicalSex.male,
               heightCm: 178.0,
               targetWeightKg: 72.0,
               weeklyGoalRateKg: -0.4,
@@ -68,16 +71,22 @@ void main() {
               isCycleTrackingEnabled: false,
               isFastingEnabled: true,
               isManualMacroMode: false,
-              activeDietArchetype: 'mediterranean',
-              activeDietPhase: 'deficit',
+              activeDietArchetype: DietArchetype.mediterranean,
+              activeDietPhase: DietPhase.deficit,
               calorieCyclingScheduleJson: '',
               caffeineBedtimeCutoffHours: 8.0,
+              hasImpedanceContraindication: false,
+              hasEatingDisorderHistory: false,
+              takesHypoglycemicMedication: false,
               createdAt: DateTime.now(),
             ),
           ),
         ),
       ],
       child: MaterialApp(
+        locale: const Locale('es'),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         theme: themeData,
         home: MediaQuery(
           data: MediaQueryData(size: screenSize),
@@ -100,12 +109,13 @@ void main() {
 
       expect(find.text('Nathan QA'), findsOneWidget);
 
-      final Finder titleFinder = find.text('Correlaciones Estadísticas (Pearson r)');
+      final Finder titleFinder = find.text('Tus patrones');
       await tester.scrollUntilVisible(titleFinder, 150.0);
       await tester.pumpAndSettle();
 
       expect(titleFinder, findsOneWidget);
       expect(tester.takeException(), isNull);
+      await unmountAndFlush(tester);
     });
 
     testWidgets('NXTPAPER High-Contrast E-Ink theme renders cleanly with zero elevation and flat borders', (WidgetTester tester) async {
@@ -123,6 +133,7 @@ void main() {
 
       expect(find.text('Nathan QA'), findsOneWidget);
       expect(tester.takeException(), isNull);
+      await unmountAndFlush(tester);
     });
 
     testWidgets('Interactive Pearson Correlation Refresh button triggers recomputation smoothly', (WidgetTester tester) async {
@@ -134,7 +145,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // Scroll down to Cross Analytics card
-      final Finder refreshBtn = find.byTooltip('Recalcular correlaciones');
+      final Finder refreshBtn = find.byTooltip('Volver a calcular');
       await tester.scrollUntilVisible(refreshBtn, 150.0);
       await tester.drag(find.byType(ListView), const Offset(0, -120));
       await tester.pumpAndSettle();
@@ -146,6 +157,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(tester.takeException(), isNull);
+      await unmountAndFlush(tester);
     });
   });
 }

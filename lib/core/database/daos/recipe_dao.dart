@@ -1,43 +1,18 @@
 import 'package:drift/drift.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../clock/clock.dart';
+import '../../domain/enums.dart';
 import '../app_database.dart';
+import '../models/recipe_models.dart';
 
-/// Modelo ligero para definir un ingrediente crudo al crear o editar una receta.
-class RecipeIngredientDraft {
-  const RecipeIngredientDraft({
-    required this.foodItemId,
-    required this.rawGrams,
-  });
-
-  final int foodItemId;
-  final double rawGrams;
-}
-
-/// Agregado que combina una receta con sus ingredientes completos resueltos.
-class RecipeWithIngredients {
-  const RecipeWithIngredients({
-    required this.recipe,
-    required this.ingredients,
-  });
-
-  final Recipe recipe;
-  final List<ResolvedRecipeIngredient> ingredients;
-}
-
-class ResolvedRecipeIngredient {
-  const ResolvedRecipeIngredient({
-    required this.ingredient,
-    required this.foodItem,
-  });
-
-  final RecipeIngredient ingredient;
-  final FoodItem foodItem;
-}
+export '../models/recipe_models.dart';
 
 /// DAO para gestión de recetas caseras multiración (Batch Cooking & Meal Prep).
 class RecipeDao {
-  RecipeDao(this._db);
+  RecipeDao(this._db, {this._clock = const Clock()});
+
+  final Clock _clock;
 
   final AppDatabase _db;
 
@@ -83,7 +58,7 @@ class RecipeDao {
   Future<int> createRecipe({
     required String name,
     String? description,
-    String defaultMealType = 'lunch',
+    MealType defaultMealType = MealType.lunch,
     required int totalYieldServings,
     double? cookedTotalWeightGrams,
     required List<RecipeIngredientDraft> ingredients,
@@ -139,7 +114,7 @@ class RecipeDao {
       sodiumMgPerServing: Value(double.parse((totalSod / yieldD).toStringAsFixed(1))),
       potassiumMgPerServing: Value(double.parse((totalPot / yieldD).toStringAsFixed(1))),
       magnesiumMgPerServing: Value(double.parse((totalMag / yieldD).toStringAsFixed(1))),
-      lastUsedAt: Value(DateTime.now()),
+      lastUsedAt: Value(_clock.now()),
     );
 
     return _db.transaction(() async {
@@ -165,19 +140,12 @@ class RecipeDao {
   /// Actualiza la fecha de último uso de una receta.
   Future<void> touchRecipe(int id) async {
     final query = _db.update(_db.recipes)..where((tbl) => tbl.id.equals(id));
-    await query.write(RecipesCompanion(lastUsedAt: Value(DateTime.now())));
+    await query.write(RecipesCompanion(lastUsedAt: Value(_clock.now())));
   }
 }
 
 /// Provider de Riverpod para inyectar RecipeDao.
 final recipeDaoProvider = Provider<RecipeDao>((ref) {
   final AppDatabase db = ref.watch(appDatabaseProvider);
-  return RecipeDao(db);
+  return RecipeDao(db, clock: ref.watch(clockProvider));
 });
-
-/// StreamProvider reactivo que expone todas las recetas caseras ordenadas por uso reciente.
-final allRecipesStreamProvider = StreamProvider<List<Recipe>>((ref) {
-  final RecipeDao dao = ref.watch(recipeDaoProvider);
-  return dao.watchAllRecipes();
-});
-

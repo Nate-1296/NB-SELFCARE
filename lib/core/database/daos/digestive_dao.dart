@@ -1,11 +1,14 @@
 import 'package:drift/drift.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../clock/clock.dart';
 import '../app_database.dart';
 
 /// DAO para seguimiento de salud gastrointestinal, síntomas y Escala de Bristol (1 a 7).
 class DigestiveDao {
-  DigestiveDao(this._db);
+  DigestiveDao(this._db, {this._clock = const Clock()});
+
+  final Clock _clock;
 
   final AppDatabase _db;
 
@@ -44,10 +47,13 @@ class DigestiveDao {
             discomfortLevel: Value(discomfortLevel),
             symptomsJson: Value(symptomsJson),
             notes: Value(notes),
-            loggedAt: Value(DateTime.now()),
+            loggedAt: Value(_clock.now()),
           ),
         );
   }
+
+  /// Reinserta un registro borrado (flujo Deshacer).
+  Future<void> restoreLog(DigestiveLog log) => _db.into(_db.digestiveLogs).insertOnConflictUpdate(log);
 
   /// Elimina un registro digestivo.
   Future<int> deleteLog(int id) {
@@ -57,7 +63,7 @@ class DigestiveDao {
   /// Obtiene los registros con malestar significativo (discomfort >= 3)
   /// en los últimos [days] para el motor de correlaciones cruzadas.
   Future<List<DigestiveLog>> getRecentDiscomfortLogs(int days) async {
-    final DateTime cutoff = DateTime.now().subtract(Duration(days: days));
+    final DateTime cutoff = _clock.now().subtract(Duration(days: days));
     return (_db.select(_db.digestiveLogs)
           ..where((tbl) => tbl.loggedAt.isBiggerOrEqualValue(cutoff) & tbl.discomfortLevel.isBiggerOrEqualValue(3))
           ..orderBy([(tbl) => OrderingTerm(expression: tbl.loggedAt, mode: OrderingMode.desc)]))
@@ -68,6 +74,6 @@ class DigestiveDao {
 /// Provider de Riverpod para inyectar DigestiveDao.
 final digestiveDaoProvider = Provider<DigestiveDao>((ref) {
   final AppDatabase db = ref.watch(appDatabaseProvider);
-  return DigestiveDao(db);
+  return DigestiveDao(db, clock: ref.watch(clockProvider));
 });
 

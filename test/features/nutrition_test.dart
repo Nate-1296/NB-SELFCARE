@@ -13,10 +13,15 @@ import 'package:nb_selfcare/core/database/daos/food_dao.dart';
 import 'package:nb_selfcare/core/database/daos/hydration_dao.dart';
 import 'package:nb_selfcare/core/database/daos/pet_dao.dart';
 import 'package:nb_selfcare/core/database/daos/user_profile_dao.dart';
+import 'package:nb_selfcare/core/domain/enums.dart';
+import 'package:nb_selfcare/core/l10n/l10n.dart';
 import 'package:nb_selfcare/core/services/open_food_facts_service.dart';
+import 'package:nb_selfcare/features/nutrition_hydration/application/hydration_service.dart';
 import 'package:nb_selfcare/features/nutrition_hydration/presentation/nutricion_screen.dart';
 import 'package:nb_selfcare/shared/theme/sc_theme.dart';
 import 'package:nb_selfcare/shared/utils/current_date_provider.dart';
+
+import '../support/test_container.dart';
 
 class _FixedDateNotifier extends CurrentDateNotifier {
   _FixedDateNotifier(this._fixed);
@@ -36,14 +41,14 @@ void main() {
     db = AppDatabase(NativeDatabase.memory());
     foodDao = FoodDao(db);
     petDao = PetDao(db);
-    hydrationDao = HydrationDao(db, petDao);
+    hydrationDao = HydrationDao(db);
 
     // Perfil inicial
     await UserProfileDao(db).createProfile(
       UserProfilesCompanion(
         name: const drift.Value('Nathan'),
         birthDate: drift.Value(DateTime(1998, 5, 20)),
-        biologicalSex: const drift.Value('male'),
+        biologicalSex: const drift.Value(BiologicalSex.male),
         heightCm: const drift.Value(178.0),
         targetWeightKg: const drift.Value(72.0),
         weeklyGoalRateKg: const drift.Value(-0.5),
@@ -122,7 +127,7 @@ void main() {
       final huevoId = await foodDao.insertFood(
         const FoodItemsCompanion(
           name: drift.Value('Huevo Entero'),
-          source: drift.Value('usda_seed'),
+          source: drift.Value(FoodSource.usdaSeed),
           kcalPer100g: drift.Value(143.0),
           proteinPer100g: drift.Value(12.6),
           carbsPer100g: drift.Value(0.7),
@@ -133,7 +138,7 @@ void main() {
       final aguacateId = await foodDao.insertFood(
         const FoodItemsCompanion(
           name: drift.Value('Aguacate Hass'),
-          source: drift.Value('usda_seed'),
+          source: drift.Value(FoodSource.usdaSeed),
           kcalPer100g: drift.Value(160.0),
           proteinPer100g: drift.Value(2.0),
           carbsPer100g: drift.Value(8.5),
@@ -144,7 +149,7 @@ void main() {
       // 2. Crear combo con 100g de huevo y 50g de aguacate
       final comboId = await foodDao.createCombo(
         name: 'Desayuno Keto',
-        defaultMealType: 'breakfast',
+        defaultMealType: MealType.breakfast,
         itemsWithGrams: [
           MapEntry(huevoId, 100.0),
           MapEntry(aguacateId, 50.0),
@@ -156,7 +161,7 @@ void main() {
         comboId: comboId,
         multiplier: 1.5,
         dateKey: '2026-10-23',
-        mealType: 'breakfast',
+        mealType: MealType.breakfast,
       );
 
       expect(loggedIds, hasLength(2));
@@ -164,7 +169,7 @@ void main() {
       // 4. Verificar logs escalados:
       // Huevo 100g * 1.5 = 150g -> 143 * 1.5 = 214.5 kcal
       // Aguacate 50g * 1.5 = 75g -> 160 * 0.75 = 120.0 kcal
-      final logs = await foodDao.getLogsForDateAndMeal('2026-10-23', 'breakfast');
+      final logs = await foodDao.getLogsForDateAndMeal('2026-10-23', MealType.breakfast);
       expect(logs, hasLength(2));
 
       final huevoLog = logs.firstWhere((l) => l.foodItemId == huevoId);
@@ -182,7 +187,7 @@ void main() {
       final foodId = await foodDao.insertFood(
         const FoodItemsCompanion(
           name: drift.Value('Pechuga de Pollo'),
-          source: drift.Value('usda_seed'),
+          source: drift.Value(FoodSource.usdaSeed),
           kcalPer100g: drift.Value(165.0),
           proteinPer100g: drift.Value(31.0),
           carbsPer100g: drift.Value(0.0),
@@ -195,7 +200,7 @@ void main() {
         FoodLogsCompanion(
           dateKey: const drift.Value('2026-10-22'),
           loggedAt: drift.Value(DateTime(2026, 10, 22, 13, 0)),
-          mealType: const drift.Value('lunch'),
+          mealType: const drift.Value(MealType.lunch),
           foodItemId: drift.Value(foodId),
           gramsConsumed: const drift.Value(200.0),
           portionMultiplier: const drift.Value(1.0),
@@ -214,12 +219,12 @@ void main() {
       final repeated = await foodDao.repeatMealFromYesterday(
         fromDateKey: '2026-10-22',
         toDateKey: '2026-10-23',
-        mealType: 'lunch',
+        mealType: MealType.lunch,
       );
 
       expect(repeated, hasLength(1));
 
-      final todayLogs = await foodDao.getLogsForDateAndMeal('2026-10-23', 'lunch');
+      final todayLogs = await foodDao.getLogsForDateAndMeal('2026-10-23', MealType.lunch);
       expect(todayLogs, hasLength(1));
       expect(todayLogs.first.gramsConsumed, equals(200.0));
       expect(todayLogs.first.totalKcal, equals(330.0));
@@ -228,25 +233,30 @@ void main() {
 
   group('Registro Atómico de Hidratación y Recompensas', () {
     test('Registrar vasos acumula mililitros y otorga recompensa al alcanzar la meta diaria', () async {
-      // Registrar 4 vasos de 500ml = 2000ml (alcanza la meta diaria de 2000ml)
-      await hydrationDao.logGlass(dateKey: '2026-10-23', volumeMl: 500, dailyGoalMl: 2000);
-      await hydrationDao.logGlass(dateKey: '2026-10-23', volumeMl: 500, dailyGoalMl: 2000);
-      await hydrationDao.logGlass(dateKey: '2026-10-23', volumeMl: 500, dailyGoalMl: 2000);
+      final ProviderContainer container = createTestContainer(db);
+      addTearDown(container.dispose);
+      final HydrationService service = container.read(hydrationServiceProvider);
 
-      // Todavía 1500 ml -> saldo debe seguir en 50
+      // 3 vasos de 500 ml = 1500 ml: todavía no alcanza la meta de 2000 ml del perfil.
+      for (int i = 0; i < 3; i++) {
+        await service.logGlass(dateKey: '2026-10-23', volumeMl: 500);
+      }
       var pet = await petDao.getPetStatus();
       expect(pet!.coinsBalance, equals(50));
 
       // Cuarto vaso -> 2000 ml alcanzados -> otorga +15 monedas (50 + 15 = 65)
-      await hydrationDao.logGlass(dateKey: '2026-10-23', volumeMl: 500, dailyGoalMl: 2000);
-
+      final WaterLogResult goal = await service.logGlass(dateKey: '2026-10-23', volumeMl: 500);
+      expect(goal.totalMl, equals(2000));
+      expect(goal.coins, equals(15));
       pet = await petDao.getPetStatus();
       expect(pet!.coinsBalance, equals(65));
 
       // Un quinto vaso no debe otorgar doble recompensa (idempotencia diaria)
-      await hydrationDao.logGlass(dateKey: '2026-10-23', volumeMl: 250, dailyGoalMl: 2000);
+      final WaterLogResult extra = await service.logGlass(dateKey: '2026-10-23', volumeMl: 250);
+      expect(extra.coins, equals(0));
       pet = await petDao.getPetStatus();
       expect(pet!.coinsBalance, equals(65));
+      expect(await hydrationDao.getTotalWaterMl('2026-10-23'), equals(2250));
     });
   });
 
@@ -259,7 +269,7 @@ void main() {
         tester.view.devicePixelRatio = 1.0;
         addTearDown(tester.view.resetPhysicalSize);
 
-        final FastingDao fastingDao = FastingDao(db, petDao);
+        final FastingDao fastingDao = FastingDao(db);
         final DateTime fixedDate = DateTime(2026, 10, 24, 13, 0);
 
         for (final String themeId in <String>[
@@ -279,6 +289,9 @@ void main() {
                 ),
               ],
               child: MaterialApp(
+                locale: const Locale('es'),
+                localizationsDelegates: AppLocalizations.localizationsDelegates,
+                supportedLocales: AppLocalizations.supportedLocales,
                 theme: ScTheme.build(themeId),
                 home: const NutricionScreen(),
               ),
@@ -288,17 +301,16 @@ void main() {
           await tester.pumpAndSettle();
 
           expect(find.text('Comida'), findsOneWidget);
-          expect(find.text('24/10/2026'), findsOneWidget);
-          expect(find.text('Buscar alimento o marca...'), findsOneWidget);
-          expect(find.text('Dictado IA'), findsOneWidget);
-          expect(find.text('Mis Combos'), findsOneWidget);
+          expect(find.text('Sábado, 24 de octubre'), findsOneWidget);
+          expect(find.text('Buscar alimento o marca'), findsOneWidget);
+          expect(find.text('Escribir comida').first, findsOneWidget);
+          expect(find.text('Mis combos'), findsOneWidget);
           expect(find.text('Ayuno'), findsOneWidget);
           expect(find.text('Crear alimento'), findsOneWidget);
           expect(find.text('Balance energético'), findsOneWidget);
-          expect(find.text('Electrolitos y Fibra'), findsOneWidget);
 
           // Desplazar hasta el bloque de Hidratación para validar toda la lista sin overflows
-          final Finder waterTitle = find.text('Agua acumulada');
+          final Finder waterTitle = find.text('Agua de hoy');
           await tester.scrollUntilVisible(
             waterTitle,
             300,
@@ -322,7 +334,7 @@ void main() {
         tester.view.devicePixelRatio = 1.0;
         addTearDown(tester.view.resetPhysicalSize);
 
-        final FastingDao fastingDao = FastingDao(db, petDao);
+        final FastingDao fastingDao = FastingDao(db);
         final DateTime fixedDate = DateTime(2026, 10, 24, 13, 0);
 
         // Insertar un producto comercial con Nutri-Score B y sin potasio/magnesio reportados
@@ -330,7 +342,7 @@ void main() {
           const FoodItemsCompanion(
             name: drift.Value('Yogur Griego Artesanal'),
             brand: drift.Value('Alpina'),
-            source: drift.Value('open_food_facts'),
+            source: drift.Value(FoodSource.openFoodFacts),
             nutriScore: drift.Value('B'),
             defaultServingGrams: drift.Value(150.0),
             servingLabel: drift.Value('1 vaso'),
@@ -358,6 +370,9 @@ void main() {
               ),
             ],
             child: MaterialApp(
+              locale: const Locale('es'),
+              localizationsDelegates: AppLocalizations.localizationsDelegates,
+              supportedLocales: AppLocalizations.supportedLocales,
               theme: ScTheme.build('samsung_dark'),
               home: const NutricionScreen(),
             ),
@@ -367,7 +382,7 @@ void main() {
         await tester.pumpAndSettle();
 
         // Abrir subpágina de búsqueda FTS5
-        await tester.tap(find.text('Buscar alimento o marca...'));
+        await tester.tap(find.text('Buscar alimento o marca'));
         await tester.pumpAndSettle();
 
         expect(find.text('Añadir alimento'), findsOneWidget);
@@ -406,7 +421,7 @@ void main() {
         tester.view.devicePixelRatio = 1.0;
         addTearDown(tester.view.resetPhysicalSize);
 
-        final FastingDao fastingDao = FastingDao(db, petDao);
+        final FastingDao fastingDao = FastingDao(db);
         final DateTime fixedDate = DateTime(2026, 10, 24, 13, 0);
 
         await tester.pumpWidget(
@@ -422,6 +437,9 @@ void main() {
               ),
             ],
             child: MaterialApp(
+              locale: const Locale('es'),
+              localizationsDelegates: AppLocalizations.localizationsDelegates,
+              supportedLocales: AppLocalizations.supportedLocales,
               theme: ScTheme.build('samsung_dark'),
               home: const NutricionScreen(),
             ),
@@ -461,19 +479,19 @@ void main() {
     );
 
     testWidgets(
-      'Subpáginas Dictado IA, Mis Combos y Crear alimento abren sin overflows en 390px',
+      'Subpáginas Escribir comida, Mis Combos y Crear alimento abren sin overflows en 390px',
       (WidgetTester tester) async {
         tester.view.physicalSize = const Size(390, 920);
         tester.view.devicePixelRatio = 1.0;
         addTearDown(tester.view.resetPhysicalSize);
 
-        final FastingDao fastingDao = FastingDao(db, petDao);
+        final FastingDao fastingDao = FastingDao(db);
         final DateTime fixedDate = DateTime(2026, 10, 24, 9, 0);
 
         final int avenaId = await foodDao.insertFood(
           const FoodItemsCompanion(
             name: drift.Value('Avena Integral'),
-            source: drift.Value('usda_seed'),
+            source: drift.Value(FoodSource.usdaSeed),
             kcalPer100g: drift.Value(375.0),
             proteinPer100g: drift.Value(13.0),
             carbsPer100g: drift.Value(66.0),
@@ -482,7 +500,7 @@ void main() {
         );
         await foodDao.createCombo(
           name: 'Desayuno Avena Base',
-          defaultMealType: 'breakfast',
+          defaultMealType: MealType.breakfast,
           itemsWithGrams: <MapEntry<int, double>>[
             MapEntry<int, double>(avenaId, 80.0),
           ],
@@ -501,6 +519,9 @@ void main() {
               ),
             ],
             child: MaterialApp(
+              locale: const Locale('es'),
+              localizationsDelegates: AppLocalizations.localizationsDelegates,
+              supportedLocales: AppLocalizations.supportedLocales,
               theme: ScTheme.build('samsung_dark'),
               home: const NutricionScreen(),
             ),
@@ -509,17 +530,17 @@ void main() {
 
         await tester.pumpAndSettle();
 
-        // 1. Dictado IA
-        await tester.tap(find.text('Dictado IA'));
+        // 1. Escribir comida
+        await tester.tap(find.text('Escribir comida').first);
         await tester.pumpAndSettle();
-        expect(find.text('Dictado con IA Local'), findsOneWidget);
+        expect(find.text('Escribir comida'), findsWidgets);
         await tester.tap(find.byTooltip('Cerrar'));
         await tester.pumpAndSettle();
 
         // 2. Mis Combos
-        await tester.tap(find.text('Mis Combos'));
+        await tester.tap(find.text('Mis combos'));
         await tester.pumpAndSettle();
-        expect(find.text('Mis Combos Caseros'), findsOneWidget);
+        expect(find.text('Mis combos'), findsWidgets);
         expect(find.text('Desayuno Avena Base'), findsOneWidget);
         await tester.tap(find.byTooltip('Cerrar'));
         await tester.pumpAndSettle();

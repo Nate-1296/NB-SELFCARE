@@ -1,4 +1,5 @@
 import 'dart:convert';
+
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
@@ -6,6 +7,7 @@ import 'package:http/testing.dart';
 import 'package:nb_selfcare/core/database/app_database.dart';
 import 'package:nb_selfcare/core/database/daos/food_dao.dart';
 import 'package:nb_selfcare/core/database/daos/recipe_dao.dart';
+import 'package:nb_selfcare/core/domain/enums.dart';
 import 'package:nb_selfcare/core/services/nutrition_label_ocr_service.dart';
 import 'package:nb_selfcare/core/services/open_food_facts_service.dart';
 
@@ -143,7 +145,7 @@ void main() {
       final int arrozId = await db.into(db.foodItems).insert(
             FoodItemsCompanion.insert(
               name: 'Arroz Integral',
-              source: 'test',
+              source: FoodSource.userCustom,
               kcalPer100g: 350.0,
               proteinPer100g: 7.5,
               carbsPer100g: 74.0,
@@ -154,7 +156,7 @@ void main() {
       final int polloId = await db.into(db.foodItems).insert(
             FoodItemsCompanion.insert(
               name: 'Pechuga de Pollo',
-              source: 'test',
+              source: FoodSource.userCustom,
               kcalPer100g: 165.0,
               proteinPer100g: 31.0,
               carbsPer100g: 0.0,
@@ -170,7 +172,7 @@ void main() {
       // Porción (1/4): 556.25 kcal, 46.25g P, 74g C, 7g G
       final int recipeId = await recipeDao.createRecipe(
         name: 'Arroz con Pollo Meal Prep',
-        defaultMealType: 'lunch',
+        defaultMealType: MealType.lunch,
         totalYieldServings: 4,
         ingredients: <RecipeIngredientDraft>[
           RecipeIngredientDraft(foodItemId: arrozId, rawGrams: 400.0),

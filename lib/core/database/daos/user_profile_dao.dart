@@ -1,6 +1,7 @@
 import 'package:drift/drift.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../domain/enums.dart';
 import '../app_database.dart';
 
 /// DAO especializado para el perfil de usuario único y configuración biométrica.
@@ -87,7 +88,7 @@ class UserProfileDao {
   }
 
   /// Actualiza el arquetipo de dieta activo (ej. 'mediterranean', 'keto', 'flexible').
-  Future<void> updateDietArchetype(String archetype) async {
+  Future<void> updateDietArchetype(DietArchetype archetype) async {
     final UserProfile? current = await getProfile();
     if (current == null) return;
 
@@ -95,13 +96,19 @@ class UserProfileDao {
     await query.write(UserProfilesCompanion(activeDietArchetype: Value(archetype)));
   }
 
-  /// Actualiza la fase de dieta activa ('deficit', 'maintenance', 'diet_break', 'reverse_diet').
-  Future<void> updateDietPhase(String phase) async {
+  /// Cambia la fase de dieta activa y registra cuándo empezó (reverse diet, diet break).
+  /// Si la fase no cambia, se conserva su fecha de inicio original.
+  Future<void> updateDietPhase(DietPhase phase, {required DateTime startedAt}) async {
     final UserProfile? current = await getProfile();
-    if (current == null) return;
+    if (current == null || current.activeDietPhase == phase) return;
 
     final query = _db.update(_db.userProfiles)..where((tbl) => tbl.id.equals(current.id));
-    await query.write(UserProfilesCompanion(activeDietPhase: Value(phase)));
+    await query.write(
+      UserProfilesCompanion(
+        activeDietPhase: Value(phase),
+        activeDietPhaseStartedAt: Value(startedAt),
+      ),
+    );
   }
 
   /// Configura la activación del seguimiento del ciclo menstrual femenino.
@@ -127,10 +134,4 @@ class UserProfileDao {
 final userProfileDaoProvider = Provider<UserProfileDao>((ref) {
   final AppDatabase db = ref.watch(appDatabaseProvider);
   return UserProfileDao(db);
-});
-
-/// StreamProvider que expone el perfil actual de forma reactiva a la UI.
-final userProfileStreamProvider = StreamProvider<UserProfile?>((ref) {
-  final UserProfileDao dao = ref.watch(userProfileDaoProvider);
-  return dao.watchProfile();
 });

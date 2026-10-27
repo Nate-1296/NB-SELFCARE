@@ -1,17 +1,17 @@
-# Flutter Proguard Rules
--keep class io.flutter.app.** { *; }
--keep class io.flutter.plugin.**  { *; }
--keep class io.flutter.util.**  { *; }
--keep class io.flutter.view.**  { *; }
--keep class io.flutter.**  { *; }
--keep class io.flutter.plugins.**  { *; }
+# NB Selfcare — reglas R8 propias.
+# Los plugins de Flutter publican sus reglas de consumo en sus AAR; aquí solo va
+# lo que la app necesita y no cubren ellos.
 
-# Universal BLE
--keep class com.navideck.universal_ble.** { *; }
+# Canales nativos propios (MainActivity y servicios de plataforma).
+-keep class com.nb.selfcare.** { *; }
 
-# SQLite3 Native
--keep class org.sqlite.** { *; }
+# Google Play Core es referenciado por el embedding de Flutter (deferred components)
+# pero la app no lo usa.
+-dontwarn com.google.android.play.core.**
 
-# Java / Kotlin attributes
--keepattributes *Annotation*,InnerClasses,Signature,EnclosingMethod
-
+# google_mlkit_text_recognition referencia los reconocedores de escrituras no latinas,
+# que la app no incluye (solo se usa el modelo latino para tablas nutricionales).
+-dontwarn com.google.mlkit.vision.text.chinese.**
+-dontwarn com.google.mlkit.vision.text.devanagari.**
+-dontwarn com.google.mlkit.vision.text.japanese.**
+-dontwarn com.google.mlkit.vision.text.korean.**

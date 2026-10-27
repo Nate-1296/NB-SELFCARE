@@ -2,9 +2,9 @@ import 'dart:typed_data';
 
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
-
 import 'package:nb_selfcare/core/database/app_database.dart';
 import 'package:nb_selfcare/core/database/daos/milestone_dao.dart';
+import 'package:nb_selfcare/core/domain/enums.dart';
 import 'package:nb_selfcare/core/services/caffeine_pharmacokinetics_service.dart';
 import 'package:nb_selfcare/core/services/clinical_report_pdf_service.dart';
 import 'package:nb_selfcare/core/services/fasting_dosage_advisor.dart';
@@ -247,6 +247,8 @@ void main() {
         final FastingSafetyVerdict verdict = FastingDosageAdvisor.evaluateProtocolSafety(
           proposedTargetHours: 16,
           recentSessions: <FastingSession>[],
+
+          now: DateTime(2026, 10, 26, 12),
         );
         expect(verdict.isSafe, isTrue);
       });
@@ -261,7 +263,7 @@ void main() {
       });
 
       test('Consecutive OMAD (>19.5h within 36h) triggers recovery warning', () {
-        final DateTime now = DateTime.now();
+        final DateTime now = DateTime(2026, 10, 26, 12);
         final List<FastingSession> recent = <FastingSession>[
           FastingSession(
             id: 1,
@@ -278,6 +280,8 @@ void main() {
         final FastingSafetyVerdict verdict = FastingDosageAdvisor.evaluateProtocolSafety(
           proposedTargetHours: 23,
           recentSessions: recent,
+
+          now: DateTime(2026, 10, 26, 12),
         );
 
         expect(verdict.isSafe, isFalse);
@@ -346,12 +350,12 @@ void main() {
     // =========================================================================
     group('BiometricFormulas - Extreme & Edge Values', () {
       test('Dynamic age calculation with future birthdate or today', () {
-        final DateTime now = DateTime.now();
-        final double ageToday = BiometricFormulas.calculateDynamicAge(now);
+        final DateTime now = DateTime(2026, 10, 26, 12);
+        final double ageToday = BiometricFormulas.calculateDynamicAge(now, now);
         expect(ageToday, closeTo(0.0, 0.05));
 
         final DateTime centuryAgo = now.subtract(const Duration(days: 36525));
-        final double ageCentury = BiometricFormulas.calculateDynamicAge(centuryAgo);
+        final double ageCentury = BiometricFormulas.calculateDynamicAge(centuryAgo, now);
         expect(ageCentury, closeTo(100.0, 0.5));
       });
 
@@ -402,7 +406,7 @@ void main() {
           id: 1,
           name: 'Paciente Test',
           birthDate: DateTime(1995, 5, 10),
-          biologicalSex: 'male',
+          biologicalSex: BiologicalSex.male,
           heightCm: 178.0,
           targetWeightKg: 72.0,
           weeklyGoalRateKg: 0.5,
@@ -415,10 +419,13 @@ void main() {
           isCycleTrackingEnabled: false,
           isFastingEnabled: true,
           isManualMacroMode: false,
-          activeDietArchetype: 'mediterranean',
-          activeDietPhase: 'maintenance',
+          activeDietArchetype: DietArchetype.mediterranean,
+          activeDietPhase: DietPhase.maintenance,
           calorieCyclingScheduleJson: '',
           caffeineBedtimeCutoffHours: 8.0,
+          hasImpedanceContraindication: false,
+          hasEatingDisorderHistory: false,
+          takesHypoglycemicMedication: false,
           createdAt: DateTime.now(),
         );
 

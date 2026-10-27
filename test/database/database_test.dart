@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:nb_selfcare/core/database/app_database.dart';
 import 'package:nb_selfcare/core/database/daos/food_dao.dart';
 import 'package:nb_selfcare/core/database/seeder/database_seeder.dart';
+import 'package:nb_selfcare/core/domain/enums.dart';
 
 void main() {
   late AppDatabase db;
@@ -181,7 +182,7 @@ void main() {
       final int logId = await foodDao.logFood(
         FoodLogsCompanion.insert(
           dateKey: '2026-10-23',
-          mealType: 'breakfast',
+          mealType: MealType.breakfast,
           foodItemId: food.id,
           gramsConsumed: 100.0,
           totalKcal: food.kcalPer100g,
@@ -200,12 +201,12 @@ void main() {
         existingLog: inserted,
         food: food,
         newGrams: 150.0,
-        mealType: 'snack',
+        mealType: MealType.snack,
       );
 
       final updated = await (db.select(db.foodLogs)..where((t) => t.id.equals(logId))).getSingle();
       expect(updated.gramsConsumed, equals(150.0));
-      expect(updated.mealType, equals('snack'));
+      expect(updated.mealType, equals(MealType.snack));
       expect(updated.totalKcal, closeTo(food.kcalPer100g * 1.5, 0.5));
 
       await foodDao.deleteFoodLog(logId);

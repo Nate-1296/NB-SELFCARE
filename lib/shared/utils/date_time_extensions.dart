@@ -12,14 +12,14 @@ extension DateTimeExtensions on DateTime {
   ///
   /// Cumple con la regla inquebrantable de persistencia (AGENTS.md):
   /// La edad nunca se almacena como entero estático, sino que se deriva dinámicamente.
-  static double calculateAgeYears(DateTime birthDate, [DateTime? referenceDate]) {
-    final DateTime target = referenceDate ?? DateTime.now();
+  static double calculateAgeYears(DateTime birthDate, DateTime referenceDate) {
+    final DateTime target = referenceDate;
     final int differenceInDays = target.difference(birthDate).inDays;
     return differenceInDays / 365.25;
   }
 
   /// Retorna la edad cronológica redondeada en años enteros.
-  static int calculateAge(DateTime birthDate, [DateTime? referenceDate]) {
+  static int calculateAge(DateTime birthDate, DateTime referenceDate) {
     return calculateAgeYears(birthDate, referenceDate).floor();
   }
 

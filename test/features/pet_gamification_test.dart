@@ -7,9 +7,12 @@ import 'package:nb_selfcare/app.dart';
 import 'package:nb_selfcare/core/database/app_database.dart';
 import 'package:nb_selfcare/core/database/daos/pet_dao.dart';
 import 'package:nb_selfcare/core/database/daos/user_profile_dao.dart';
+import 'package:nb_selfcare/core/domain/enums.dart';
+import 'package:nb_selfcare/core/l10n/l10n.dart';
 import 'package:nb_selfcare/features/pet_gamification/presentation/nibi_screen.dart';
 import 'package:nb_selfcare/features/pet_gamification/presentation/shop_modal.dart';
 import 'package:nb_selfcare/features/pet_gamification/presentation/widgets/animated_nibi_view.dart';
+import 'package:nb_selfcare/shared/utils/date_formats.dart';
 
 void main() {
   late AppDatabase db;
@@ -23,7 +26,7 @@ void main() {
       UserProfilesCompanion(
         name: const drift.Value('Nathan'),
         birthDate: drift.Value(DateTime(1998, 5, 20)),
-        biologicalSex: const drift.Value('male'),
+        biologicalSex: const drift.Value(BiologicalSex.male),
         heightCm: const drift.Value(178.0),
         targetWeightKg: const drift.Value(72.0),
         weeklyGoalRateKg: const drift.Value(-0.5),
@@ -53,6 +56,9 @@ void main() {
         (tester) async {
       await tester.pumpWidget(
         const MaterialApp(
+          locale: Locale('es'),
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
           home: Scaffold(
             body: Column(
               children: [
@@ -106,6 +112,9 @@ void main() {
             appDatabaseProvider.overrideWithValue(db),
           ],
           child: const MaterialApp(
+            locale: Locale('es'),
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
             home: Scaffold(body: ShopModal()),
           ),
         ),
@@ -159,11 +168,9 @@ void main() {
         expect(find.text('Acciones Rápidas'), findsNothing);
         expect(find.text('Personalizar'), findsNothing);
 
-        // Fecha corta DD/MM/YYYY debajo del saludo
-        final DateTime now = DateTime.now();
-        final String expectedShortDate =
-            '${now.day.toString().padLeft(2, '0')}/${now.month.toString().padLeft(2, '0')}/${now.year.toString().padLeft(4, '0')}';
-        expect(find.text(expectedShortDate), findsOneWidget);
+        // Fecha legible del día debajo del saludo ("lunes, 26 de octubre")
+        final String day = DateFormats.weekdayDayMonth(DateTime.now(), 'es');
+        expect(find.text(day[0].toUpperCase() + day.substring(1)), findsOneWidget);
 
         // Capturar saludo inicial de la sesión y verificar que NO cambia al cambiar de pestaña y volver
         final Finder greetingFinder = find.textContaining('Nathan');
@@ -216,7 +223,7 @@ void main() {
         await tester.tap(editBottomBtn);
         await tester.pumpAndSettle();
 
-        final saveBtn = find.text('Guardar diseño de Hoy');
+        final saveBtn = find.text('Guardar diseño');
         await tester.scrollUntilVisible(
           saveBtn,
           350,
@@ -225,7 +232,7 @@ void main() {
         expect(saveBtn, findsOneWidget);
 
         // Volver arriba para ocultar Hidratación y verificar que pasa a la bandeja de ocultas
-        final hideHydration = find.byTooltip('Ocultar (Hidratación)');
+        final hideHydration = find.byTooltip('Ocultar (Agua)');
         await tester.scrollUntilVisible(
           hideHydration,
           -350,
@@ -298,11 +305,11 @@ void main() {
       expect(pet.unlockedItemsJson, isNot(contains('shield_1')));
 
       // Día 1 con multiplicador de sueño reparador 1.5x (10 * 1.5 = 15 monedas)
-      final grantedDay1 = await petDao.grantDailyReward(
+      final grantedDay1 = await petDao.recordReward(
         dateKey: '2026-10-20',
-        actionType: 'meal_log_breakfast',
-        baseAmount: 10,
-        sleepMultiplier: 1.5,
+        ledgerKey: 'meal_log_breakfast',
+        amount: 15,
+        multiplierApplied: 1.5,
       );
       expect(grantedDay1, isTrue);
 
@@ -311,10 +318,10 @@ void main() {
       expect(pet.currentStreakDays, equals(6));
 
       // Salto de 1 día (2026-10-21 sin actividad -> 2026-10-22 activo): consume 1 escudo y mantiene racha
-      await petDao.grantDailyReward(
+      await petDao.recordReward(
         dateKey: '2026-10-22',
-        actionType: 'weigh_in',
-        baseAmount: 15,
+        ledgerKey: 'weigh_in',
+        amount: 15,
       );
       pet = await petDao.getPetStatus();
       expect(pet!.streakShieldsAvailable, equals(1));
@@ -335,6 +342,9 @@ void main() {
             appDatabaseProvider.overrideWithValue(db),
           ],
           child: const MaterialApp(
+            locale: Locale('es'),
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
             home: NibiScreen(),
           ),
         ),

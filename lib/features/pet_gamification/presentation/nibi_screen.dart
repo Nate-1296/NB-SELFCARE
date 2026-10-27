@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/clock/clock.dart';
 import '../../../core/database/app_database.dart';
 import '../../../core/database/daos/fasting_dao.dart';
 import '../../../core/database/daos/health_sync_dao.dart';
@@ -231,7 +232,7 @@ class _NibiScreenState extends ConsumerState<NibiScreen>
                             sleepHours >= sleepGoal && sleepHours > 0;
 
                         final bool isKetosis = activeFast != null &&
-                            DateTime.now()
+                            ref.read(clockProvider).now()
                                     .difference(activeFast.startedAt)
                                     .inHours >=
                                 12;

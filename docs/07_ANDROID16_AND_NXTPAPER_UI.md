@@ -6,6 +6,8 @@
 
 ## 1. Manifiesto y Permisos de Android 16 (`AndroidManifest.xml`)
 
+> **Actualizado (2026-10-26):** el manifiesto real añade `READ_RESTING_HEART_RATE`, `READ_HEALTH_DATA_IN_BACKGROUND`, `POST_PROMOTED_NOTIFICATIONS`, `RECEIVE_BOOT_COMPLETED`, `RECORD_AUDIO`, `<queries>` para Health Connect y el reconocedor de voz, el `activity-alias` de uso de permisos de Android 14+ y los receptores de recordatorios. La implementación nativa vive en `android/app/src/main/kotlin/com/nb/selfcare/` (ver `15_AUDITORIA_AAA.md` §9, Fase 3).
+
 ```xml
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.nb.selfcare">

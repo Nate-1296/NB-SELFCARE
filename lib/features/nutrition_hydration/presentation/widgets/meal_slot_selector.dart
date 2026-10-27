@@ -3,57 +3,41 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../../../core/domain/enums.dart';
+import '../../../../core/l10n/l10n.dart';
 import '../../../../shared/theme/sc_colors.dart';
 import '../../../../shared/theme/sc_theme.dart';
 
 /// Metadatos visuales y semánticos unificados para cada momento de comida.
 class MealSlotMeta {
-  const MealSlotMeta({
-    required this.key,
-    required this.title,
-    required this.shortLabel,
-    required this.timeHint,
-    required this.icon,
-  });
+  const MealSlotMeta({required this.key, required this.icon});
 
-  final String key;
-  final String title;
-  final String shortLabel;
-  final String timeHint;
+  final MealType key;
   final IconData icon;
 
   static const List<MealSlotMeta> all = <MealSlotMeta>[
-    MealSlotMeta(
-      key: 'breakfast',
-      title: 'Desayuno',
-      shortLabel: 'Desayuno',
-      timeHint: '05:00 – 10:59',
-      icon: Icons.wb_twilight_rounded,
-    ),
-    MealSlotMeta(
-      key: 'lunch',
-      title: 'Almuerzo',
-      shortLabel: 'Almuerzo',
-      timeHint: '11:00 – 15:59',
-      icon: Icons.wb_sunny_rounded,
-    ),
-    MealSlotMeta(
-      key: 'dinner',
-      title: 'Cena',
-      shortLabel: 'Cena',
-      timeHint: '19:00 – 23:59',
-      icon: Icons.nights_stay_rounded,
-    ),
-    MealSlotMeta(
-      key: 'snack',
-      title: 'Snacks',
-      shortLabel: 'Snacks',
-      timeHint: 'Entre comidas',
-      icon: Icons.bakery_dining_rounded,
-    ),
+    MealSlotMeta(key: MealType.breakfast, icon: Icons.wb_twilight_rounded),
+    MealSlotMeta(key: MealType.lunch, icon: Icons.wb_sunny_rounded),
+    MealSlotMeta(key: MealType.dinner, icon: Icons.nights_stay_rounded),
+    MealSlotMeta(key: MealType.snack, icon: Icons.bakery_dining_rounded),
   ];
 
-  static MealSlotMeta of(String mealType) {
+  String title(AppLocalizations l10n) => switch (key) {
+        MealType.breakfast => l10n.foodDesayuno,
+        MealType.lunch => l10n.foodAlmuerzo,
+        MealType.dinner => l10n.foodCena,
+        MealType.snack => l10n.foodSnacks,
+      };
+
+  /// Franja horaria orientativa (coincide con `MealType.forHour`).
+  String timeHint(AppLocalizations l10n) => switch (key) {
+        MealType.breakfast => '05:00 – 10:59',
+        MealType.lunch => '11:00 – 15:59',
+        MealType.dinner => '19:00 – 23:59',
+        MealType.snack => l10n.foodEntreComidas,
+      };
+
+  static MealSlotMeta of(MealType mealType) {
     for (final MealSlotMeta item in all) {
       if (item.key == mealType) return item;
     }
@@ -61,26 +45,16 @@ class MealSlotMeta {
   }
 
   /// Determina el momento de comida sugerido según la hora actual del reloj.
-  static String suggestedKeyForNow([DateTime? now]) {
-    final int h = (now ?? DateTime.now()).hour;
-    if (h >= 5 && h < 11) return 'breakfast';
-    if (h >= 11 && h < 16) return 'lunch';
-    if (h >= 19 || h < 2) return 'dinner';
-    return 'snack';
-  }
+  static MealType suggestedKeyForNow(DateTime now) => MealType.forHour(now.hour);
 
   Color accentColor(ScColors c) {
     if (c.isFlat) return c.text;
-    switch (key) {
-      case 'breakfast':
-        return c.carbs;
-      case 'lunch':
-        return c.calories;
-      case 'dinner':
-        return c.fasting;
-      default:
-        return c.protein;
-    }
+    return switch (key) {
+      MealType.breakfast => c.carbs,
+      MealType.lunch => c.calories,
+      MealType.dinner => c.fasting,
+      MealType.snack => c.protein,
+    };
   }
 }
 
@@ -93,8 +67,8 @@ class MealSlotSelectorGrid extends StatelessWidget {
     this.compact = false,
   });
 
-  final String selectedMealType;
-  final ValueChanged<String> onSelected;
+  final MealType selectedMealType;
+  final ValueChanged<MealType> onSelected;
   final bool compact;
 
   @override
@@ -205,7 +179,7 @@ class _MealSlotTile extends StatelessWidget {
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  meta.title,
+                  meta.title(context.l10n),
                   softWrap: true,
                   style: TextStyle(
                     fontFamily: ScFonts.ui,
@@ -273,7 +247,7 @@ class NutriScoreBadge extends StatelessWidget {
           border: Border.all(color: c.line2, width: 1.4),
         ),
         child: Text(
-          'Nutri-Score $normalized',
+          context.l10n.foodNutriScore((normalized).toString()),
           style: TextStyle(
             fontFamily: ScFonts.ui,
             fontSize: 10.5,
@@ -292,7 +266,7 @@ class NutriScoreBadge extends StatelessWidget {
         border: Border.all(color: badgeColor.withValues(alpha: 0.6), width: 1),
       ),
       child: Text(
-        'Nutri-Score $normalized',
+        context.l10n.foodNutriScore((normalized).toString()),
         style: TextStyle(
           fontFamily: ScFonts.ui,
           fontSize: 10.5,
@@ -311,22 +285,14 @@ class FoodSourceBadge extends StatelessWidget {
     required this.source,
   });
 
-  final String source;
+  final FoodSource source;
 
-  String get _label {
-    switch (source) {
-      case 'usda_seed':
-        return 'USDA Base';
-      case 'open_food_facts':
-        return 'Open Food Facts';
-      case 'user_custom':
-        return 'Mi receta';
-      case 'ai_fallback':
-        return 'Estimación IA';
-      default:
-        return 'Catálogo local';
-    }
-  }
+  String _label(AppLocalizations l10n) => switch (source) {
+        FoodSource.usdaSeed => l10n.foodUsdaBase,
+        FoodSource.openFoodFacts => l10n.foodOpenFoodFacts,
+        FoodSource.userCustom => l10n.foodMiReceta,
+        FoodSource.textEstimate => l10n.foodEstimacion,
+      };
 
   @override
   Widget build(BuildContext context) {
@@ -342,7 +308,7 @@ class FoodSourceBadge extends StatelessWidget {
         ),
       ),
       child: Text(
-        _label,
+        _label(context.l10n),
         style: TextStyle(
           fontFamily: ScFonts.ui,
           fontSize: 10.5,

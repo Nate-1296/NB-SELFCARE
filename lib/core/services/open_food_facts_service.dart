@@ -1,10 +1,12 @@
 import 'dart:convert';
+
 import 'package:drift/drift.dart' as drift;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
 
 import '../database/app_database.dart';
 import '../database/daos/food_dao.dart';
+import '../domain/enums.dart';
 
 /// Servicio de resolución de alimentos mediante Open Food Facts
 /// con política inquebrantable de persistencia inmediata en SQLite local (FTS5).
@@ -211,7 +213,7 @@ class OpenFoodFactsService {
         barcode: drift.Value(rawCode),
         name: drift.Value(name),
         brand: drift.Value(brand),
-        source: const drift.Value('open_food_facts'),
+        source: const drift.Value(FoodSource.openFoodFacts),
         nutriScore: drift.Value(nutriScore),
         novaGroup: drift.Value(novaGroup),
         defaultServingGrams: const drift.Value(100.0),

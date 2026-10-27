@@ -53,17 +53,47 @@ class FastBreakStage {
 
 /// Asesor clínico y preventivo de dosificación segura del ayuno intermitente.
 class FastingDosageAdvisor {
+  /// Duración máxima por defecto con historial de trastornos de la conducta alimentaria (docs/01 §6).
+  static const int maxHoursWithEdHistory = 16;
+
+  /// Avisos derivados de las respuestas de seguridad del onboarding. Tienen
+  /// prioridad sobre la dosificación semanal porque dependen de la persona.
+  static FastingSafetyVerdict evaluatePersonalSafety({
+    required int proposedTargetHours,
+    required bool hasEatingDisorderHistory,
+    required bool takesHypoglycemicMedication,
+  }) {
+    if (hasEatingDisorderHistory && proposedTargetHours > maxHoursWithEdHistory) {
+      return FastingSafetyVerdict.warning(
+        title: 'Ayunos largos desactivados por defecto',
+        body: 'Indicaste antecedentes de trastornos de la conducta alimentaria. Para cuidarte, '
+            'NB Selfcare propone ventanas de hasta $maxHoursWithEdHistory h. Si tu equipo de '
+            'salud te indicó otra pauta, puedes continuar.',
+        recommendedAlternativeHours: maxHoursWithEdHistory,
+      );
+    }
+    if (takesHypoglycemicMedication) {
+      return FastingSafetyVerdict.warning(
+        title: 'Antes de ayunar, consulta tu medicación',
+        body: 'Los medicamentos que bajan la glucosa (insulina, sulfonilureas…) pueden requerir '
+            'ajustes durante el ayuno. Confirma esta pauta con tu médico y lleva contigo una '
+            'fuente rápida de azúcar.',
+      );
+    }
+    return FastingSafetyVerdict.safe();
+  }
+
   /// Evalúa si el protocolo propuesto es seguro respecto al historial de los últimos 7 días.
   static FastingSafetyVerdict evaluateProtocolSafety({
     required int proposedTargetHours,
     required List<FastingSession> recentSessions,
+    required DateTime now,
   }) {
     // Protocolos suaves o moderados (hasta 18h) son fisiológicamente seguros a diario
     if (proposedTargetHours < 20) {
       return FastingSafetyVerdict.safe();
     }
 
-    final DateTime now = DateTime.now();
     final DateTime sevenDaysAgo = now.subtract(const Duration(days: 7));
 
     // Filtrar sesiones completadas en los últimos 7 días con duración real ≥ 20 horas

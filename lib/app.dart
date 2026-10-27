@@ -1,10 +1,12 @@
 import 'dart:async';
+
+import 'package:dynamic_color/dynamic_color.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'app/router/app_router.dart';
 import 'core/constants/app_constants.dart';
 import 'core/l10n/generated/app_localizations.dart';
-import 'core/router/app_router.dart';
 import 'shared/theme/sc_theme.dart';
 import 'shared/theme/theme_controller.dart';
 
@@ -21,7 +23,7 @@ class ThemeEngineNotifier extends Notifier<String> {
   void setEngine(String engine) {
     if (engine == 'nxtpaper_eink') {
       unawaited(
-        ref.read(themeControllerProvider.notifier).selectTheme('nxtpaper_eink_dark'),
+        ref.read(themeControllerProvider.notifier).selectTheme('nxtpaper_eink_light'),
       );
     } else {
       unawaited(
@@ -54,14 +56,23 @@ class NbSelfcareApp extends ConsumerWidget {
     final String activeThemeKey = ref.watch(themeControllerProvider);
     final router = ref.watch(appRouterProvider);
 
-    return MaterialApp.router(
-      title: AppConstants.appName,
-      debugShowCheckedModeBanner: false,
-      theme: ScTheme.build(activeThemeKey),
-      locale: const Locale('es'),
-      localizationsDelegates: AppLocalizations.localizationsDelegates,
-      supportedLocales: AppLocalizations.supportedLocales,
-      routerConfig: router,
+    return DynamicColorBuilder(
+      builder: (ColorScheme? light, ColorScheme? dark) {
+        final bool dynamicTheme = activeThemeKey == kDynamicThemeKey && light != null && dark != null;
+        return MaterialApp.router(
+          title: AppConstants.appName,
+          debugShowCheckedModeBanner: false,
+          theme: dynamicTheme
+              ? ScTheme.build(activeThemeKey, override: dynamicThemeDef(light))
+              : ScTheme.build(activeThemeKey),
+          darkTheme: dynamicTheme ? ScTheme.build(activeThemeKey, override: dynamicThemeDef(dark)) : null,
+          themeMode: dynamicTheme ? ThemeMode.system : ThemeMode.light,
+          locale: const Locale('es'),
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          routerConfig: router,
+        );
+      },
     );
   }
 }

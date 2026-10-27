@@ -1,14 +1,16 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/database/app_database.dart';
-import '../../../../core/database/daos/supplement_dao.dart';
+import '../../../../core/l10n/l10n.dart';
 import '../../../../shared/theme/sc_colors.dart';
 import '../../../../shared/theme/sc_theme.dart';
 import '../../../../shared/widgets/app_icons.dart';
 import '../../../../shared/widgets/sheet.dart';
+import '../../application/supplement_service.dart';
 
 /// Modal interactivo para el control y adherencia de suplementos y medicación.
 class SupplementTrackerSheet extends ConsumerStatefulWidget {
@@ -45,9 +47,9 @@ class _SupplementTrackerSheetState
           builder: (BuildContext ctx, StateSetter setModalState) {
             final ScColors c = ctx.sc;
             return AlertDialog(
-              title: const Text(
-                'Nuevo Suplemento',
-                style: TextStyle(
+              title: Text(
+                context.l10n.perfilNuevoSuplemento,
+                style: const TextStyle(
                   fontFamily: ScFonts.display,
                   fontWeight: FontWeight.w800,
                 ),
@@ -58,32 +60,32 @@ class _SupplementTrackerSheetState
                   children: <Widget>[
                     TextField(
                       controller: nameCtrl,
-                      decoration: const InputDecoration(
-                        labelText: 'Nombre',
-                        hintText: 'Ej. Creatina Creapure, Omega 3, Magnesio',
+                      decoration: InputDecoration(
+                        labelText: context.l10n.perfilNombre,
+                        hintText: context.l10n.perfilEjCreatinaCreapureOmega3,
                       ),
                     ),
                     const SizedBox(height: 10),
                     TextField(
                       controller: dosageCtrl,
-                      decoration: const InputDecoration(
-                        labelText: 'Dosis diaria',
-                        hintText: 'Ej. 5 g, 2 cápsulas, 400 mg',
+                      decoration: InputDecoration(
+                        labelText: context.l10n.perfilDosisDiaria,
+                        hintText: context.l10n.perfilEj5G2Capsulas,
                       ),
                     ),
                     const SizedBox(height: 12),
                     SwitchListTile(
                       contentPadding: EdgeInsets.zero,
-                      title: const Text(
-                        '¿Afecta retención hídrica?',
-                        style: TextStyle(
+                      title: Text(
+                        context.l10n.perfilAfectaRetencionHidrica,
+                        style: const TextStyle(
                           fontFamily: ScFonts.ui,
                           fontSize: 13,
                           fontWeight: FontWeight.w700,
                         ),
                       ),
                       subtitle: Text(
-                        'Actívalo para Creatina. Evita falsas alarmas de peso graso en la báscula.',
+                        context.l10n.perfilActivaloParaCreatinaEvitaFalsas,
                         style: TextStyle(
                           fontFamily: ScFonts.ui,
                           fontSize: 11,
@@ -101,7 +103,7 @@ class _SupplementTrackerSheetState
               actions: <Widget>[
                 TextButton(
                   onPressed: () => Navigator.of(dCtx).pop(false),
-                  child: const Text('Cancelar'),
+                  child: Text(context.l10n.commonCancel),
                 ),
                 FilledButton(
                   onPressed: () {
@@ -109,7 +111,7 @@ class _SupplementTrackerSheetState
                       Navigator.of(dCtx).pop(true);
                     }
                   },
-                  child: const Text('Guardar'),
+                  child: Text(context.l10n.bodyRegistrarEn5Segundos),
                 ),
               ],
             );
@@ -118,19 +120,18 @@ class _SupplementTrackerSheetState
       },
     );
 
-    if (created == true && nameCtrl.text.trim().isNotEmpty) {
+    if (created == true && nameCtrl.text.trim().isNotEmpty && mounted) {
       unawaited(HapticFeedback.lightImpact());
-      await ref.read(supplementDaoProvider).createSupplement(
+      final String fallbackDose = context.l10n.perfil1Dosis;
+      await ref.read(supplementServiceProvider).add(
             name: nameCtrl.text.trim(),
-            dosage: dosageCtrl.text.trim().isNotEmpty
-                ? dosageCtrl.text.trim()
-                : '1 dosis',
+            dosage: dosageCtrl.text.trim().isNotEmpty ? dosageCtrl.text.trim() : fallbackDose,
             affectsWaterRetention: affectsWater,
           );
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Suplemento "${nameCtrl.text.trim()}" añadido'),
+          content: Text(context.l10n.perfilSuplementoAnadido(nameCtrl.text.trim().toString())),
           duration: const Duration(seconds: 2),
         ),
       );
@@ -140,27 +141,17 @@ class _SupplementTrackerSheetState
   @override
   Widget build(BuildContext context) {
     final ScColors c = context.sc;
-    final SupplementDao dao = ref.watch(supplementDaoProvider);
+    final List<SupplementsTrackerData> supplements =
+        ref.watch(activeSupplementsProvider).value ?? const <SupplementsTrackerData>[];
+    final List<SupplementLog> logs =
+        ref.watch(supplementLogsProvider(widget.dateKey)).value ?? const <SupplementLog>[];
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
-      child: StreamBuilder<List<SupplementsTrackerData>>(
-        stream: dao.watchActiveSupplements(),
-        builder: (
-          BuildContext context,
-          AsyncSnapshot<List<SupplementsTrackerData>> suppSnap,
-        ) {
-          final List<SupplementsTrackerData> supplements =
-              suppSnap.data ?? const <SupplementsTrackerData>[];
-
-          return StreamBuilder<List<SupplementLog>>(
-            stream: dao.watchLogsForDate(widget.dateKey),
-            builder: (
-              BuildContext context,
-              AsyncSnapshot<List<SupplementLog>> logsSnap,
-            ) {
-              final List<SupplementLog> logs =
-                  logsSnap.data ?? const <SupplementLog>[];
+      child: Builder(
+        builder: (BuildContext context) {
+          return Builder(
+            builder: (BuildContext context) {
               final Set<int> takenIds = logs
                   .where((SupplementLog l) => l.wasTaken)
                   .map((SupplementLog l) => l.supplementId)
@@ -193,7 +184,7 @@ class _SupplementTrackerSheetState
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: <Widget>[
                               Text(
-                                'Suplementación & Salud',
+                                context.l10n.perfilSuplementacionSalud,
                                 style: TextStyle(
                                   fontFamily: ScFonts.display,
                                   fontSize: 17,
@@ -202,7 +193,7 @@ class _SupplementTrackerSheetState
                                 ),
                               ),
                               Text(
-                                '${takenIds.length} de ${supplements.length} tomados hoy (${widget.dateKey})',
+                                context.l10n.perfilDeTomadosHoy(takenIds.length.toString(), supplements.length.toString(), widget.dateKey.toString()),
                                 style: TextStyle(
                                   fontFamily: ScFonts.ui,
                                   fontSize: 12,
@@ -240,7 +231,7 @@ class _SupplementTrackerSheetState
                             ),
                             const SizedBox(height: 10),
                             Text(
-                              'Aún no tienes suplementos configurados',
+                              context.l10n.perfilAunNoTienesSuplementosConfigurados,
                               style: TextStyle(
                                 fontFamily: ScFonts.display,
                                 fontSize: 14,
@@ -250,7 +241,7 @@ class _SupplementTrackerSheetState
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              'Añade creatina, vitaminas o minerales para llevar su adherencia y correlacionar con tu composición corporal.',
+                              context.l10n.perfilAnadeCreatinaVitaminasOMinerales,
                               textAlign: TextAlign.center,
                               style: TextStyle(
                                 fontFamily: ScFonts.ui,
@@ -284,10 +275,10 @@ class _SupplementTrackerSheetState
                                 onChanged: (bool? val) {
                                   unawaited(HapticFeedback.selectionClick());
                                   unawaited(
-                                    dao.toggleSupplementIntake(
+                                    ref.read(supplementServiceProvider).setTaken(
                                       dateKey: widget.dateKey,
                                       supplementId: item.id,
-                                      wasTaken: val ?? false,
+                                      taken: val ?? false,
                                     ),
                                   );
                                 },
@@ -328,7 +319,7 @@ class _SupplementTrackerSheetState
                                                   BorderRadius.circular(6),
                                             ),
                                             child: Text(
-                                              'Agua BIA',
+                                              context.l10n.perfilAguaBia,
                                               style: TextStyle(
                                                 fontFamily: ScFonts.ui,
                                                 fontSize: 10,
@@ -360,7 +351,7 @@ class _SupplementTrackerSheetState
                                   color: c.text2,
                                 ),
                                 onPressed: () {
-                                  unawaited(dao.deleteSupplement(item.id));
+                                  unawaited(ref.read(supplementServiceProvider).remove(item.id));
                                 },
                               ),
                             ],
@@ -373,7 +364,7 @@ class _SupplementTrackerSheetState
                       child: OutlinedButton.icon(
                         onPressed: _openAddSupplementDialog,
                         icon: const Icon(Icons.add, size: 18),
-                        label: const Text('Añadir Suplemento o Fármaco'),
+                        label: Text(context.l10n.perfilAnadirSuplementoOFarmaco),
                       ),
                     ),
                   ],

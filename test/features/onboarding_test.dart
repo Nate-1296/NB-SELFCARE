@@ -35,8 +35,8 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byType(OnboardingScreen), findsOneWidget);
-    expect(find.text('Tu Santuario de Autocuidado'), findsOneWidget);
-    expect(find.text('Comenzar mi Santuario'), findsOneWidget);
+    expect(find.text('Bienvenido a NB Selfcare'), findsOneWidget);
+    expect(find.text('Siguiente'), findsOneWidget);
 
     // Limpiar árbol para vaciar timers pendientes de Drift
     await tester.pumpWidget(const SizedBox());
@@ -59,14 +59,25 @@ void main() {
 
     await tester.pumpAndSettle();
 
-    // Llenar el nombre
+    // Paso 1 → 2: sin nombre no se puede avanzar
+    await tester.tap(find.text('Siguiente'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Siguiente'));
+    await tester.pumpAndSettle();
+    expect(find.text('Escribe tu nombre'), findsOneWidget);
+
     final nameField = find.widgetWithText(TextFormField, '¿Cómo te llamas?');
     await tester.enterText(nameField, 'Nathan');
     await tester.pump();
 
-    // Presionar el botón de guardar
-    final submitButton = find.text('Comenzar mi Santuario');
-    await tester.tap(submitButton);
+    // Sobre ti → Metas → Seguridad → Empezar
+    await tester.tap(find.text('Siguiente'));
+    await tester.pumpAndSettle();
+    expect(find.text('Tus metas'), findsOneWidget);
+    await tester.tap(find.text('Siguiente'));
+    await tester.pumpAndSettle();
+    expect(find.text('Tu seguridad primero'), findsOneWidget);
+    await tester.tap(find.text('Empezar'));
 
     // Esperar a que la transacción termine y el stream reactive la UI
     await tester.pumpAndSettle();

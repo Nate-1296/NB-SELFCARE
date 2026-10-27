@@ -1,5 +1,6 @@
 import 'package:drift/drift.dart';
 
+import '../../domain/enums.dart';
 import '../app_database.dart';
 
 /// Servicio de inicialización de datos base para NB Selfcare.
@@ -41,7 +42,7 @@ abstract final class DatabaseSeeder {
       // ---------- CARNES Y AVES ----------
       const FoodItemsCompanion(
         name: Value('Pechuga de pollo a la plancha'),
-        source: Value('usda_seed'),
+        source: Value(FoodSource.usdaSeed),
         servingLabel: Value('100g'),
         defaultServingGrams: Value(100.0),
         kcalPer100g: Value(165.0),
@@ -63,7 +64,7 @@ abstract final class DatabaseSeeder {
       ),
       const FoodItemsCompanion(
         name: Value('Carne de res magra (Lomo)'),
-        source: Value('usda_seed'),
+        source: Value(FoodSource.usdaSeed),
         servingLabel: Value('100g'),
         defaultServingGrams: Value(100.0),
         kcalPer100g: Value(205.0),
@@ -84,7 +85,7 @@ abstract final class DatabaseSeeder {
       ),
       const FoodItemsCompanion(
         name: Value('Muslo de pollo cocido (sin piel)'),
-        source: Value('usda_seed'),
+        source: Value(FoodSource.usdaSeed),
         servingLabel: Value('100g'),
         defaultServingGrams: Value(100.0),
         kcalPer100g: Value(179.0),
@@ -107,7 +108,7 @@ abstract final class DatabaseSeeder {
       // ---------- PESCADOS Y MARISCOS ----------
       const FoodItemsCompanion(
         name: Value('Salmón a la plancha'),
-        source: Value('usda_seed'),
+        source: Value(FoodSource.usdaSeed),
         servingLabel: Value('100g'),
         defaultServingGrams: Value(100.0),
         kcalPer100g: Value(206.0),
@@ -129,7 +130,7 @@ abstract final class DatabaseSeeder {
       ),
       const FoodItemsCompanion(
         name: Value('Atún en agua (escurrido)'),
-        source: Value('usda_seed'),
+        source: Value(FoodSource.usdaSeed),
         servingLabel: Value('100g'),
         defaultServingGrams: Value(100.0),
         kcalPer100g: Value(116.0),
@@ -152,7 +153,7 @@ abstract final class DatabaseSeeder {
       // ---------- HUEVOS Y LÁCTEOS ----------
       const FoodItemsCompanion(
         name: Value('Huevo entero cocido o revuelto'),
-        source: Value('usda_seed'),
+        source: Value(FoodSource.usdaSeed),
         servingLabel: Value('1 unidad (50g)'),
         defaultServingGrams: Value(50.0),
         kcalPer100g: Value(143.0),
@@ -174,7 +175,7 @@ abstract final class DatabaseSeeder {
       ),
       const FoodItemsCompanion(
         name: Value('Clara de huevo'),
-        source: Value('usda_seed'),
+        source: Value(FoodSource.usdaSeed),
         servingLabel: Value('1 unidad (33g)'),
         defaultServingGrams: Value(33.0),
         kcalPer100g: Value(52.0),
@@ -195,7 +196,7 @@ abstract final class DatabaseSeeder {
       ),
       const FoodItemsCompanion(
         name: Value('Yogur griego natural sin azúcar'),
-        source: Value('usda_seed'),
+        source: Value(FoodSource.usdaSeed),
         servingLabel: Value('1 taza (150g)'),
         defaultServingGrams: Value(150.0),
         kcalPer100g: Value(73.0),
@@ -216,7 +217,7 @@ abstract final class DatabaseSeeder {
       ),
       const FoodItemsCompanion(
         name: Value('Queso campesino / blanco fresco'),
-        source: Value('usda_seed'),
+        source: Value(FoodSource.usdaSeed),
         servingLabel: Value('1 tajada (30g)'),
         defaultServingGrams: Value(30.0),
         kcalPer100g: Value(260.0),
@@ -239,7 +240,7 @@ abstract final class DatabaseSeeder {
       // ---------- FRUTAS Y VEGETALES ----------
       const FoodItemsCompanion(
         name: Value('Plátano / Banano maduro'),
-        source: Value('usda_seed'),
+        source: Value(FoodSource.usdaSeed),
         servingLabel: Value('1 unidad (118g)'),
         defaultServingGrams: Value(118.0),
         kcalPer100g: Value(89.0),
@@ -261,7 +262,7 @@ abstract final class DatabaseSeeder {
       ),
       const FoodItemsCompanion(
         name: Value('Aguacate Hass'),
-        source: Value('usda_seed'),
+        source: Value(FoodSource.usdaSeed),
         servingLabel: Value('1/2 unidad (100g)'),
         defaultServingGrams: Value(100.0),
         kcalPer100g: Value(160.0),
@@ -283,7 +284,7 @@ abstract final class DatabaseSeeder {
       ),
       const FoodItemsCompanion(
         name: Value('Manzana con piel'),
-        source: Value('usda_seed'),
+        source: Value(FoodSource.usdaSeed),
         servingLabel: Value('1 unidad (180g)'),
         defaultServingGrams: Value(180.0),
         kcalPer100g: Value(52.0),
@@ -304,7 +305,7 @@ abstract final class DatabaseSeeder {
       ),
       const FoodItemsCompanion(
         name: Value('Espinaca cruda'),
-        source: Value('usda_seed'),
+        source: Value(FoodSource.usdaSeed),
         servingLabel: Value('1 taza (30g)'),
         defaultServingGrams: Value(30.0),
         kcalPer100g: Value(23.0),
@@ -325,7 +326,7 @@ abstract final class DatabaseSeeder {
       ),
       const FoodItemsCompanion(
         name: Value('Brócoli al vapor'),
-        source: Value('usda_seed'),
+        source: Value(FoodSource.usdaSeed),
         servingLabel: Value('1 taza (150g)'),
         defaultServingGrams: Value(150.0),
         kcalPer100g: Value(35.0),
@@ -348,7 +349,7 @@ abstract final class DatabaseSeeder {
       // ---------- CEREALES, TUBÉRCULOS Y GRANOS ----------
       const FoodItemsCompanion(
         name: Value('Arroz blanco cocido'),
-        source: Value('usda_seed'),
+        source: Value(FoodSource.usdaSeed),
         servingLabel: Value('1 taza (158g)'),
         defaultServingGrams: Value(158.0),
         kcalPer100g: Value(130.0),
@@ -370,7 +371,7 @@ abstract final class DatabaseSeeder {
       ),
       const FoodItemsCompanion(
         name: Value('Papa cocida con piel'),
-        source: Value('usda_seed'),
+        source: Value(FoodSource.usdaSeed),
         servingLabel: Value('1 unidad mediana (150g)'),
         defaultServingGrams: Value(150.0),
         kcalPer100g: Value(87.0),
@@ -391,7 +392,7 @@ abstract final class DatabaseSeeder {
       ),
       const FoodItemsCompanion(
         name: Value('Avena en hojuelas'),
-        source: Value('usda_seed'),
+        source: Value(FoodSource.usdaSeed),
         servingLabel: Value('1/2 taza seca (40g)'),
         defaultServingGrams: Value(40.0),
         kcalPer100g: Value(389.0),
@@ -413,7 +414,7 @@ abstract final class DatabaseSeeder {
       ),
       const FoodItemsCompanion(
         name: Value('Arepa de maíz blanco tradicional'),
-        source: Value('usda_seed'),
+        source: Value(FoodSource.usdaSeed),
         servingLabel: Value('1 unidad (100g)'),
         defaultServingGrams: Value(100.0),
         kcalPer100g: Value(210.0),
@@ -435,7 +436,7 @@ abstract final class DatabaseSeeder {
       ),
       const FoodItemsCompanion(
         name: Value('Lentejas cocidas'),
-        source: Value('usda_seed'),
+        source: Value(FoodSource.usdaSeed),
         servingLabel: Value('1 taza (198g)'),
         defaultServingGrams: Value(198.0),
         kcalPer100g: Value(116.0),
@@ -458,7 +459,7 @@ abstract final class DatabaseSeeder {
       // ---------- GRASAS SALUDABLES Y SEMILLAS ----------
       const FoodItemsCompanion(
         name: Value('Aceite de oliva extra virgen'),
-        source: Value('usda_seed'),
+        source: Value(FoodSource.usdaSeed),
         servingLabel: Value('1 cucharada (14g)'),
         defaultServingGrams: Value(14.0),
         kcalPer100g: Value(884.0),
@@ -480,7 +481,7 @@ abstract final class DatabaseSeeder {
       ),
       const FoodItemsCompanion(
         name: Value('Almendras naturales'),
-        source: Value('usda_seed'),
+        source: Value(FoodSource.usdaSeed),
         servingLabel: Value('1 puñado (30g)'),
         defaultServingGrams: Value(30.0),
         kcalPer100g: Value(579.0),
@@ -503,7 +504,7 @@ abstract final class DatabaseSeeder {
       // ---------- BEBIDAS ----------
       const FoodItemsCompanion(
         name: Value('Café negro sin azúcar'),
-        source: Value('usda_seed'),
+        source: Value(FoodSource.usdaSeed),
         servingLabel: Value('1 taza (240ml)'),
         defaultServingGrams: Value(240.0),
         kcalPer100g: Value(1.0),
@@ -525,7 +526,7 @@ abstract final class DatabaseSeeder {
       ),
       const FoodItemsCompanion(
         name: Value('Agua natural pura'),
-        source: Value('usda_seed'),
+        source: Value(FoodSource.usdaSeed),
         servingLabel: Value('1 vaso (250ml)'),
         defaultServingGrams: Value(250.0),
         kcalPer100g: Value(0.0),

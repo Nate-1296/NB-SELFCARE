@@ -1,14 +1,16 @@
 import 'package:drift/drift.dart';
 
+import 'converters.dart';
+
 // 1. PERFIL DINÁMICO Y PREFERENCIAS DEL SISTEMA
 class UserProfiles extends Table {
   IntColumn get id => integer().autoIncrement()();
   TextColumn get name => text().withLength(min: 1, max: 60)();
   TextColumn get avatarPath => text().nullable()();
 
-  // Edad dinámica calculada al vuelo: DateTime.now().difference(birthDate).inDays / 365.25
+  // La edad nunca se almacena: se calcula al vuelo con BiometricFormulas.calculateDynamicAge.
   DateTimeColumn get birthDate => dateTime()();
-  TextColumn get biologicalSex => text()(); // 'male' | 'female'
+  TextColumn get biologicalSex => text().map(biologicalSexConverter)();
   RealColumn get heightCm => real()();
 
   // Metas biométricas y conductuales
@@ -36,20 +38,34 @@ class UserProfiles extends Table {
   IntColumn get manualProteinG => integer().nullable()();
   IntColumn get manualCarbsG => integer().nullable()();
   IntColumn get manualFatG => integer().nullable()();
-  TextColumn get activeDietArchetype => text().withDefault(const Constant('flexible'))(); // 'flexible', 'mediterranean', 'keto', 'high_protein', 'plant_based', 'balanced'
-  TextColumn get activeDietPhase => text().withDefault(const Constant('deficit'))(); // 'deficit', 'maintenance', 'diet_break', 'reverse_diet'
+  TextColumn get activeDietArchetype =>
+      text().map(dietArchetypeConverter).withDefault(const Constant('flexible'))();
+  TextColumn get activeDietPhase =>
+      text().map(dietPhaseConverter).withDefault(const Constant('deficit'))();
   TextColumn get calorieCyclingScheduleJson => text().withDefault(const Constant('{}'))(); // JSON con metas por día de la semana
   RealColumn get caffeineBedtimeCutoffHours => real().withDefault(const Constant(8.0))(); // Horas antes de dormir para corte de cafeína
+  DateTimeColumn get activeDietPhaseStartedAt => dateTime().nullable()(); // Inicio de la fase vigente (reverse diet, diet break)
+
+  // Seguridad clínica declarada en el onboarding (docs/01 §6)
+  BoolColumn get hasImpedanceContraindication =>
+      boolean().withDefault(const Constant(false))(); // Marcapasos, implantes o embarazo: solo peso
+  BoolColumn get hasEatingDisorderHistory =>
+      boolean().withDefault(const Constant(false))(); // Oculta déficit agresivo y ayunos > 16 h
+  BoolColumn get takesHypoglycemicMedication =>
+      boolean().withDefault(const Constant(false))(); // Aviso antes de ayunar
 
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
 }
 
 // 2. BIOMETRÍA: BÁSCULA XIAOMI MI SCALE 2 (13 MÉTRICAS) + CINTA US NAVY
+@TableIndex.sql(
+  'CREATE INDEX idx_body_measurements_date ON body_measurements(date_key DESC, measured_at DESC)',
+)
 class BodyMeasurements extends Table {
   IntColumn get id => integer().autoIncrement()();
   DateTimeColumn get measuredAt => dateTime().withDefault(currentDateAndTime)();
   TextColumn get dateKey => text()(); // Formato YYYY-MM-DD para joins directos
-  TextColumn get source => text()(); // 'mi_scale_2_ble' | 'health_connect' | 'manual'
+  TextColumn get source => text().map(measurementSourceConverter)();
 
   RealColumn get weightKg => real()();
   RealColumn get trendWeightKg => real()(); // EMA (alpha = 0.1)
@@ -103,6 +119,7 @@ class DailySummaries extends Table {
 }
 
 // 4. REGISTRO ATÓMICO DE VASOS DE AGUA (SINCRONIZACIÓN Y EDICIÓN RÁPIDA)
+@TableIndex(name: 'idx_hydration_logs_date', columns: {#dateKey, #loggedAt})
 class HydrationLogs extends Table {
   IntColumn get id => integer().autoIncrement()();
   TextColumn get dateKey => text()(); // 'YYYY-MM-DD'
@@ -117,7 +134,7 @@ class FoodItems extends Table {
   TextColumn get barcode => text().nullable().unique()();
   TextColumn get name => text()();
   TextColumn get brand => text().nullable()();
-  TextColumn get source => text()(); // 'usda_seed' | 'open_food_facts' | 'user_custom' | 'ai_fallback'
+  TextColumn get source => text().map(foodSourceConverter)();
   TextColumn get nutriScore => text().nullable()(); // 'A'..'E'
   IntColumn get novaGroup => integer().nullable()(); // 1 a 4 (Clasificación NOVA de ultraprocesados)
   RealColumn get defaultServingGrams => real().withDefault(const Constant(100.0))();
@@ -150,7 +167,7 @@ class FoodItems extends Table {
 class MealCombos extends Table {
   IntColumn get id => integer().autoIncrement()();
   TextColumn get name => text()();
-  TextColumn get defaultMealType => text()(); // 'breakfast' | 'lunch' | 'dinner' | 'snack'
+  TextColumn get defaultMealType => text().map(mealTypeConverter)();
   IntColumn get timesUsed => integer().withDefault(const Constant(0))();
 }
 
@@ -162,11 +179,13 @@ class MealComboItems extends Table {
 }
 
 // 7. REGISTRO DIARIO DE INGESTA NUTRICIONAL
+@TableIndex(name: 'idx_food_logs_date_meal', columns: {#dateKey, #mealType})
+@TableIndex(name: 'idx_food_logs_food_item', columns: {#foodItemId})
 class FoodLogs extends Table {
   IntColumn get id => integer().autoIncrement()();
   TextColumn get dateKey => text()(); // 'YYYY-MM-DD'
   DateTimeColumn get loggedAt => dateTime().withDefault(currentDateAndTime)();
-  TextColumn get mealType => text()(); // 'breakfast' | 'lunch' | 'dinner' | 'snack'
+  TextColumn get mealType => text().map(mealTypeConverter)();
 
   IntColumn get foodItemId => integer().references(FoodItems, #id)();
   RealColumn get gramsConsumed => real()();
@@ -184,6 +203,7 @@ class FoodLogs extends Table {
 }
 
 // 8. SESIONES DE AYUNO INTERMITENTE
+@TableIndex(name: 'idx_fasting_sessions_started', columns: {#startedAt})
 class FastingSessions extends Table {
   IntColumn get id => integer().autoIncrement()();
   TextColumn get protocolName => text()(); // '16:8', '18:6', '20:4', 'OMAD', 'Custom'
@@ -196,14 +216,15 @@ class FastingSessions extends Table {
 }
 
 // 9. BLOQUES RÁPIDOS DE ENTRENAMIENTO (RPE -> METs)
+@TableIndex(name: 'idx_workout_blocks_date', columns: {#dateKey})
 class WorkoutBlocks extends Table {
   IntColumn get id => integer().autoIncrement()();
   TextColumn get dateKey => text()(); // 'YYYY-MM-DD'
   DateTimeColumn get performedAt => dateTime().withDefault(currentDateAndTime)();
 
-  TextColumn get category => text()(); // 'weights' | 'calisthenics' | 'cardio' | 'sports'
+  TextColumn get category => text().map(workoutCategoryConverter)();
   IntColumn get durationMinutes => integer()();
-  TextColumn get rpeIntensity => text()(); // 'light' | 'moderate' | 'intense'
+  TextColumn get rpeIntensity => text().map(rpeIntensityConverter)();
 
   RealColumn get appliedMet => real()();
   RealColumn get userWeightAtTimeKg => real()();
@@ -211,6 +232,7 @@ class WorkoutBlocks extends Table {
 }
 
 // 10. DIARIO PERSONAL Y NLP LOCAL
+@TableIndex(name: 'idx_journal_entries_date', columns: {#dateKey})
 class JournalEntries extends Table {
   IntColumn get id => integer().autoIncrement()();
   TextColumn get dateKey => text()(); // 'YYYY-MM-DD'
@@ -245,6 +267,10 @@ class PetStatus extends Table {
   DateTimeColumn get lastGreetingAt => dateTime().nullable()();
 }
 
+@TableIndex.sql(
+  'CREATE UNIQUE INDEX idx_coin_ledger_daily_unique ON coin_ledger(date_key, action_type) '
+  "WHERE action_type != 'shop_buy'",
+)
 class CoinLedger extends Table {
   IntColumn get id => integer().autoIncrement()();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
@@ -257,7 +283,7 @@ class CoinLedger extends Table {
 // 12. PROGRAMADOR DE RECORDATORIOS EXACTOS
 class Reminders extends Table {
   IntColumn get id => integer().autoIncrement()();
-  TextColumn get reminderType => text()(); // 'hydration' | 'fasting_open' | 'fasting_close' | 'morning_weigh_in' | 'tape_measure' | 'journal'
+  TextColumn get reminderType => text().map(reminderTypeConverter)();
   IntColumn get timeOfDayMinutes => integer()(); // Minutos desde medianoche (ej. 480 = 08:00 AM)
   IntColumn get daysOfWeekBitmask => integer().withDefault(const Constant(127))(); // 7 bits (L-D, 127 = todos)
   BoolColumn get isEnabled => boolean().withDefault(const Constant(true))();
@@ -288,11 +314,13 @@ class HealthSyncCheckpoints extends Table {
 }
 
 // 15. RECETAS CASERAS MULTIRACIÓN (BATCH COOKING & MEAL PREP)
+@TableIndex(name: 'idx_recipes_name', columns: {#name})
 class Recipes extends Table {
   IntColumn get id => integer().autoIncrement()();
   TextColumn get name => text()();
   TextColumn get description => text().nullable()();
-  TextColumn get defaultMealType => text().withDefault(const Constant('lunch'))(); // 'breakfast', 'lunch', 'dinner', 'snack'
+  TextColumn get defaultMealType =>
+      text().map(mealTypeConverter).withDefault(const Constant('lunch'))();
   IntColumn get totalYieldServings => integer().withDefault(const Constant(1))();
   RealColumn get cookedTotalWeightGrams => real().nullable()(); // Peso total cocinado opcional
 
@@ -328,6 +356,7 @@ class SupplementsTracker extends Table {
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
 }
 
+@TableIndex(name: 'idx_supplement_logs_date', columns: {#dateKey})
 class SupplementLogs extends Table {
   IntColumn get id => integer().autoIncrement()();
   TextColumn get dateKey => text()(); // 'YYYY-MM-DD'
@@ -348,6 +377,7 @@ class FemaleCycleLogs extends Table {
 }
 
 // 18. SALUD INTESTINAL Y ESCALA DE BRISTOL
+@TableIndex(name: 'idx_digestive_logs_date', columns: {#dateKey})
 class DigestiveLogs extends Table {
   IntColumn get id => integer().autoIncrement()();
   TextColumn get dateKey => text()(); // 'YYYY-MM-DD'
@@ -359,6 +389,7 @@ class DigestiveLogs extends Table {
 }
 
 // 19. REGISTRO FARMACOCINÉTICO DE CAFEÍNA
+@TableIndex(name: 'idx_caffeine_logs_date', columns: {#dateKey})
 class CaffeineLogs extends Table {
   IntColumn get id => integer().autoIncrement()();
   TextColumn get dateKey => text()(); // 'YYYY-MM-DD'
@@ -386,4 +417,13 @@ class MilestoneGoals extends Table {
   BoolColumn get isCompleted => boolean().withDefault(const Constant(false))();
   DateTimeColumn get completedAt => dateTime().nullable()();
   DateTimeColumn get estimatedCompletionDate => dateTime().nullable()();
+}
+
+// 22. PREFERENCIAS LOCALES DE INTERFAZ (layout de widgets de Hoy, etc.)
+class UiPreferences extends Table {
+  TextColumn get prefKey => text()();
+  TextColumn get prefValue => text()();
+
+  @override
+  Set<Column> get primaryKey => {prefKey};
 }

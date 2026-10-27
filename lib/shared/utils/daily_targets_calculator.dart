@@ -1,8 +1,10 @@
 import 'dart:math' as math;
 
-import '../../core/constants/app_constants.dart';
 import '../../core/database/app_database.dart';
+import '../../core/domain/enums.dart';
+import '../../core/services/smart_meal_suggester.dart';
 import 'biometric_formulas.dart';
+import 'diet_phase_policy.dart';
 
 /// Objetivos nutricionales y electrolíticos consolidados para un día específico.
 class DailyMacroTargets {
@@ -42,11 +44,12 @@ abstract final class DailyTargetsCalculator {
     required double weightKg,
     required double heightCm,
     required DateTime birthDate,
-    required String biologicalSex,
+    required BiologicalSex biologicalSex,
+    required DateTime now,
     int dailyStepsGoal = 8000,
   }) {
-    final double ageYears = BiometricFormulas.calculateDynamicAge(birthDate);
-    final bool isMale = biologicalSex == 'male';
+    final double ageYears = BiometricFormulas.calculateDynamicAge(birthDate, now);
+    final bool isMale = biologicalSex == BiologicalSex.male;
     final double bmr = (10.0 * weightKg) +
         (6.25 * heightCm) -
         (5.0 * ageYears) +
@@ -69,12 +72,12 @@ abstract final class DailyTargetsCalculator {
   /// Calcula la Tasa Metabólica Basal (BMR Mifflin-St Jeor) actual del usuario.
   static int estimateBmr({
     required UserProfile profile,
+    required DateTime referenceDate,
     double? currentWeightKg,
-    DateTime? referenceDate,
   }) {
     final double ageYears =
         BiometricFormulas.calculateDynamicAge(profile.birthDate, referenceDate);
-    final bool isMale = profile.biologicalSex == 'male';
+    final bool isMale = profile.biologicalSex == BiologicalSex.male;
     final double refWeight = currentWeightKg ?? profile.targetWeightKg;
     final double bmr = (10.0 * refWeight) +
         (6.25 * profile.heightCm) -
@@ -88,12 +91,13 @@ abstract final class DailyTargetsCalculator {
   /// Si el usuario activó [isManualMacroMode], se respetan sus valores médicos o personalizados.
   static DailyMacroTargets compute({
     required UserProfile profile,
+    required DateTime now,
     double? currentWeightKg,
     int netWorkoutKcal = 0,
     int lutealCaloricSurgeKcal = 0,
   }) {
-    final double ageYears = BiometricFormulas.calculateDynamicAge(profile.birthDate);
-    final bool isMale = profile.biologicalSex == 'male';
+    final double ageYears = BiometricFormulas.calculateDynamicAge(profile.birthDate, now);
+    final bool isMale = profile.biologicalSex == BiologicalSex.male;
     final double refWeight = currentWeightKg ?? profile.targetWeightKg;
 
     // 1. Caso Especial: Modo Manual / Prescripción Médica o Deportiva
@@ -127,34 +131,20 @@ abstract final class DailyTargetsCalculator {
 
     final int baseTdee = profile.currentAdaptiveTdeeKcal;
 
-    // 2. Ajuste según Fase de Dieta activa
-    final int goalAdjustment;
-    if (profile.activeDietPhase == 'maintenance' || profile.activeDietPhase == 'diet_break') {
-      // Normocalórica para consolidación o descanso metabólico
-      goalAdjustment = 0;
-    } else if (profile.activeDietPhase == 'reverse_diet') {
-      // Salida guiada de déficit: ligero paso intermedio hacia normocalórica
-      goalAdjustment = -100;
-    } else {
-      // Déficit o superávit programado estándar
-      goalAdjustment =
-          ((profile.weeklyGoalRateKg * AppConstants.kcalPerKgBodyFat) / 7.0).round();
-    }
+    // 2. Ajuste según la fase de dieta activa (déficit, mantenimiento, diet break, reverse diet)
+    final int goalAdjustment = DietPhasePolicy.dailyAdjustmentKcal(
+      phase: profile.activeDietPhase,
+      weeklyGoalRateKg: profile.weeklyGoalRateKg,
+      phaseStartedAt: profile.activeDietPhaseStartedAt,
+      now: now,
+      hasEatingDisorderHistory: profile.hasEatingDisorderHistory,
+    );
 
     final int rawTarget = baseTdee + goalAdjustment + netWorkoutKcal + lutealCaloricSurgeKcal;
     final int effectiveKcal = math.max(minSafeBmr.round(), rawTarget);
 
-    // Proteína prioritaria para preservar masa muscular (2.0 g por kg peso objetivo)
-    final double proteinG = (profile.targetWeightKg * 2.0).clamp(60.0, 230.0);
-    final double proteinKcal = proteinG * 4.0;
-
-    // Grasas esenciales (~27% de la meta calórica, mín 40g)
-    final double fatG = ((effectiveKcal * 0.27) / 9.0).clamp(40.0, 130.0);
-    final double fatKcal = fatG * 9.0;
-
-    // Carbohidratos totales con la energía restante (mín 70g)
-    final double remainingForCarbs = math.max(280.0, effectiveKcal - proteinKcal - fatKcal);
-    final double carbsG = (remainingForCarbs / 4.0).clamp(70.0, 480.0);
+    final ({double proteinG, double carbsG, double fatG}) macros =
+        _macroSplit(profile, effectiveKcal);
 
     // Fibra recomendada: 14g por cada 1000 kcal
     final double fiberG = ((effectiveKcal / 1000.0) * 14.0).clamp(22.0, 45.0);
@@ -164,22 +154,36 @@ abstract final class DailyTargetsCalculator {
       goalAdjustmentKcal: goalAdjustment,
       netWorkoutKcal: netWorkoutKcal,
       effectiveCalorieTargetKcal: effectiveKcal,
-      proteinTargetG: double.parse(proteinG.toStringAsFixed(0)),
-      carbsTargetG: double.parse(carbsG.toStringAsFixed(0)),
-      fatTargetG: double.parse(fatG.toStringAsFixed(0)),
-      fiberTargetG: double.parse(fiberG.toStringAsFixed(0)),
+      proteinTargetG: macros.proteinG.roundToDouble(),
+      carbsTargetG: macros.carbsG.roundToDouble(),
+      fatTargetG: macros.fatG.roundToDouble(),
+      fiberTargetG: fiberG.roundToDouble(),
       sodiumTargetMg: 2300.0,
       potassiumTargetMg: 3500.0,
       magnesiumTargetMg: isMale ? 420.0 : 320.0,
     );
   }
 
-  /// Sugiere el bloque horario de comida según la hora actual del dispositivo.
-  static String defaultMealTypeForHour([int? hour]) {
-    final int h = hour ?? DateTime.now().hour;
-    if (h >= 5 && h < 11) return 'breakfast';
-    if (h >= 11 && h < 16) return 'lunch';
-    if (h >= 16 && h < 19) return 'snack';
-    return 'dinner';
+  /// Reparto de macronutrientes. En modo flexible prioriza la proteína
+  /// (2 g/kg del peso meta), ~27 % de grasa y el resto en carbohidratos; con un
+  /// arquetipo activo (keto, mediterránea…) se usan sus porcentajes.
+  static ({double proteinG, double carbsG, double fatG}) _macroSplit(
+    UserProfile profile,
+    int kcal,
+  ) {
+    if (profile.activeDietArchetype != DietArchetype.flexible) {
+      final DietArchetypeInfo info = DietArchetypeInfo.getById(profile.activeDietArchetype);
+      return (
+        proteinG: kcal * info.proteinPct / 100 / 4,
+        carbsG: kcal * info.carbsPct / 100 / 4,
+        fatG: kcal * info.fatPct / 100 / 9,
+      );
+    }
+
+    final double proteinG = (profile.targetWeightKg * 2.0).clamp(60.0, 230.0);
+    final double fatG = ((kcal * 0.27) / 9.0).clamp(40.0, 130.0);
+    final double remainingForCarbs = math.max(280.0, kcal - proteinG * 4.0 - fatG * 9.0);
+    final double carbsG = (remainingForCarbs / 4.0).clamp(70.0, 480.0);
+    return (proteinG: proteinG, carbsG: carbsG, fatG: fatG);
   }
 }

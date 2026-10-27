@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/clock/clock.dart';
 import 'date_time_extensions.dart';
 
 /// Notificador reactivo de la fecha calendario vigente.
@@ -28,11 +29,11 @@ class CurrentDateNotifier extends Notifier<DateTime> {
       _lifecycleListener?.dispose();
     });
 
-    return DateTime.now().startOfDay;
+    return ref.read(clockProvider).now().startOfDay;
   }
 
   void _checkRollover() {
-    final DateTime nowDay = DateTime.now().startOfDay;
+    final DateTime nowDay = ref.read(clockProvider).now().startOfDay;
     if (!state.isSameDay(nowDay)) {
       state = nowDay;
     }

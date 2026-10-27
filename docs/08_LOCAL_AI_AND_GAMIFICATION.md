@@ -6,6 +6,8 @@
 
 ## 1. Ciclo de Vida de Memoria del Motor de IA Local (`LocalAiService`)
 
+> **Estado (2026-10-26):** aún no hay runtime LLM integrado. `LocalAiService`, que simulaba este ciclo de vida, se reemplazó por `TextAssistant` (`lib/core/services/text_assistant.dart`): motores deterministas con una API asíncrona preparada para enchufar LiteRT/llama.cpp. La UI no promete IA mientras no exista.
+
 NB Selfcare permite la carga opcional de modelos de lenguaje pequeños cuantizados a 4 bits (**Qwen 2.5/3 1.5B–3B Instruct** o **Gemma 3 1B/4B**) ubicados en el almacenamiento del dispositivo (`.task`, `.litertlm` o `.gguf`).
 
 ### Máquina de Estados de Memoria (Lazy-Load + Auto-Evict a los 120s)

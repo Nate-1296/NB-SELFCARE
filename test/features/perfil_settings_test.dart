@@ -3,13 +3,17 @@ import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:nb_selfcare/app/router/app_router.dart';
 import 'package:nb_selfcare/core/database/app_database.dart';
-import 'package:nb_selfcare/core/database/daos/tdee_dao.dart';
 import 'package:nb_selfcare/core/database/daos/user_profile_dao.dart';
-import 'package:nb_selfcare/core/router/app_router.dart';
+import 'package:nb_selfcare/core/domain/enums.dart';
+import 'package:nb_selfcare/features/profile_goals/application/profile_queries.dart';
+import 'package:nb_selfcare/features/profile_goals/presentation/app_settings_screen.dart';
 import 'package:nb_selfcare/features/profile_goals/presentation/perfil_yo_screen.dart';
 import 'package:nb_selfcare/shared/theme/sc_colors.dart';
 import 'package:nb_selfcare/shared/theme/sc_theme.dart';
+
+import '../support/widget_test_helpers.dart';
 
 void main() {
   late AppDatabase db;
@@ -23,7 +27,7 @@ void main() {
       UserProfilesCompanion(
         name: const drift.Value('Nathan'),
         birthDate: drift.Value(DateTime(1995, 8, 14)),
-        biologicalSex: const drift.Value('male'),
+        biologicalSex: const drift.Value(BiologicalSex.male),
         heightCm: const drift.Value(180.0),
         targetWeightKg: const drift.Value(75.0),
         weeklyGoalRateKg: const drift.Value(-0.5),
@@ -53,7 +57,7 @@ void main() {
               id: 1,
               name: 'Nathan',
               birthDate: DateTime(1995, 8, 14),
-              biologicalSex: 'male',
+              biologicalSex: BiologicalSex.male,
               heightCm: 180.0,
               targetWeightKg: 75.0,
               weeklyGoalRateKg: -0.5,
@@ -66,18 +70,22 @@ void main() {
               isCycleTrackingEnabled: false,
               isFastingEnabled: true,
               isManualMacroMode: false,
-              activeDietArchetype: 'flexible',
-              activeDietPhase: 'deficit',
+              activeDietArchetype: DietArchetype.flexible,
+              activeDietPhase: DietPhase.deficit,
               calorieCyclingScheduleJson: '{}',
               caffeineBedtimeCutoffHours: 8.0,
+              hasImpedanceContraindication: false,
+              hasEatingDisorderHistory: false,
+              takesHypoglycemicMedication: false,
               createdAt: DateTime.now(),
             ),
           ),
         ),
       ],
-      child: MaterialApp(
+      child: routedTestApp(
         theme: themeData,
         home: const PerfilYoScreen(),
+        routes: const <String, Widget>{'/ajustes': AppSettingsScreen()},
       ),
     );
   }
@@ -100,33 +108,35 @@ void main() {
     expect(find.text('180 cm'), findsOneWidget);
     expect(find.text('75.0 kg meta'), findsOneWidget);
 
-    // 2. Metas y Gasto Calórico
-    expect(find.text('Metas y Gasto Calórico'), findsOneWidget);
+    // 2. Metas y gasto diario
+    expect(find.text('Metas y gasto diario'), findsOneWidget);
     expect(find.text('kcal / día'), findsOneWidget);
 
     // 3. 2x2 Stat Cards
-    expect(find.text('TDEE Adaptativo'), findsOneWidget);
-    expect(find.text('Meta de Peso'), findsOneWidget);
-    expect(find.text('Meta Hidratación'), findsOneWidget);
-    expect(find.text('Pasos y Sueño'), findsOneWidget);
+    expect(find.text('Gasto diario'), findsOneWidget);
+    expect(find.text('Meta de peso'), findsOneWidget);
+    expect(find.text('Agua'), findsOneWidget);
+    expect(find.text('Pasos y sueño'), findsOneWidget);
 
     // 4. Botones ordenados y expandidos
-    expect(find.text('Ajustar Metas Nutricionales y Calóricas'), findsOneWidget);
-    expect(find.text('Auto-Calibrar TDEE con IA Local (14 días)'), findsOneWidget);
+    expect(find.text('Ajustar metas'), findsOneWidget);
+    expect(find.text('Recalcular mi gasto (14 días)'), findsOneWidget);
 
-    // Desplazamiento seguro hasta el botón de Ajustes
+    // 5. Patrones vacíos / iniciales
     await tester.scrollUntilVisible(
-      find.text('Ajustes de la Aplicación'),
+      find.text('Aún reuniendo datos'),
       200,
       scrollable: find.byType(Scrollable).first,
     );
     await tester.pumpAndSettle();
+    expect(find.text('Tus patrones'), findsOneWidget);
 
-    expect(find.text('Ajustes de la Aplicación'), findsOneWidget);
-
-    // 5. Correlaciones vacías / iniciales
-    expect(find.text('Correlaciones Estadísticas (Pearson r)'), findsOneWidget);
-    expect(find.text('Calibrando correlaciones multivariables'), findsOneWidget);
+    // 6. Ajustes desde la cabecera
+    await tester.scrollUntilVisible(find.byTooltip('Ajustes'), -400, scrollable: find.byType(Scrollable).first);
+    await tester.tap(find.byTooltip('Ajustes'));
+    await tester.pumpAndSettle();
+    expect(find.byType(AppSettingsScreen), findsOneWidget);
+    await unmountAndFlush(tester);
   });
 
   testWidgets('PerfilYoScreen renderiza nítidamente en Modo Papel NXTPAPER E-Ink',
@@ -140,7 +150,8 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Nathan'), findsOneWidget);
-    expect(find.text('Metas y Gasto Calórico'), findsOneWidget);
+    expect(find.text('Metas y gasto diario'), findsOneWidget);
+    await unmountAndFlush(tester);
   });
 
   test('Temas NXTPAPER E-Ink asignan tonos de gris o colores distintos a los macronutrientes',
