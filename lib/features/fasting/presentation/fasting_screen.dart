@@ -8,9 +8,11 @@ import 'package:go_router/go_router.dart';
 import '../../../core/clock/clock.dart';
 import '../../../core/database/app_database.dart';
 import '../../../core/l10n/l10n.dart';
+import '../../../core/platform/system_permissions.dart';
 import '../../../core/services/fasting_dosage_advisor.dart';
 import '../../../shared/theme/sc_colors.dart';
 import '../../../shared/theme/sc_tokens.dart';
+import '../../../shared/utils/number_formats.dart';
 import '../../../shared/widgets/section_head.dart';
 import '../../../shared/widgets/top_bar.dart';
 import '../../../shared/widgets/undo_snackbar.dart';
@@ -68,12 +70,19 @@ class _FastingScreenState extends ConsumerState<FastingScreen> {
     final DateTime now = ref.read(clockProvider).now();
     final DateTime? date = await showDatePicker(
       context: context,
+      confirmText: context.l10n.commonAccept,
       initialDate: initial.isAfter(now) ? now : initial,
       firstDate: now.subtract(const Duration(days: 7)),
       lastDate: now,
     );
     if (date == null || !mounted) return null;
-    final TimeOfDay? time = await showTimePicker(context: context, initialTime: TimeOfDay.fromDateTime(initial));
+    final TimeOfDay? time = await showTimePicker(
+      context: context,
+      confirmText: context.l10n.commonAccept,
+      // Corto: el aviso largo de Flutter ocupaba dos líneas y desbordaba el diálogo.
+      errorInvalidText: context.l10n.commonInvalidTime,
+      initialTime: TimeOfDay.fromDateTime(initial),
+    );
     if (time == null || !mounted) return null;
     final DateTime picked = DateTime(date.year, date.month, date.day, time.hour, time.minute);
     return picked.isAfter(now) ? now : picked;
@@ -97,8 +106,14 @@ class _FastingScreenState extends ConsumerState<FastingScreen> {
           title: Text(verdict.warningTitle ?? l10n.fastSafetyTitle),
           content: Text(verdict.warningBody ?? ''),
           actions: <Widget>[
-            TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: Text(l10n.commonCancel)),
-            TextButton(onPressed: () => Navigator.of(ctx).pop(true), child: Text(l10n.fastSafetyContinue)),
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(false),
+              child: Text(l10n.commonCancel),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(true),
+              child: Text(l10n.fastSafetyContinue),
+            ),
             if (alternative != null)
               FilledButton(
                 onPressed: () {
@@ -116,12 +131,22 @@ class _FastingScreenState extends ConsumerState<FastingScreen> {
       );
       if (proceed != true) return;
     }
+    // El cronómetro de la pantalla de bloqueo necesita poder notificar (Android 13+).
+    // Si se niega, el ayuno empieza igual.
+    await ref.read(systemPermissionsProvider).request(AppPermission.notifications);
     await _service.start(
       protocolName: _protocol.name(_targetHours),
       targetHours: _targetHours,
       startedAt: _customStart,
     );
     if (mounted) setState(() => _customStart = null);
+  }
+
+  /// "25 min" o "14 h 05 min": más claro que "0,4 h".
+  static String _durationLabel(AppLocalizations l10n, double hours) {
+    final int minutes = (hours * 60).round();
+    if (minutes < 60) return l10n.fastDurationMinutes('$minutes');
+    return l10n.fastDurationHours('${minutes ~/ 60}', (minutes % 60).toString().padLeft(2, '0'));
   }
 
   Future<void> _finish(FastingSession session, double hours) async {
@@ -132,10 +157,15 @@ class _FastingScreenState extends ConsumerState<FastingScreen> {
       builder: (BuildContext ctx) => AlertDialog(
         title: Text(l10n.fastFinishTitle),
         content: Text(
-          hours >= 14 ? l10n.fastFinishBodyReward(hours.toStringAsFixed(1)) : l10n.fastFinishBody(hours.toStringAsFixed(1)),
+          hours >= 14
+              ? l10n.fastFinishBodyReward(_durationLabel(l10n, hours))
+              : l10n.fastFinishBody(_durationLabel(l10n, hours)),
         ),
         actions: <Widget>[
-          TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: Text(l10n.fastKeepGoing)),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: Text(l10n.fastKeepGoing),
+          ),
           FilledButton(onPressed: () => Navigator.of(ctx).pop(true), child: Text(l10n.fastFinish)),
         ],
       ),
@@ -144,7 +174,10 @@ class _FastingScreenState extends ConsumerState<FastingScreen> {
     final FastFinishResult? result = await _service.finish(session.id);
     if (!mounted || result == null) return;
     if (result.coins > 0) {
-      showUndoSnackBar(context, message: l10n.fastFinishedCoins(result.hours.toStringAsFixed(1), result.coins));
+      showUndoSnackBar(
+        context,
+        message: l10n.fastFinishedCoins(NumberFormats.fixed(result.hours, 1), result.coins),
+      );
     }
     if (result.suggestsRefeedingGuide) {
       unawaited(FastBreakSheet.show(context, actualHours: result.hours));
@@ -179,8 +212,6 @@ class _FastingScreenState extends ConsumerState<FastingScreen> {
             TopBar(
               title: l10n.fastTitle,
               subtitle: l10n.fastSubtitle,
-              subtitleBelowTitle: true,
-              uppercaseSubtitle: false,
               leading: BackButton(
                 color: c.text,
                 onPressed: () => context.canPop() ? context.pop() : context.go('/comer'),
@@ -203,7 +234,9 @@ class _FastingScreenState extends ConsumerState<FastingScreen> {
                             protocol: _protocol,
                             targetHours: _targetHours,
                             hasCustomStart: _customStart != null,
-                            startLabel: _customStart == null ? null : fastClockLabel(_customStart!, now, l10n),
+                            startLabel: _customStart == null
+                                ? null
+                                : fastClockLabel(_customStart!, now, l10n),
                             onProtocol: _selectProtocol,
                             onCustomHours: (int h) => setState(() {
                               _protocolTouched = true;
@@ -218,7 +251,9 @@ class _FastingScreenState extends ConsumerState<FastingScreen> {
                           ),
                         SectionHead(title: l10n.fastPhasesTitle, subtitle: l10n.fastPhasesSubtitle),
                         PhaseTimeline(
-                          elapsedHours: session == null ? null : now.difference(session.startedAt).inMinutes / 60.0,
+                          elapsedHours: session == null
+                              ? null
+                              : now.difference(session.startedAt).inMinutes / 60.0,
                         ),
                         FastHistory(onDelete: _delete),
                       ],

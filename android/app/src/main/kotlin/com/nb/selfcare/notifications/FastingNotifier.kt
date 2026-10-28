@@ -13,6 +13,7 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import com.nb.selfcare.R
 import java.text.DateFormat
+import java.util.Calendar
 import java.util.Date
 
 /**
@@ -36,6 +37,7 @@ class FastingNotifier(private val context: Context) {
 
         /** Límites de fase de docs/09 §1 (horas). */
         private val PHASE_BOUNDARIES = listOf(4, 12, 18, 24)
+        private const val MIDNIGHT_INDEX = 50
     }
 
     private val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
@@ -64,6 +66,12 @@ class FastingNotifier(private val context: Context) {
         schedulePhaseUpdates(started, prefs.getInt(KEY_TARGET_HOURS, 16))
     }
 
+    private fun isSameDay(a: Long, b: Long): Boolean {
+        val ca = Calendar.getInstance().apply { timeInMillis = a }
+        val cb = Calendar.getInstance().apply { timeInMillis = b }
+        return ca.get(Calendar.YEAR) == cb.get(Calendar.YEAR) && ca.get(Calendar.DAY_OF_YEAR) == cb.get(Calendar.DAY_OF_YEAR)
+    }
+
     private fun post() {
         val started = prefs.getLong(KEY_STARTED, -1L)
         if (started <= 0L || !canNotify()) return
@@ -74,7 +82,8 @@ class FastingNotifier(private val context: Context) {
         val goalText = if (elapsedHours >= targetHours) {
             "¡Meta de ${targetHours} h alcanzada!"
         } else {
-            "Meta a las ${DateFormat.getTimeInstance(DateFormat.SHORT).format(Date(goalAt))}"
+            val time = DateFormat.getTimeInstance(DateFormat.SHORT).format(Date(goalAt))
+            if (isSameDay(goalAt, System.currentTimeMillis())) "Meta hoy a las $time" else "Meta mañana a las $time"
         }
 
         val notification = NotificationCompat.Builder(context, NotificationChannels.FASTING)
@@ -95,8 +104,8 @@ class FastingNotifier(private val context: Context) {
     }
 
     private fun phaseFor(hours: Double): String = when {
-        hours < 4 -> "Fase anabólica"
-        hours < 12 -> "Glucogenólisis"
+        hours < 4 -> "Fase digestiva"
+        hours < 12 -> "Usando glucógeno"
         hours < 18 -> "Quema de grasa"
         hours < 24 -> "Cetosis"
         else -> "Autofagia"
@@ -112,6 +121,17 @@ class FastingNotifier(private val context: Context) {
                 alarms.set(AlarmManager.RTC, at, phaseIntent(index))
             }
         }
+        // A medianoche "Meta mañana" pasa a "Meta hoy".
+        val goalAt = startedAtMillis + targetHours * 3_600_000L
+        val midnight = Calendar.getInstance().apply {
+            timeInMillis = now
+            add(Calendar.DAY_OF_YEAR, 1)
+            set(Calendar.HOUR_OF_DAY, 0)
+            set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 30)
+            set(Calendar.MILLISECOND, 0)
+        }.timeInMillis
+        if (midnight < goalAt) alarms.set(AlarmManager.RTC, midnight, phaseIntent(MIDNIGHT_INDEX))
     }
 
     private fun cancelPhaseUpdates() {
@@ -119,6 +139,7 @@ class FastingNotifier(private val context: Context) {
         for (index in 0..PHASE_BOUNDARIES.size) {
             alarms.cancel(phaseIntent(index))
         }
+        alarms.cancel(phaseIntent(MIDNIGHT_INDEX))
     }
 
     private fun phaseIntent(index: Int): PendingIntent = PendingIntent.getBroadcast(

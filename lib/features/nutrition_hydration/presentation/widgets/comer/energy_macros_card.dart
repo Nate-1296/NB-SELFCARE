@@ -2,13 +2,20 @@ import 'package:flutter/material.dart';
 
 import '../../../../../core/l10n/l10n.dart';
 import '../../../../../shared/theme/sc_colors.dart';
-import '../../../../../shared/theme/sc_theme.dart';
+import '../../../../../shared/theme/sc_tokens.dart';
+import '../../../../../shared/utils/number_formats.dart';
 import '../../../../../shared/widgets/app_icons.dart';
 import '../../../../../shared/widgets/health_card.dart';
+import '../../../../../shared/widgets/metric_value.dart';
+import '../../../../../shared/widgets/progress_bar.dart';
+import '../../../../../shared/widgets/progress_ring.dart';
+import '../../../../../shared/widgets/quick_action_button.dart';
+import '../../../../../shared/widgets/tonal_badge.dart';
 
 /// Tarjeta Hero de Energía y Macronutrientes con anillo calórico y carbohidratos netos.
 class EnergyAndMacrosCard extends StatelessWidget {
-  const EnergyAndMacrosCard({super.key, 
+  const EnergyAndMacrosCard({
+    super.key,
     required this.totalKcal,
     required this.targetKcal,
     required this.netWorkoutKcal,
@@ -39,216 +46,115 @@ class EnergyAndMacrosCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ScColors c = context.sc;
+    final AppLocalizations l10n = context.l10n;
+    final String locale = l10n.localeName;
     final int consumedInt = totalKcal.round();
     final int remaining = targetKcal - consumedInt;
-    final double kcalRatio =
-        targetKcal > 0 ? (totalKcal / targetKcal).clamp(0.0, 1.0) : 0.0;
-    final int pct = (kcalRatio * 100).round();
+    final double kcalRatio = targetKcal > 0 ? (totalKcal / targetKcal).clamp(0.0, 1.0) : 0.0;
 
     return HealthCard(
+      padding: const EdgeInsets.all(ScSpace.l + 2),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
+          Text(l10n.comerBalanceEnergetico.toUpperCase(), style: context.type.overline),
+          const SizedBox(height: ScSpace.m),
           Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
             children: <Widget>[
-              SizedBox(
-                width: 92,
-                height: 92,
-                child: Stack(
-                  alignment: Alignment.center,
-                  children: <Widget>[
-                    SizedBox(
-                      width: 92,
-                      height: 92,
-                      child: CircularProgressIndicator(
-                        value: kcalRatio,
-                        strokeWidth: 9.5,
-                        strokeCap:
-                            c.isFlat ? StrokeCap.butt : StrokeCap.round,
-                        backgroundColor: c.bg3,
-                        valueColor: AlwaysStoppedAnimation<Color>(
-                          c.isFlat ? c.text : c.calories,
-                        ),
+              ScProgressRing(
+                value: kcalRatio,
+                size: 124,
+                stroke: 11,
+                color: c.calories,
+                semanticsLabel: l10n.comerBalanceEnergetico,
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: <Widget>[
+                      AnimatedMetricValue(
+                        value: consumedInt.toDouble(),
+                        format: (double v) => NumberFormats.integer(v, locale),
+                        size: 28,
                       ),
-                    ),
-                    Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: <Widget>[
-                        Icon(
-                          AppIcons.fuego,
-                          size: 17,
-                          color: c.isFlat ? c.text : c.calories,
-                        ),
-                        Text(
-                          '$pct%',
-                          style: TextStyle(
-                            fontFamily: ScFonts.display,
-                            fontSize: 16,
-                            fontWeight: FontWeight.w800,
-                            color: c.text,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
+                      const SizedBox(height: 2),
+                      Text(
+                        l10n.comerOfGoalKcal(NumberFormats.integer(targetKcal, locale)),
+                        style: context.type.caption,
+                      ),
+                    ],
+                  ),
                 ),
               ),
-              const SizedBox(width: 16),
+              const SizedBox(width: ScSpace.l + 4),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
                     Text(
-                      context.l10n.comerBalanceEnergetico,
-                      style: TextStyle(
-                        fontFamily: ScFonts.ui,
-                        fontSize: 12.5,
-                        fontWeight: FontWeight.w700,
-                        color: c.text2,
+                      (remaining >= 0 ? l10n.comerAvailableLabel : l10n.comerOverLabel)
+                          .toUpperCase(),
+                      style: context.type.overline,
+                    ),
+                    const SizedBox(height: ScSpace.xs),
+                    AnimatedMetricValue(
+                      value: remaining.abs().toDouble(),
+                      format: (double v) => NumberFormats.integer(v, locale),
+                      unit: l10n.unitKcal,
+                      size: 26,
+                      color: remaining >= 0 ? null : (c.isFlat ? c.text : c.warning),
+                    ),
+                    if (netWorkoutKcal > 0) ...<Widget>[
+                      const SizedBox(height: ScSpace.s),
+                      TonalBadge(
+                        label: l10n.comerKcalEntreno(NumberFormats.group(netWorkoutKcal)),
+                        tone: c.steps,
+                        icon: AppIcons.bolt,
                       ),
-                    ),
-                    const SizedBox(height: 2),
-                    RichText(
-                      text: TextSpan(
-                        text: '$consumedInt',
-                        style: TextStyle(
-                          fontFamily: ScFonts.display,
-                          fontSize: 28,
-                          fontWeight: FontWeight.w800,
-                          color: c.text,
-                        ),
-                        children: <InlineSpan>[
-                          TextSpan(
-                            text: context.l10n.comerKcal((targetKcal).toString()),
-                            style: TextStyle(
-                              fontFamily: ScFonts.ui,
-                              fontSize: 13.5,
-                              fontWeight: FontWeight.w600,
-                              color: c.text2,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    Wrap(
-                      spacing: 6,
-                      runSpacing: 6,
-                      children: <Widget>[
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color: c.bg3,
-                            borderRadius: BorderRadius.circular(10),
-                            border: Border.all(
-                              color: c.isFlat ? c.line2 : c.line,
-                            ),
-                          ),
-                          child: Text(
-                            remaining >= 0
-                                ? context.l10n.comerDisponiblesKcal((remaining).toString()): context.l10n.comerKcalSobreLaMeta(remaining.abs().toString()),
-                            softWrap: true,
-                            style: TextStyle(
-                              fontFamily: ScFonts.ui,
-                              fontSize: 11.5,
-                              fontWeight: FontWeight.w700,
-                              color: remaining >= 0
-                                  ? (c.isFlat ? c.text : c.accent)
-                                  : (c.isFlat ? c.text : c.warning),
-                            ),
-                          ),
-                        ),
-                        if (netWorkoutKcal > 0)
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 9,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: c.bg3,
-                              borderRadius: BorderRadius.circular(10),
-                              border: Border.all(
-                                color: c.isFlat ? c.line2 : c.steps,
-                              ),
-                            ),
-                            child: Text(
-                              context.l10n.comerKcalEntreno((netWorkoutKcal).toString()),
-                              style: TextStyle(
-                                fontFamily: ScFonts.ui,
-                                fontSize: 11,
-                                fontWeight: FontWeight.w700,
-                                color: c.isFlat ? c.text : c.steps,
-                              ),
-                            ),
-                          ),
-                      ],
-                    ),
+                    ],
                   ],
                 ),
               ),
             ],
           ),
-
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 14),
-            child: Divider(height: 1, color: c.line),
-          ),
-
-          // 3 barras amplias de macronutrientes (cero truncamiento)
+          const SizedBox(height: ScSpace.l + 2),
           _MacroWideRow(
-            label: context.l10n.todayProteina,
+            label: l10n.todayProteina,
             currentG: totalP,
             targetG: targetP,
             badgeText: totalP >= targetP
-                ? context.l10n.comerMetaCubierta: context.l10n.comerFaltanG((targetP - totalP).round().toString()),
-            barColor: c.isFlat ? c.text : c.protein,
+                ? l10n.comerMetaCubierta
+                : l10n.comerFaltanG(NumberFormats.group(targetP - totalP)),
+            barColor: c.protein,
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: ScSpace.m + 2),
           _MacroWideRow(
-            label: context.l10n.todayCarbohidratos,
+            label: l10n.todayCarbohidratos,
             currentG: totalC,
             targetG: targetC,
-            badgeText:
-                context.l10n.comerNetosGFibraG(netCarbs.round().toString(), totalFiber.round().toString()),
-            barColor: c.isFlat ? c.text : c.carbs,
+            badgeText: l10n.comerNetosGFibraG(
+              NumberFormats.group(netCarbs),
+              NumberFormats.group(totalFiber),
+            ),
+            barColor: c.carbs,
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: ScSpace.m + 2),
           _MacroWideRow(
-            label: context.l10n.todayGrasasSaludables,
+            label: l10n.todayGrasasSaludables,
             currentG: totalF,
             targetG: targetF,
             badgeText: totalF >= targetF
-                ? context.l10n.comerMetaCubierta: context.l10n.comerFaltanG((targetF - totalF).round().toString()),
-            barColor: c.isFlat ? c.text : c.fat,
+                ? l10n.comerMetaCubierta
+                : l10n.comerFaltanG(NumberFormats.group(targetF - totalF)),
+            barColor: c.fat,
           ),
           if (onOpenOracle != null) ...<Widget>[
-            const SizedBox(height: 14),
-            OutlinedButton.icon(
+            const SizedBox(height: ScSpace.l),
+            QuickActionButton(
+              label: l10n.comerQueComerParaCerrarMis,
+              icon: Icons.auto_awesome_rounded,
+              tone: c.accent,
               onPressed: onOpenOracle,
-              icon: Icon(Icons.auto_awesome_rounded, size: 16, color: c.accent),
-              label: Text(
-                context.l10n.comerQueComerParaCerrarMis,
-                style: TextStyle(
-                  fontFamily: ScFonts.ui,
-                  fontSize: 12.5,
-                  fontWeight: FontWeight.w700,
-                  color: c.text,
-                ),
-              ),
-              style: OutlinedButton.styleFrom(
-                minimumSize: const Size.fromHeight(40),
-                side: BorderSide(
-                  color: c.isFlat ? c.line2 : c.accent.withValues(alpha: 0.35),
-                  width: 1.2,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
             ),
           ],
         ],
@@ -275,68 +181,35 @@ class _MacroWideRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ScColors c = context.sc;
-    final double ratio =
-        targetG > 0 ? (currentG / targetG).clamp(0.0, 1.0) : 0.0;
+    final double ratio = targetG > 0 ? (currentG / targetG).clamp(0.0, 1.0) : 0.0;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
         Row(
+          crossAxisAlignment: CrossAxisAlignment.end,
           children: <Widget>[
-            Expanded(
-              child: Text(
-                label,
-                softWrap: true,
-                style: TextStyle(
-                  fontFamily: ScFonts.display,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w800,
-                  color: c.text,
-                ),
-              ),
-            ),
-            RichText(
-              text: TextSpan(
-                text: context.l10n.comerG2(currentG.round().toString()),
-                style: TextStyle(
-                  fontFamily: ScFonts.display,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w800,
-                  color: c.text,
-                ),
+            Expanded(child: Text(label, style: context.type.label)),
+            Text.rich(
+              TextSpan(
                 children: <InlineSpan>[
                   TextSpan(
-                    text: context.l10n.comerG3(targetG.round().toString()),
-                    style: TextStyle(
-                      fontFamily: ScFonts.ui,
-                      fontSize: 12,
-                      color: c.text3,
-                    ),
+                    text: NumberFormats.group(currentG),
+                    style: context.type.metricS.copyWith(fontSize: 16),
+                  ),
+                  TextSpan(
+                    text: ' / ${targetG.round()} g',
+                    style: context.type.caption.copyWith(color: c.text3),
                   ),
                 ],
               ),
             ),
           ],
         ),
-        const SizedBox(height: 5),
-        LinearProgressIndicator(
-          value: ratio,
-          backgroundColor: c.bg3,
-          valueColor: AlwaysStoppedAnimation<Color>(barColor),
-          borderRadius: BorderRadius.circular(5),
-          minHeight: 6.5,
-        ),
-        const SizedBox(height: 4),
-        Text(
-          badgeText,
-          softWrap: true,
-          style: TextStyle(
-            fontFamily: ScFonts.ui,
-            fontSize: 11.5,
-            fontWeight: FontWeight.w600,
-            color: c.text2,
-          ),
-        ),
+        const SizedBox(height: ScSpace.s - 2),
+        ScProgressBar(value: ratio, color: barColor, height: 7),
+        const SizedBox(height: ScSpace.xs + 1),
+        Text(badgeText, style: context.type.caption.copyWith(fontSize: 12, color: c.text3)),
       ],
     );
   }

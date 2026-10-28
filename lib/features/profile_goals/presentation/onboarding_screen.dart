@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../app.dart';
 import '../../../core/clock/clock.dart';
+import '../../../core/constants/app_constants.dart';
 import '../../../core/domain/enums.dart';
 import '../../../core/l10n/l10n.dart';
 import '../../../shared/theme/sc_colors.dart';
@@ -14,6 +15,7 @@ import '../../../shared/theme/sc_tokens.dart';
 import '../../../shared/theme/theme_controller.dart';
 import '../../../shared/utils/date_formats.dart';
 import '../../../shared/utils/diet_phase_policy.dart';
+import '../../../shared/utils/number_formats.dart';
 import '../../../shared/widgets/card_header.dart';
 import '../../../shared/widgets/health_card.dart';
 import '../application/onboarding_service.dart';
@@ -32,8 +34,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   final GlobalKey<FormState> _aboutFormKey = GlobalKey<FormState>();
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _heightController = TextEditingController(text: '175');
-  final TextEditingController _currentWeightController = TextEditingController(text: '75.0');
-  final TextEditingController _targetWeightController = TextEditingController(text: '70.0');
+  final TextEditingController _currentWeightController = TextEditingController(text: '75');
+  final TextEditingController _targetWeightController = TextEditingController(text: '70');
 
   int _step = 0;
   late DateTime _birthDate;
@@ -99,6 +101,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     final DateTime now = ref.read(clockProvider).now();
     final DateTime? picked = await showDatePicker(
       context: context,
+      confirmText: context.l10n.commonAccept,
       initialDate: _birthDate,
       firstDate: DateTime(1920),
       lastDate: DateTime(now.year - 14, now.month, now.day),
@@ -123,7 +126,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       await ref.read(onboardingServiceProvider).complete(_answers());
     } on Exception catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.l10n.onbSaveError(e.toString()))));
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(context.l10n.onbSaveError(e.toString()))));
       }
     } finally {
       if (mounted) setState(() => _isSaving = false);
@@ -182,7 +186,12 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
             Expanded(
               child: ListView(
                 key: ValueKey<int>(_step),
-                padding: const EdgeInsets.fromLTRB(ScSpace.gutter, ScSpace.l, ScSpace.gutter, ScSpace.l),
+                padding: const EdgeInsets.fromLTRB(
+                  ScSpace.gutter,
+                  ScSpace.l,
+                  ScSpace.gutter,
+                  ScSpace.l,
+                ),
                 children: <Widget>[
                   switch (_step) {
                     0 => const _WelcomeStep(),
@@ -199,10 +208,14 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                 onPressed: _isSaving ? null : _next,
                 style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(54)),
                 child: _isSaving
-                    ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
                     : Text(
                         last ? l10n.onbStart : l10n.onbNext,
-                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
+                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
                       ),
               ),
             ),
@@ -225,7 +238,11 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           const SizedBox(height: ScSpace.xl),
           TextFormField(
             controller: _nameController,
-            decoration: InputDecoration(labelText: l10n.onbName, prefixIcon: const Icon(Icons.badge_outlined)),
+            maxLength: AppConstants.maxProfileNameLength,
+            decoration: InputDecoration(
+              labelText: l10n.onbName,
+              prefixIcon: const Icon(Icons.badge_outlined),
+            ),
             textCapitalization: TextCapitalization.words,
             textInputAction: TextInputAction.next,
             validator: (String? v) {
@@ -240,7 +257,10 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
             leading: const Icon(Icons.cake_outlined),
             title: Text(l10n.onbBirthDate),
             subtitle: Text(
-              l10n.onbBirthDateValue(DateFormats.shortDate(_birthDate, l10n.localeName), age.floor()),
+              l10n.onbBirthDateValue(
+                DateFormats.shortDate(_birthDate, l10n.localeName),
+                age.floor(),
+              ),
             ),
             trailing: OutlinedButton(onPressed: _pickBirthDate, child: Text(l10n.commonEdit)),
           ),
@@ -304,18 +324,21 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     final ScColors c = context.sc;
     final double rate = _weeklyGoalRateKg;
     final int tdee = ref.read(onboardingServiceProvider).initialTdee(_answers());
-    final int dailyKcal = (tdee +
-            DietPhasePolicy.dailyAdjustmentKcal(
-              phase: DietPhase.deficit,
-              weeklyGoalRateKg: rate,
-              phaseStartedAt: null,
-              now: ref.read(clockProvider).now(),
-              hasEatingDisorderHistory: _hasEatingDisorderHistory,
-            ))
-        .clamp(1200, 4500);
+    final int dailyKcal =
+        (tdee +
+                DietPhasePolicy.dailyAdjustmentKcal(
+                  phase: DietPhase.deficit,
+                  weeklyGoalRateKg: rate,
+                  phaseStartedAt: null,
+                  now: ref.read(clockProvider).now(),
+                  hasEatingDisorderHistory: _hasEatingDisorderHistory,
+                ))
+            .clamp(1200, 4500);
     final String paceLabel = rate == 0
         ? l10n.onbPaceMaintain
-        : (rate < 0 ? l10n.onbPaceLose(rate.abs().toStringAsFixed(2)) : l10n.onbPaceGain(rate.toStringAsFixed(2)));
+        : (rate < 0
+              ? l10n.onbPaceLose(NumberFormats.fixed(rate.abs(), 2))
+              : l10n.onbPaceGain(NumberFormats.fixed(rate, 2)));
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -350,7 +373,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           onChanged: (double v) => setState(() => _dailyStepsGoal = v.round()),
         ),
         _SliderRow(
-          label: l10n.onbSleep(_dailySleepGoalHours.toStringAsFixed(1)),
+          label: l10n.onbSleep(NumberFormats.fixed(_dailySleepGoalHours, 1)),
           value: _dailySleepGoalHours,
           min: 6,
           max: 9.5,
@@ -382,7 +405,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                     style: TextStyle(
                       fontFamily: ScFonts.display,
                       fontSize: 24,
-                      fontWeight: FontWeight.w900,
+                      fontWeight: FontWeight.w800,
                       color: c.isFlat ? c.text : c.accent,
                     ),
                   ),
@@ -436,14 +459,33 @@ class _WelcomeStep extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final AppLocalizations l10n = context.l10n;
+    final ScColors c = context.sc;
     final String engine = ref.watch(themeEngineProvider);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
         const SizedBox(height: ScSpace.l),
-        Center(child: Image.asset('assets/images/logo.png', width: 96, height: 96, fit: BoxFit.contain)),
-        const SizedBox(height: ScSpace.l),
-        Text(l10n.onbWelcomeTitle, textAlign: TextAlign.center, style: context.text.headlineSmall),
+        // El logo es un PNG de 1254 px con fondo propio: se decodifica al tamaño
+        // de pantalla y se presenta como sello circular.
+        Center(
+          child: Container(
+            width: 104,
+            height: 104,
+            padding: const EdgeInsets.all(3),
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: c.isFlat ? c.line2 : c.accent.withValues(alpha: 0.5),
+                width: 2,
+              ),
+            ),
+            child: ClipOval(
+              child: Image.asset('assets/images/logo.png', fit: BoxFit.cover, cacheWidth: 300),
+            ),
+          ),
+        ),
+        const SizedBox(height: ScSpace.l + 4),
+        Text(l10n.onbWelcomeTitle, textAlign: TextAlign.center, style: context.text.displaySmall),
         const SizedBox(height: ScSpace.s),
         Text(l10n.onbWelcomeBody, textAlign: TextAlign.center, style: context.text.bodyMedium),
         const SizedBox(height: ScSpace.xl),
@@ -543,7 +585,13 @@ class _SliderRow extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
         Text(label, style: context.text.bodyMedium),
-        Slider(value: value.clamp(min, max), min: min, max: max, divisions: divisions, onChanged: enabled ? onChanged : null),
+        Slider(
+          value: value.clamp(min, max),
+          min: min,
+          max: max,
+          divisions: divisions,
+          onChanged: enabled ? onChanged : null,
+        ),
         const SizedBox(height: ScSpace.xs),
       ],
     );

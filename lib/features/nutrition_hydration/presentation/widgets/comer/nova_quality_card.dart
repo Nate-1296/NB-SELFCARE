@@ -8,6 +8,7 @@ import '../../../../../shared/theme/sc_theme.dart';
 import '../../../../../shared/theme/sc_tokens.dart';
 import '../../../../../shared/widgets/card_header.dart';
 import '../../../../../shared/widgets/health_card.dart';
+import '../../../../../shared/widgets/progress_bar.dart';
 import '../../../../../shared/widgets/science_on_demand_sheet.dart';
 import '../../../../../shared/widgets/tonal_badge.dart';
 import '../../../domain/nutrient_totals.dart';
@@ -26,8 +27,9 @@ class NovaQualityCard extends StatelessWidget {
     final ScColors c = context.sc;
     final AppLocalizations l10n = context.l10n;
     final double classified = totals.classifiedKcal;
-    final int freshPct =
-        classified > 0 ? (totals.minimallyProcessedKcal / classified * 100).round() : 0;
+    final int freshPct = classified > 0
+        ? (totals.minimallyProcessedKcal / classified * 100).round()
+        : 0;
     final bool highUltra = classified > 0 && freshPct < 75;
 
     return HealthCard(
@@ -47,15 +49,7 @@ class NovaQualityCard extends StatelessWidget {
           ),
           const SizedBox(height: ScSpace.m),
           if (classified > 0) ...<Widget>[
-            ClipRRect(
-              borderRadius: BorderRadius.circular(ScRadius.pill),
-              child: LinearProgressIndicator(
-                value: freshPct / 100.0,
-                minHeight: 7,
-                backgroundColor: c.isFlat ? c.line2 : c.warning.withValues(alpha: 0.3),
-                valueColor: AlwaysStoppedAnimation<Color>(c.isFlat ? c.text : c.protein),
-              ),
-            ),
+            ScProgressBar(value: freshPct / 100.0, color: c.protein, height: 7),
             const SizedBox(height: ScSpace.s),
             Wrap(
               spacing: ScSpace.m,
@@ -91,9 +85,8 @@ class NovaQualityCard extends StatelessWidget {
               visualDensity: VisualDensity.compact,
               foregroundColor: c.isFlat ? c.text : c.accent,
             ),
-            onPressed: () => unawaited(
-              ScienceOnDemandSheet.show(context, ScienceSpec.novaClassification()),
-            ),
+            onPressed: () =>
+                unawaited(ScienceOnDemandSheet.show(context, ScienceSpec.novaClassification())),
             icon: const Icon(Icons.info_outline_rounded, size: 16),
             label: Text(
               l10n.comerNovaHowItWorks,

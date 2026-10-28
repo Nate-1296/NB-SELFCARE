@@ -7,7 +7,7 @@ import '../../../core/platform/notification_gateway.dart';
 /// Estado del aviso de pausas activas.
 enum MovementNudgeStatus { enabled, disabled, needsHealthConnect, unsupported }
 
-/// Pomodoro de sedentarismo (docs/14 Fase 5): invitación a moverse tras ~60 min
+/// Pomodoro de sedentarismo (docs/07 §1.2): invitación a moverse tras ~60 min
 /// sin pasos, calculado en el dispositivo con Health Connect.
 class MovementNudgeService {
   MovementNudgeService(this._db, this._healthConnect, this._notifications);

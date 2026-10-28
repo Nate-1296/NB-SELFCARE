@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/hardware/body_scale_driver.dart';
 import '../../../core/hardware/drivers/xiaomi_miscale2_driver.dart';
+import '../../../core/platform/native_call.dart';
 
 /// Báscula activa. Hoy solo la Mi Scale 2; el contrato permite añadir otras.
 final bodyScaleDriverProvider = Provider<BodyScaleDriver>((Ref ref) {
@@ -23,6 +24,10 @@ enum ScalePhase {
   awaitingImpedance,
 
   error,
+
+  /// No llegó ninguna trama en [ScaleSession.searchTimeout]: la radio se apaga
+  /// para no gastar batería.
+  notFound,
 }
 
 class ScaleSessionState {
@@ -56,8 +61,12 @@ class ScaleSessionState {
 class ScaleSession extends Notifier<ScaleSessionState> {
   static const Duration impedanceGrace = Duration(seconds: 10);
 
+  /// Búsqueda máxima sin recibir nada de la báscula.
+  static const Duration searchTimeout = Duration(seconds: 90);
+
   StreamSubscription<ScaleMeasurementEvent>? _subscription;
   Timer? _graceTimer;
+  Timer? _searchTimer;
   bool _weightOnly = false;
   bool _captured = false;
 
@@ -72,16 +81,22 @@ class ScaleSession extends Notifier<ScaleSessionState> {
     _weightOnly = weightOnly;
     _captured = false;
     state = const ScaleSessionState(phase: ScalePhase.searching);
+    _searchTimer = Timer(searchTimeout, () {
+      if (state.phase != ScalePhase.searching) return;
+      _release();
+      state = const ScaleSessionState(phase: ScalePhase.notFound);
+      unawaited(bestEffort(ref.read(bodyScaleDriverProvider).stopScan, null));
+    });
     _subscription = ref
         .read(bodyScaleDriverProvider)
         .scanAndStreamMeasurements(targetMacAddress: targetMacAddress)
-        .listen(_onEvent, onError: _onError);
+        .listen(_onEvent, onError: _onError, onDone: _onDone);
   }
 
   Future<void> stop() async {
     _release();
-    await ref.read(bodyScaleDriverProvider).stopScan();
     state = ScaleSessionState(live: state.live);
+    await bestEffort(ref.read(bodyScaleDriverProvider).stopScan, null);
   }
 
   /// Guarda el peso estable sin esperar a la bioimpedancia.
@@ -96,6 +111,8 @@ class ScaleSession extends Notifier<ScaleSessionState> {
 
   void _onEvent(ScaleMeasurementEvent event) {
     if (_captured) return;
+    _searchTimer?.cancel();
+    _searchTimer = null;
     if (!event.isStabilized) {
       state = ScaleSessionState(phase: ScalePhase.measuring, live: event);
       return;
@@ -112,6 +129,19 @@ class ScaleSession extends Notifier<ScaleSessionState> {
     });
   }
 
+  /// El escaneo terminó solo (Bluetooth apagado, límite de tiempo del sistema).
+  /// Si ya había un peso estable se guarda; si no, se avisa en vez de quedarse
+  /// "buscando" para siempre.
+  void _onDone() {
+    if (_captured) return;
+    final ScaleMeasurementEvent? live = state.live;
+    if (live != null && live.isStabilized) {
+      unawaited(_capture(live));
+    } else {
+      _onError(StateError('scan_ended'));
+    }
+  }
+
   void _onError(Object error) {
     _release();
     state = ScaleSessionState(phase: ScalePhase.error, live: state.live, error: error);
@@ -121,13 +151,17 @@ class ScaleSession extends Notifier<ScaleSessionState> {
     if (_captured) return;
     _captured = true;
     _release();
-    await ref.read(bodyScaleDriverProvider).stopScan();
+    // El peso se entrega antes de apagar la radio: si stopScan falla (Bluetooth
+    // apagado a mitad), la lectura no se pierde.
     state = ScaleSessionState(live: event, capture: event);
+    await bestEffort(ref.read(bodyScaleDriverProvider).stopScan, null);
   }
 
   void _release() {
     _graceTimer?.cancel();
     _graceTimer = null;
+    _searchTimer?.cancel();
+    _searchTimer = null;
     unawaited(_subscription?.cancel());
     _subscription = null;
   }

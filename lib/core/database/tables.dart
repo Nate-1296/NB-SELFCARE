@@ -46,7 +46,7 @@ class UserProfiles extends Table {
   RealColumn get caffeineBedtimeCutoffHours => real().withDefault(const Constant(8.0))(); // Horas antes de dormir para corte de cafeína
   DateTimeColumn get activeDietPhaseStartedAt => dateTime().nullable()(); // Inicio de la fase vigente (reverse diet, diet break)
 
-  // Seguridad clínica declarada en el onboarding (docs/01 §6)
+  // Seguridad clínica declarada en el onboarding (docs/01 §5)
   BoolColumn get hasImpedanceContraindication =>
       boolean().withDefault(const Constant(false))(); // Marcapasos, implantes o embarazo: solo peso
   BoolColumn get hasEatingDisorderHistory =>
@@ -241,6 +241,11 @@ class JournalEntries extends Table {
   TextColumn get content => text()();
   TextColumn get progressPhotoPath => text().nullable()();
 
+  /// Foto de progreso (JPEG reducido) dentro de la base de datos, para que la
+  /// copia de seguridad la incluya (v6). `progressPhotoPath` queda para
+  /// entradas anteriores.
+  BlobColumn get progressPhoto => blob().nullable()();
+
   IntColumn get moodScore => integer().nullable()(); // 1..5
   IntColumn get energyLevel => integer().nullable()(); // 1..5
   IntColumn get stressLevel => integer().nullable()(); // 1..5
@@ -260,6 +265,12 @@ class PetStatus extends Table {
   DateTimeColumn get shieldActiveUntil => dateTime().nullable()();
 
   TextColumn get equippedHatId => text().nullable()();
+
+  /// Accesorio puesto (gafas, bufanda…); `null` = ninguno (v5).
+  TextColumn get equippedAccessoryId => text().nullable()();
+
+  /// Color de Nibi; `null` = el verde de siempre (v5).
+  TextColumn get equippedColorId => text().nullable()();
   TextColumn get equippedBackgroundId => text().withDefault(const Constant('bg_default_room'))();
   TextColumn get unlockedItemsJson => text().withDefault(const Constant('["bg_default_room"]'))();
 

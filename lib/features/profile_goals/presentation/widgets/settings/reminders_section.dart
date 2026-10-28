@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../../core/database/app_database.dart';
 import '../../../../../core/domain/enums.dart';
 import '../../../../../core/l10n/l10n.dart';
+import '../../../../../core/platform/system_permissions.dart';
 import '../../../../../shared/theme/sc_colors.dart';
 import '../../../../../shared/theme/sc_theme.dart';
 import '../../../../../shared/widgets/app_icons.dart';
@@ -94,6 +95,9 @@ class RemindersSection extends ConsumerWidget {
                           onTap: () async {
                             final picked = await showTimePicker(
                               context: context,
+                              confirmText: context.l10n.commonAccept,
+                              // Corto: el aviso largo de Flutter ocupaba dos líneas y desbordaba el diálogo.
+                              errorInvalidText: context.l10n.commonInvalidTime,
                               initialTime: TimeOfDay(
                                 hour: rem.timeOfDayMinutes ~/ 60,
                                 minute: rem.timeOfDayMinutes % 60,
@@ -116,8 +120,11 @@ class RemindersSection extends ConsumerWidget {
                           ),
                         ),
                         value: rem.isEnabled,
-                        onChanged: (bool val) =>
-                            ref.read(reminderServiceProvider).setEnabled(rem.id, val),
+                        onChanged: (bool val) async {
+                          // Un recordatorio sin permiso de notificaciones no se vería.
+                          if (val) await ref.read(systemPermissionsProvider).request(AppPermission.notifications);
+                          await ref.read(reminderServiceProvider).setEnabled(rem.id, val);
+                        },
                       ),
                   ],
                 ),
@@ -144,6 +151,7 @@ class RemindersSection extends ConsumerWidget {
             onChanged: movementStatus == MovementNudgeStatus.unsupported
                 ? null
                 : (bool enabled) async {
+                    if (enabled) await ref.read(systemPermissionsProvider).request(AppPermission.notifications);
                     final MovementNudgeStatus next = await ref
                         .read(movementNudgeServiceProvider)
                         .setEnabled(enabled);

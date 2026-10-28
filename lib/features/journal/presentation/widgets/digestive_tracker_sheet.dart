@@ -9,6 +9,7 @@ import '../../../../core/database/app_database.dart';
 import '../../../../core/l10n/l10n.dart';
 import '../../../../shared/theme/sc_colors.dart';
 import '../../../../shared/theme/sc_theme.dart';
+import '../../../../shared/utils/number_formats.dart';
 import '../../../../shared/widgets/app_icons.dart';
 import '../../../../shared/widgets/sheet.dart';
 import '../../../../shared/widgets/undo_snackbar.dart';
@@ -16,23 +17,16 @@ import '../../application/digestive_service.dart';
 
 /// Modal para seguimiento de salud digestiva y Escala de Bristol (Tipos 1 a 7).
 class DigestiveTrackerSheet extends ConsumerStatefulWidget {
-  const DigestiveTrackerSheet({
-    super.key,
-    required this.dateKey,
-  });
+  const DigestiveTrackerSheet({super.key, required this.dateKey});
 
   final String dateKey;
 
   static Future<void> show(BuildContext context, {required String dateKey}) {
-    return mostrarHojaMenu<void>(
-      context,
-      builder: (_) => DigestiveTrackerSheet(dateKey: dateKey),
-    );
+    return mostrarHojaMenu<void>(context, builder: (_) => DigestiveTrackerSheet(dateKey: dateKey));
   }
 
   @override
-  ConsumerState<DigestiveTrackerSheet> createState() =>
-      _DigestiveTrackerSheetState();
+  ConsumerState<DigestiveTrackerSheet> createState() => _DigestiveTrackerSheetState();
 }
 
 class _DigestiveTrackerSheetState extends ConsumerState<DigestiveTrackerSheet> {
@@ -41,8 +35,9 @@ class _DigestiveTrackerSheetState extends ConsumerState<DigestiveTrackerSheet> {
   final Set<String> _selectedSymptoms = <String>{};
   final TextEditingController _notesCtrl = TextEditingController();
 
-  List<({int type, String name, String subtitle, bool isOptimal})> _bristolTypes(AppLocalizations l10n) =>
-      <({int type, String name, String subtitle, bool isOptimal})>[
+  List<({int type, String name, String subtitle, bool isOptimal})> _bristolTypes(
+    AppLocalizations l10n,
+  ) => <({int type, String name, String subtitle, bool isOptimal})>[
     (
       type: 1,
       name: l10n.journalTipo1TerronesDuros,
@@ -88,16 +83,22 @@ class _DigestiveTrackerSheetState extends ConsumerState<DigestiveTrackerSheet> {
   ];
 
   /// Síntomas guardados como códigos estables; la etiqueta se traduce al mostrar.
-  static const List<String> _symptomCodes = <String>['bloating', 'gas', 'reflux', 'cramps', 'heaviness'];
+  static const List<String> _symptomCodes = <String>[
+    'bloating',
+    'gas',
+    'reflux',
+    'cramps',
+    'heaviness',
+  ];
 
   static String symptomLabel(AppLocalizations l10n, String code) => switch (code) {
-        'bloating' => l10n.journalHinchazonDistension,
-        'gas' => l10n.journalGasesFrecuentes,
-        'reflux' => l10n.journalReflujoOAcidez,
-        'cramps' => l10n.journalDolorOColicos,
-        'heaviness' => l10n.journalPesadezGastrica,
-        _ => code,
-      };
+    'bloating' => l10n.journalHinchazonDistension,
+    'gas' => l10n.journalGasesFrecuentes,
+    'reflux' => l10n.journalReflujoOAcidez,
+    'cramps' => l10n.journalDolorOColicos,
+    'heaviness' => l10n.journalPesadezGastrica,
+    _ => code,
+  };
 
   static List<String> _decodeSymptoms(String raw) {
     try {
@@ -116,7 +117,9 @@ class _DigestiveTrackerSheetState extends ConsumerState<DigestiveTrackerSheet> {
 
   Future<void> _saveDigestiveEvent() async {
     unawaited(HapticFeedback.lightImpact());
-    await ref.read(digestiveServiceProvider).log(
+    await ref
+        .read(digestiveServiceProvider)
+        .log(
           dateKey: widget.dateKey,
           bristolType: _selectedBristol,
           discomfortLevel: _discomfortLevel,
@@ -129,7 +132,9 @@ class _DigestiveTrackerSheetState extends ConsumerState<DigestiveTrackerSheet> {
       ..hideCurrentSnackBar()
       ..showSnackBar(
         SnackBar(
-          content: Text(context.l10n.journalEventoDigestivoTipoRegistrado((_selectedBristol).toString())),
+          content: Text(
+            context.l10n.journalEventoDigestivoTipoRegistrado((_selectedBristol).toString()),
+          ),
           duration: const Duration(seconds: 2),
         ),
       );
@@ -146,7 +151,6 @@ class _DigestiveTrackerSheetState extends ConsumerState<DigestiveTrackerSheet> {
       padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
       child: Builder(
         builder: (BuildContext context) {
-
           return SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -158,16 +162,10 @@ class _DigestiveTrackerSheetState extends ConsumerState<DigestiveTrackerSheet> {
                     Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: c.isFlat
-                            ? c.line2
-                            : c.carbs.withValues(alpha: 0.15),
+                        color: c.isFlat ? c.line2 : c.carbs.withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      child: Icon(
-                        Icons.health_and_safety_rounded,
-                        color: c.carbs,
-                        size: 22,
-                      ),
+                      child: Icon(Icons.health_and_safety_rounded, color: c.carbs, size: 22),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
@@ -179,17 +177,13 @@ class _DigestiveTrackerSheetState extends ConsumerState<DigestiveTrackerSheet> {
                             style: TextStyle(
                               fontFamily: ScFonts.display,
                               fontSize: 16.5,
-                              fontWeight: FontWeight.w800,
+                              fontWeight: FontWeight.w700,
                               color: c.text,
                             ),
                           ),
                           Text(
                             context.l10n.journalTransitoIntestinalYCorrelacionCon,
-                            style: TextStyle(
-                              fontFamily: ScFonts.ui,
-                              fontSize: 12,
-                              color: c.text2,
-                            ),
+                            style: TextStyle(fontFamily: ScFonts.ui, fontSize: 12, color: c.text2),
                           ),
                         ],
                       ),
@@ -223,10 +217,7 @@ class _DigestiveTrackerSheetState extends ConsumerState<DigestiveTrackerSheet> {
                     },
                     child: Container(
                       margin: const EdgeInsets.only(bottom: 6),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 9,
-                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
                       decoration: BoxDecoration(
                         color: _selectedBristol == item.type
                             ? (c.isFlat ? c.line2 : c.soft)
@@ -295,10 +286,8 @@ class _DigestiveTrackerSheetState extends ConsumerState<DigestiveTrackerSheet> {
                                         decoration: BoxDecoration(
                                           color: c.isFlat
                                               ? c.line2
-                                              : c.protein
-                                                  .withValues(alpha: 0.15),
-                                          borderRadius:
-                                              BorderRadius.circular(6),
+                                              : c.protein.withValues(alpha: 0.15),
+                                          borderRadius: BorderRadius.circular(6),
                                         ),
                                         child: Text(
                                           context.l10n.bodyStatusOptimal,
@@ -306,9 +295,7 @@ class _DigestiveTrackerSheetState extends ConsumerState<DigestiveTrackerSheet> {
                                             fontFamily: ScFonts.ui,
                                             fontSize: 10,
                                             fontWeight: FontWeight.w700,
-                                            color: c.isFlat
-                                                ? c.text
-                                                : c.protein,
+                                            color: c.isFlat ? c.text : c.protein,
                                           ),
                                         ),
                                       ),
@@ -337,7 +324,7 @@ class _DigestiveTrackerSheetState extends ConsumerState<DigestiveTrackerSheet> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: <Widget>[
-                    Text(
+                    Flexible(child: Text(
                       context.l10n.journalNivelDeMolestiaHinchazon,
                       style: TextStyle(
                         fontFamily: ScFonts.ui,
@@ -345,11 +332,15 @@ class _DigestiveTrackerSheetState extends ConsumerState<DigestiveTrackerSheet> {
                         fontWeight: FontWeight.w700,
                         color: c.text,
                       ),
-                    ),
+                    )),
                     Text(
                       _discomfortLevel == 1
-                          ? context.l10n.journal1CeroMolestia: (_discomfortLevel <= 3
-                              ? context.l10n.journalLeveModerada((_discomfortLevel).toString()): context.l10n.journalMolestiaMarcada((_discomfortLevel).toString())),
+                          ? context.l10n.journal1CeroMolestia
+                          : (_discomfortLevel <= 3
+                                ? context.l10n.journalLeveModerada((_discomfortLevel).toString())
+                                : context.l10n.journalMolestiaMarcada(
+                                    (_discomfortLevel).toString(),
+                                  )),
                       style: TextStyle(
                         fontFamily: ScFonts.ui,
                         fontSize: 12,
@@ -386,8 +377,7 @@ class _DigestiveTrackerSheetState extends ConsumerState<DigestiveTrackerSheet> {
                   spacing: 8,
                   runSpacing: 6,
                   children: _symptomCodes.map((String symptom) {
-                    final bool isSelected =
-                        _selectedSymptoms.contains(symptom);
+                    final bool isSelected = _selectedSymptoms.contains(symptom);
                     return FilterChip(
                       selected: isSelected,
                       label: Text(symptomLabel(context.l10n, symptom)),
@@ -431,10 +421,7 @@ class _DigestiveTrackerSheetState extends ConsumerState<DigestiveTrackerSheet> {
                   for (final DigestiveLog log in todayLogs)
                     Container(
                       margin: const EdgeInsets.only(bottom: 6),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 8,
-                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                       decoration: BoxDecoration(
                         color: c.bg3,
                         borderRadius: BorderRadius.circular(10),
@@ -442,11 +429,11 @@ class _DigestiveTrackerSheetState extends ConsumerState<DigestiveTrackerSheet> {
                       child: Row(
                         children: <Widget>[
                           Text(
-                            context.l10n.journalTipo(log.bristolType.toString()),
+                            context.l10n.journalTipo(NumberFormats.group(log.bristolType)),
                             style: TextStyle(
                               fontFamily: ScFonts.display,
                               fontSize: 13,
-                              fontWeight: FontWeight.w800,
+                              fontWeight: FontWeight.w700,
                               color: c.text,
                             ),
                           ),
@@ -455,7 +442,8 @@ class _DigestiveTrackerSheetState extends ConsumerState<DigestiveTrackerSheet> {
                             child: Text(
                               <String>[
                                 context.l10n.journalDiscomfortLine(log.discomfortLevel),
-                                ..._decodeSymptoms(log.symptomsJson).map((String code) => symptomLabel(context.l10n, code)),
+                                ..._decodeSymptoms(log.symptomsJson)
+                                    .map((String code) => symptomLabel(context.l10n, code)),
                               ].join(' · '),
                               style: TextStyle(
                                 fontFamily: ScFonts.ui,
@@ -465,11 +453,7 @@ class _DigestiveTrackerSheetState extends ConsumerState<DigestiveTrackerSheet> {
                             ),
                           ),
                           IconButton(
-                            icon: Icon(
-                              Icons.delete_outline_rounded,
-                              size: 16,
-                              color: c.text2,
-                            ),
+                            icon: Icon(Icons.delete_outline_rounded, size: 16, color: c.text2),
                             tooltip: context.l10n.commonDelete,
                             onPressed: () async {
                               final DigestiveService service = ref.read(digestiveServiceProvider);

@@ -68,7 +68,7 @@ web/
 *.db-wal
 *.db-shm
 nb_selfcare_backup_*
-# Pesos de modelos LLM locales (1–4 GB, jamás en el repo ni en el APK)
+# Modelos y binarios grandes (nunca en el repo)
 *.task
 *.litertlm
 *.gguf

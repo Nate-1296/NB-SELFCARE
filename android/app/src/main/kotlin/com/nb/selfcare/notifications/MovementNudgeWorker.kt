@@ -19,7 +19,7 @@ import java.time.LocalTime
 import java.util.concurrent.TimeUnit
 
 /**
- * Pomodoro de sedentarismo (docs/14 Fase 5): cada 15 min revisa, en el
+ * Pomodoro de sedentarismo (docs/07 §1.2): cada 15 min revisa, en el
  * dispositivo, los pasos de la última hora en Health Connect y, dentro del
  * horario activo, invita a una pausa de 2 minutos. Nunca regaña.
  */

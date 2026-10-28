@@ -8,6 +8,7 @@ import '../../../../../core/l10n/l10n.dart';
 import '../../../../../core/services/cross_analytics_engine.dart';
 import '../../../../../shared/theme/sc_colors.dart';
 import '../../../../../shared/theme/sc_theme.dart';
+import '../../../../../shared/utils/number_formats.dart';
 import '../../../../../shared/widgets/health_card.dart';
 import '../../../application/profile_queries.dart';
 
@@ -55,14 +56,14 @@ class CrossAnalyticsCard extends ConsumerWidget {
                     ),
                   ),
                   IconButton(
-                      icon: const Icon(Icons.refresh_rounded, size: 18),
-                      tooltip: context.l10n.perfilRecalcularCorrelaciones,
-                      onPressed: () {
-                        unawaited(HapticFeedback.selectionClick());
-                        ref.invalidate(crossInsightsProvider);
-                      },
-                      visualDensity: VisualDensity.compact,
-                    ),
+                    icon: const Icon(Icons.refresh_rounded, size: 18),
+                    tooltip: context.l10n.perfilRecalcularCorrelaciones,
+                    onPressed: () {
+                      unawaited(HapticFeedback.selectionClick());
+                      ref.invalidate(crossInsightsProvider);
+                    },
+                    visualDensity: VisualDensity.compact,
+                  ),
                 ],
               ),
               const SizedBox(height: 8),
@@ -73,10 +74,7 @@ class CrossAnalyticsCard extends ConsumerWidget {
                   decoration: BoxDecoration(
                     color: c.bg3,
                     borderRadius: BorderRadius.circular(14),
-                    border: Border.all(
-                      color: c.isFlat ? c.line2 : c.line,
-                      width: c.isFlat ? 1.3 : 1.0,
-                    ),
+                    border: c.isFlat ? Border.all(color: c.line2, width: 1.5) : null,
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -115,11 +113,7 @@ class CrossAnalyticsCard extends ConsumerWidget {
                       const SizedBox(height: 8),
                       Row(
                         children: <Widget>[
-                          Icon(
-                            Icons.lock_outline_rounded,
-                            size: 13,
-                            color: c.text3,
-                          ),
+                          Icon(Icons.lock_outline_rounded, size: 13, color: c.text3),
                           const SizedBox(width: 5),
                           Expanded(
                             child: Text(
@@ -140,11 +134,7 @@ class CrossAnalyticsCard extends ConsumerWidget {
               ] else ...<Widget>[
                 Text(
                   context.l10n.perfilDescubrimientosMatematicosCruzandoTusMetricas,
-                  style: TextStyle(
-                    fontFamily: ScFonts.ui,
-                    fontSize: 12,
-                    color: c.text2,
-                  ),
+                  style: TextStyle(fontFamily: ScFonts.ui, fontSize: 12, color: c.text2),
                 ),
                 const SizedBox(height: 10),
                 for (final CrossCorrelationInsight ins in insights)
@@ -155,27 +145,19 @@ class CrossAnalyticsCard extends ConsumerWidget {
                       decoration: BoxDecoration(
                         color: c.bg3,
                         borderRadius: BorderRadius.circular(14),
-                        border: Border.all(
-                          color: c.isFlat ? c.line2 : c.line,
-                          width: c.isFlat ? 1.3 : 1.0,
-                        ),
+                        border: c.isFlat ? Border.all(color: c.line2, width: 1.5) : null,
                       ),
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: <Widget>[
                           Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 3,
-                            ),
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                             decoration: BoxDecoration(
-                              color: c.isFlat
-                                  ? c.line2
-                                  : c.accent.withValues(alpha: 0.15),
+                              color: c.isFlat ? c.line2 : c.accent.withValues(alpha: 0.15),
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: Text(
-                              context.l10n.perfilR(ins.correlationR.toStringAsFixed(2).toString()),
+                              context.l10n.perfilR(NumberFormats.fixed(ins.correlationR, 2)),
                               style: TextStyle(
                                 fontFamily: ScFonts.display,
                                 fontSize: 11.5,

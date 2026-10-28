@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../theme/sc_colors.dart';
 import '../theme/sc_theme.dart';
+import '../utils/number_formats.dart';
 import 'app_icons.dart';
 import 'sheet.dart';
 
@@ -38,15 +39,14 @@ class ScienceSpec {
       icon: Icons.coffee_rounded,
       quickTake:
           'La cafeína tiene una semivida promedio de $halfLifeHours horas. Incluso cuando ya no sientes el estímulo activo, las moléculas residuales bloquean los receptores de adenosina y reducen el sueño profundo reparador.',
-      howItWorks:
-          'La adenosina es el neurotransmisor que acumula la presión homeostática de sueño. La cafeína actúa como antagonista competitivo en los receptores A1 y A2A. Si al acostarte tienes más de 25 mg activos, la arquitectura del sueño N3 de ondas lentas se fragmenta.',
+      howItWorks: 'La adenosina es el neurotransmisor que acumula la presión homeostática de sueño. La cafeína actúa como antagonista competitivo en los receptores A1 y A2A. Si al acostarte tienes más de 25 mg activos, la arquitectura del sueño N3 de ondas lentas se fragmenta.',
       formula: 'C(t) = C₀ · (0.5)^(Δt / $halfLifeHours)',
       scientificReferences: const <String>[
         'Drake et al. (2013). Caffeine effects on sleep taken 0, 3, or 6 hours before going to bed. J Clin Sleep Med.',
         'EFSA NDA Panel (2015). Scientific Opinion on the safety of caffeine. EFSA Journal.',
       ],
       actionableAdvice:
-          'Tu hora de corte aconsejada para café o pre-entreno es $bedtimeCurfewTime. Mantener el nivel residual bajo 25 mg al dormir (hoy proyectado en ${residualAtBedtimeMg.toStringAsFixed(1)} mg) restaura tu recuperación física y mental.',
+          'Tu hora de corte aconsejada para café o pre-entreno es $bedtimeCurfewTime. Mantener el nivel residual bajo 25 mg al dormir (hoy proyectado en ${NumberFormats.fixed(residualAtBedtimeMg, 1)} mg) restaura tu recuperación física y mental.',
     );
   }
 
@@ -55,16 +55,13 @@ class ScienceSpec {
       title: 'Sistema de Clasificación NOVA',
       badgeLabel: 'Procesamiento Alimentario',
       icon: Icons.eco_rounded,
-      quickTake:
-          'El sistema NOVA clasifica los alimentos no por sus nutrientes aislados, sino por la intensidad y el propósito de su procesamiento industrial (Grupos 1 al 4).',
-      howItWorks:
-          '• Grupo 1: Alimentos sin procesar o mínimamente procesados (frutas, verduras, huevos, carnes frescas, legumbres).\n• Grupo 2: Ingredientes culinarios procesados (aceite de oliva, mantequilla, sal, especias).\n• Grupo 3: Alimentos procesados (conservas simples, quesos madurados, panadería artesanal).\n• Grupo 4: Productos ultraprocesados (formulaciones industriales con emulsionantes, colorantes, saborizantes y harinas refinadas).',
+      quickTake: 'El sistema NOVA clasifica los alimentos no por sus nutrientes aislados, sino por la intensidad y el propósito de su procesamiento industrial (Grupos 1 al 4).',
+      howItWorks: '• Grupo 1: Alimentos sin procesar o mínimamente procesados (frutas, verduras, huevos, carnes frescas, legumbres).\n• Grupo 2: Ingredientes culinarios procesados (aceite de oliva, mantequilla, sal, especias).\n• Grupo 3: Alimentos procesados (conservas simples, quesos madurados, panadería artesanal).\n• Grupo 4: Productos ultraprocesados (formulaciones industriales con emulsionantes, colorantes, saborizantes y harinas refinadas).',
       scientificReferences: <String>[
         'Monteiro CA et al. (2019). Ultra-processed foods: what they are and how to identify them. Public Health Nutr.',
         'FAO / OMS (2019). Ultra-processed foods, diet quality, and health using the NOVA classification system.',
       ],
-      actionableAdvice:
-          'Apunta a que más del 70–80% de tus calorías provengan de los Grupos 1 al 3. La clave no es la perfección extrema, sino construir una base sólida de comida real con mínima manipulación industrial.',
+      actionableAdvice: 'Apunta a que más del 70–80% de tus calorías provengan de los Grupos 1 al 3. La clave no es la perfección extrema, sino construir una base sólida de comida real con mínima manipulación industrial.',
     );
   }
 }
@@ -73,19 +70,13 @@ class ScienceSpec {
 /// Permite que la interfaz principal se mantenga limpia de fórmulas complejas, ofreciendo
 /// la explicación científica profunda a demanda con solo un toque del usuario.
 class ScienceOnDemandSheet extends StatelessWidget {
-  const ScienceOnDemandSheet({
-    super.key,
-    required this.spec,
-  });
+  const ScienceOnDemandSheet({super.key, required this.spec});
 
   final ScienceSpec spec;
 
   /// Presenta la hoja pedagógica con el diseño responsivo del sistema.
   static Future<void> show(BuildContext context, ScienceSpec spec) {
-    return mostrarHojaMenu<void>(
-      context,
-      builder: (_) => ScienceOnDemandSheet(spec: spec),
-    );
+    return mostrarHojaMenu<void>(context, builder: (_) => ScienceOnDemandSheet(spec: spec));
   }
 
   @override
@@ -129,7 +120,7 @@ class ScienceOnDemandSheet extends StatelessWidget {
                         style: TextStyle(
                           fontFamily: ScFonts.display,
                           fontSize: 10,
-                          fontWeight: FontWeight.w800,
+                          fontWeight: FontWeight.w700,
                           letterSpacing: 0.8,
                           color: c.accent,
                         ),
@@ -141,7 +132,7 @@ class ScienceOnDemandSheet extends StatelessWidget {
                       style: TextStyle(
                         fontFamily: ScFonts.display,
                         fontSize: 18,
-                        fontWeight: FontWeight.w800,
+                        fontWeight: FontWeight.w700,
                         color: c.text,
                       ),
                     ),
@@ -199,12 +190,7 @@ class ScienceOnDemandSheet extends StatelessWidget {
           const SizedBox(height: 6),
           Text(
             spec.howItWorks,
-            style: TextStyle(
-              fontFamily: ScFonts.ui,
-              fontSize: 13,
-              color: c.text2,
-              height: 1.4,
-            ),
+            style: TextStyle(fontFamily: ScFonts.ui, fontSize: 13, color: c.text2, height: 1.4),
           ),
           const SizedBox(height: 14),
 
@@ -253,12 +239,7 @@ class ScienceOnDemandSheet extends StatelessWidget {
           const SizedBox(height: 6),
           Text(
             spec.actionableAdvice,
-            style: TextStyle(
-              fontFamily: ScFonts.ui,
-              fontSize: 13,
-              color: c.text,
-              height: 1.4,
-            ),
+            style: TextStyle(fontFamily: ScFonts.ui, fontSize: 13, color: c.text, height: 1.4),
           ),
           const SizedBox(height: 16),
 
@@ -292,9 +273,7 @@ class ScienceOnDemandSheet extends StatelessWidget {
 
           // Botón Entendido
           FilledButton(
-            style: FilledButton.styleFrom(
-              minimumSize: const Size.fromHeight(44),
-            ),
+            style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(44)),
             onPressed: () => Navigator.of(context).pop(),
             child: const Text('Entendido', style: TextStyle(fontWeight: FontWeight.bold)),
           ),

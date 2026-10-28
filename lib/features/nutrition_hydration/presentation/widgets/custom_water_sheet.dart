@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import '../../../../core/l10n/l10n.dart';
 import '../../../../shared/theme/sc_colors.dart';
 import '../../../../shared/theme/sc_theme.dart';
+import '../../../../shared/utils/number_formats.dart';
 import '../../../../shared/widgets/app_icons.dart';
 
 /// Hoja de selección de vaso personalizado de hidratación (ml).
@@ -20,13 +21,13 @@ class _CustomWaterSheetState extends State<CustomWaterSheet> {
   final TextEditingController _mlCtrl = TextEditingController(text: '350');
 
   List<({int ml, String label})> _presets(AppLocalizations l10n) => <({int ml, String label})>[
-        (ml: 150, label: l10n.foodTazaPequena),
-        (ml: 200, label: l10n.foodVasoCorto),
-        (ml: 330, label: l10n.foodBotellin),
-        (ml: 600, label: l10n.foodTermo),
-        (ml: 750, label: l10n.foodCaramanola),
-        (ml: 1000, label: l10n.foodBotella1L),
-      ];
+    (ml: 150, label: l10n.foodTazaPequena),
+    (ml: 200, label: l10n.foodVasoCorto),
+    (ml: 330, label: l10n.foodBotellin),
+    (ml: 600, label: l10n.foodTermo),
+    (ml: 750, label: l10n.foodCaramanola),
+    (ml: 1000, label: l10n.foodBotella1L),
+  ];
 
   @override
   void dispose() {
@@ -70,7 +71,7 @@ class _CustomWaterSheetState extends State<CustomWaterSheet> {
                   style: TextStyle(
                     fontFamily: ScFonts.display,
                     fontSize: 20,
-                    fontWeight: FontWeight.w800,
+                    fontWeight: FontWeight.w700,
                     color: c.text,
                   ),
                 ),
@@ -93,22 +94,16 @@ class _CustomWaterSheetState extends State<CustomWaterSheet> {
                   Expanded(
                     child: Builder(
                       builder: (BuildContext context) {
-                        final ({int ml, String label}) item =
-                            _presets(context.l10n)[row * 2 + col];
+                        final ({int ml, String label}) item = _presets(context.l10n)[row * 2 + col];
                         final bool selected = currentMl == item.ml;
                         return InkWell(
                           borderRadius: BorderRadius.circular(14),
                           onTap: () => _selectPreset(item.ml),
                           child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 11,
-                            ),
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
                             decoration: BoxDecoration(
                               color: selected
-                                  ? (c.isFlat
-                                      ? c.bg3
-                                      : c.water.withValues(alpha: 0.16))
+                                  ? (c.isFlat ? c.bg3 : c.water.withValues(alpha: 0.16))
                                   : c.bg3,
                               borderRadius: BorderRadius.circular(14),
                               border: Border.all(
@@ -122,11 +117,11 @@ class _CustomWaterSheetState extends State<CustomWaterSheet> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: <Widget>[
                                 Text(
-                                  context.l10n.foodMl(item.ml.toString()),
+                                  context.l10n.foodMl(NumberFormats.group(item.ml)),
                                   style: TextStyle(
                                     fontFamily: ScFonts.display,
                                     fontSize: 15,
-                                    fontWeight: FontWeight.w800,
+                                    fontWeight: FontWeight.w700,
                                     color: c.text,
                                   ),
                                 ),
@@ -162,7 +157,7 @@ class _CustomWaterSheetState extends State<CustomWaterSheet> {
             style: TextStyle(
               fontFamily: ScFonts.display,
               fontSize: 18,
-              fontWeight: FontWeight.w800,
+              fontWeight: FontWeight.w700,
               color: c.text,
             ),
             decoration: InputDecoration(
@@ -170,9 +165,7 @@ class _CustomWaterSheetState extends State<CustomWaterSheet> {
               suffixText: 'ml',
               filled: true,
               fillColor: c.bg3,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(14),
-              ),
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
             ),
           ),
 
@@ -181,23 +174,21 @@ class _CustomWaterSheetState extends State<CustomWaterSheet> {
             width: double.infinity,
             height: 52,
             child: FilledButton.icon(
-              onPressed:
-                  (currentMl >= 10 && currentMl <= 5000) ? _submit : null,
+              onPressed: (currentMl >= 10 && currentMl <= 5000) ? _submit : null,
               style: FilledButton.styleFrom(
                 backgroundColor: c.isFlat ? c.accent : c.water,
                 foregroundColor: c.isFlat ? c.ink : Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
               ),
               icon: const Icon(AppIcons.gota),
               label: Text(
                 currentMl > 0
-                    ? context.l10n.foodRegistrarMl((currentMl).toString()): context.l10n.foodIntroduceUnVolumenValido,
+                    ? context.l10n.foodRegistrarMl(NumberFormats.group(currentMl))
+                    : context.l10n.foodIntroduceUnVolumenValido,
                 style: const TextStyle(
                   fontFamily: ScFonts.display,
                   fontSize: 15,
-                  fontWeight: FontWeight.w800,
+                  fontWeight: FontWeight.w700,
                 ),
               ),
             ),

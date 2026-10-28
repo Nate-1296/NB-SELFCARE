@@ -5,10 +5,15 @@ import '../../../../../core/domain/metabolic_phase.dart';
 import '../../../../../core/l10n/l10n.dart';
 import '../../../../../shared/theme/sc_colors.dart';
 import '../../../../../shared/theme/sc_theme.dart';
+import '../../../../../shared/theme/sc_tokens.dart';
 import '../../../../../shared/widgets/app_icons.dart';
 import '../../../../../shared/widgets/chip_pill.dart';
 import '../../../../../shared/widgets/health_card.dart';
+import '../../../../../shared/widgets/quick_action_button.dart';
+import '../../../../../shared/widgets/tonal_badge.dart';
 import '../../../../fasting/presentation/metabolic_phase_l10n.dart';
+import '../../../../pet_gamification/domain/pet_catalog.dart';
+import '../../../../pet_gamification/presentation/nibi/nibi_view.dart';
 import '../../../../pet_gamification/presentation/shop_modal.dart';
 import '../../../domain/hoy_widget_config.dart';
 
@@ -26,7 +31,11 @@ class HoyNibiBentoCard extends StatelessWidget {
     required this.fastingPhase,
     required this.hasSleepBonus,
     required this.onRefreshGreeting,
+    this.look = const NibiLook(),
   });
+
+  /// Sombrero que lleva puesto en la pestaña de Nibi.
+  final NibiLook look;
 
   final HoyWidgetSize size;
   final String petName;
@@ -53,19 +62,7 @@ class HoyNibiBentoCard extends StatelessWidget {
       excludeSemantics: true,
       child: GestureDetector(
         onTap: () => context.go('/nibi'),
-        child: Container(
-          width: compact ? 50 : 58,
-          height: compact ? 50 : 58,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: c.soft,
-            border: Border.all(color: c.isFlat ? c.line2 : c.accent, width: c.isFlat ? 1.8 : 1.5),
-            image: const DecorationImage(
-              image: AssetImage('assets/images/nibi_avatar.png'),
-              fit: BoxFit.cover,
-            ),
-          ),
-        ),
+        child: NibiAvatar(size: compact ? 52 : 60, look: look),
       ),
     );
 
@@ -115,7 +112,7 @@ class HoyNibiBentoCard extends StatelessWidget {
               style: TextStyle(
                 fontFamily: ScFonts.display,
                 fontSize: 16.5,
-                fontWeight: FontWeight.w800,
+                fontWeight: FontWeight.w700,
                 color: c.text,
               ),
             ),
@@ -155,7 +152,7 @@ class HoyNibiBentoCard extends StatelessWidget {
                             style: TextStyle(
                               fontFamily: ScFonts.display,
                               fontSize: 17.5,
-                              fontWeight: FontWeight.w800,
+                              fontWeight: FontWeight.w700,
                               color: c.text,
                             ),
                           ),
@@ -163,16 +160,19 @@ class HoyNibiBentoCard extends StatelessWidget {
                         ],
                       ),
                       const SizedBox(height: 8),
+                      // Bocadillo: esquina superior izquierda cerrada, apuntando al avatar.
                       Container(
                         width: double.infinity,
-                        padding: const EdgeInsets.all(12),
+                        padding: const EdgeInsets.fromLTRB(14, 12, 4, 12),
                         decoration: BoxDecoration(
-                          color: c.bg,
-                          borderRadius: BorderRadius.circular(14),
-                          border: Border.all(
-                            color: c.isFlat ? c.line2 : c.line,
-                            width: c.isFlat ? 1.3 : 1.0,
+                          color: c.isFlat ? c.bg2 : c.bg3,
+                          borderRadius: const BorderRadius.only(
+                            topLeft: Radius.circular(4),
+                            topRight: Radius.circular(18),
+                            bottomLeft: Radius.circular(18),
+                            bottomRight: Radius.circular(18),
                           ),
+                          border: c.isFlat ? Border.all(color: c.line2, width: 1.5) : null,
                         ),
                         child: Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -230,28 +230,12 @@ class HoyNibiBentoCard extends StatelessWidget {
               ],
             ),
           ],
-          const SizedBox(height: 12),
-          SizedBox(
-            width: double.infinity,
-            child: OutlinedButton.icon(
-              onPressed: () => context.go('/nibi'),
-              style: OutlinedButton.styleFrom(
-                visualDensity: VisualDensity.compact,
-                padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
-              ),
-              icon: Icon(AppIcons.nibi, size: 16, color: c.accent),
-              label: Text(
-                context.l10n.todayIrAlSantuarioDe((petName).toString()),
-                softWrap: true,
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontFamily: ScFonts.ui,
-                  fontSize: 12.5,
-                  fontWeight: FontWeight.w700,
-                  color: c.text,
-                ),
-              ),
-            ),
+          const SizedBox(height: ScSpace.m),
+          QuickActionButton(
+            label: context.l10n.todayIrAlSantuarioDe(petName),
+            icon: AppIcons.nibi,
+            tone: c.accent,
+            onPressed: () => context.go('/nibi'),
           ),
         ],
       ),
@@ -270,35 +254,5 @@ class _StatusTag extends StatelessWidget {
   final Color color;
 
   @override
-  Widget build(BuildContext context) {
-    final ScColors c = context.sc;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-      decoration: BoxDecoration(
-        color: c.isFlat ? c.bg3 : color.withValues(alpha: 0.14),
-        borderRadius: BorderRadius.circular(999),
-        border: Border.all(
-          color: c.isFlat ? c.line2 : color.withValues(alpha: 0.4),
-          width: c.isFlat ? 1.2 : 1.0,
-        ),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: <Widget>[
-          Icon(icon, size: 13, color: c.isFlat ? c.text : color),
-          const SizedBox(width: 5),
-          Text(
-            label,
-            softWrap: true,
-            style: TextStyle(
-              fontFamily: ScFonts.ui,
-              fontSize: 11,
-              fontWeight: FontWeight.w700,
-              color: c.isFlat ? c.text : color,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+  Widget build(BuildContext context) => TonalBadge(label: label, icon: icon, tone: color);
 }

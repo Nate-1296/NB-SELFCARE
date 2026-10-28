@@ -21,56 +21,73 @@ class FastHistory extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final ScColors c = context.sc;
     final AppLocalizations l10n = context.l10n;
-    final List<FastingSession> history = ref.watch(recentFastsProvider).value ?? const <FastingSession>[];
+    final List<FastingSession> history =
+        ref.watch(recentFastsProvider).value ?? const <FastingSession>[];
     if (history.isEmpty) return const SizedBox.shrink();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
         SectionHead(title: l10n.fastHistoryTitle),
-        for (final FastingSession s in history)
-          HealthCard(
-            padding: const EdgeInsets.symmetric(horizontal: ScSpace.l, vertical: ScSpace.m),
-            child: Row(
-              children: <Widget>[
-                Icon(
-                  s.isCompleted ? AppIcons.check : AppIcons.fasting,
-                  size: 20,
-                  color: s.isCompleted ? (c.isFlat ? c.text : c.success) : c.text2,
-                ),
-                const SizedBox(width: ScSpace.m),
-                Expanded(
-                  child: Builder(
-                    builder: (BuildContext context) {
-                      final DateTime end = s.actualEndedAt ?? s.plannedEndAt;
-                      final int minutes = end.difference(s.startedAt).inMinutes.clamp(0, 99999);
-                      return Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: <Widget>[
-                          Text(
-                            l10n.fastHistoryLine(s.protocolName, minutes ~/ 60, (minutes % 60).toString().padLeft(2, '0')),
-                            style: context.text.titleSmall,
-                          ),
-                          Text(
-                            l10n.fastHistoryWhen(
-                              DateFormats.shortDate(s.startedAt, l10n.localeName),
-                              DateFormats.time(s.startedAt, l10n.localeName),
-                              DateFormats.time(end, l10n.localeName),
-                            ),
-                            style: context.text.bodySmall,
-                          ),
-                        ],
-                      );
-                    },
+        HealthCard(
+          padding: const EdgeInsets.symmetric(vertical: ScSpace.xs),
+          child: Column(
+            children: <Widget>[
+              for (final FastingSession s in history) ...<Widget>[
+                if (s != history.first) const Divider(height: 1, indent: ScSpace.l + 32),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(ScSpace.l, ScSpace.s, ScSpace.xs, ScSpace.s),
+                  child: Row(
+                    children: <Widget>[
+                      Icon(
+                        s.isCompleted ? AppIcons.check : AppIcons.fasting,
+                        size: 20,
+                        color: s.isCompleted ? (c.isFlat ? c.text : c.success) : c.text2,
+                      ),
+                      const SizedBox(width: ScSpace.m),
+                      Expanded(
+                        child: Builder(
+                          builder: (BuildContext context) {
+                            final DateTime end = s.actualEndedAt ?? s.plannedEndAt;
+                            final int minutes = end
+                                .difference(s.startedAt)
+                                .inMinutes
+                                .clamp(0, 99999);
+                            return Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: <Widget>[
+                                Text(
+                                  l10n.fastHistoryLine(
+                                    s.protocolName,
+                                    minutes ~/ 60,
+                                    (minutes % 60).toString().padLeft(2, '0'),
+                                  ),
+                                  style: context.type.label,
+                                ),
+                                Text(
+                                  l10n.fastHistoryWhen(
+                                    DateFormats.shortDate(s.startedAt, l10n.localeName),
+                                    DateFormats.time(s.startedAt, l10n.localeName),
+                                    DateFormats.time(end, l10n.localeName),
+                                  ),
+                                  style: context.type.caption,
+                                ),
+                              ],
+                            );
+                          },
+                        ),
+                      ),
+                      IconButton(
+                        tooltip: l10n.fastDelete,
+                        icon: Icon(AppIcons.delete, size: 18, color: c.text3),
+                        onPressed: () => onDelete(s),
+                      ),
+                    ],
                   ),
                 ),
-                IconButton(
-                  tooltip: l10n.fastDelete,
-                  icon: Icon(AppIcons.delete, size: 18, color: c.text3),
-                  onPressed: () => onDelete(s),
-                ),
               ],
-            ),
+            ],
           ),
+        ),
       ],
     );
   }

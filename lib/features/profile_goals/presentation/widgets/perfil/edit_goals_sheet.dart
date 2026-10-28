@@ -9,6 +9,7 @@ import '../../../../../core/domain/enums.dart';
 import '../../../../../core/l10n/l10n.dart';
 import '../../../../../shared/theme/sc_colors.dart';
 import '../../../../../shared/theme/sc_theme.dart';
+import '../../../../../shared/utils/number_formats.dart';
 import '../../../../../shared/widgets/app_icons.dart';
 import '../../../../nutrition_hydration/presentation/widgets/diet_archetype_sheets.dart';
 import '../../../application/profile_service.dart';
@@ -40,30 +41,18 @@ class _EditGoalsSheetState extends ConsumerState<EditGoalsSheet> {
   @override
   void initState() {
     super.initState();
-    _weightCtrl = TextEditingController(
-      text: widget.profile.targetWeightKg.toStringAsFixed(1),
-    );
-    _waterCtrl = TextEditingController(
-      text: widget.profile.dailyWaterGoalMl.toString(),
-    );
-    _stepsCtrl = TextEditingController(
-      text: widget.profile.dailyStepsGoal.toString(),
-    );
-    _sleepCtrl = TextEditingController(
-      text: widget.profile.dailySleepGoalHours.toStringAsFixed(1),
-    );
+    _weightCtrl = TextEditingController(text: NumberFormats.input(widget.profile.targetWeightKg, maxDigits: 1));
+    _waterCtrl = TextEditingController(text: widget.profile.dailyWaterGoalMl.toString());
+    _stepsCtrl = TextEditingController(text: widget.profile.dailyStepsGoal.toString());
+    _sleepCtrl = TextEditingController(text: NumberFormats.input(widget.profile.dailySleepGoalHours, maxDigits: 1));
     _manualKcalCtrl = TextEditingController(
       text: (widget.profile.manualKcalTarget ?? 2000).toString(),
     );
     _manualProteinCtrl = TextEditingController(
       text: (widget.profile.manualProteinG ?? 150).toString(),
     );
-    _manualCarbsCtrl = TextEditingController(
-      text: (widget.profile.manualCarbsG ?? 200).toString(),
-    );
-    _manualFatCtrl = TextEditingController(
-      text: (widget.profile.manualFatG ?? 60).toString(),
-    );
+    _manualCarbsCtrl = TextEditingController(text: (widget.profile.manualCarbsG ?? 200).toString());
+    _manualFatCtrl = TextEditingController(text: (widget.profile.manualFatG ?? 60).toString());
 
     _weeklyRateKg = widget.profile.weeklyGoalRateKg.clamp(-1.0, 0.5);
     _isManualMode = widget.profile.isManualMacroMode;
@@ -97,7 +86,7 @@ class _EditGoalsSheetState extends ConsumerState<EditGoalsSheet> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: <Widget>[
-                Text(
+                Flexible(child: Text(
                   context.l10n.perfilAjustarMetasNutricionales,
                   style: TextStyle(
                     fontFamily: ScFonts.display,
@@ -105,7 +94,7 @@ class _EditGoalsSheetState extends ConsumerState<EditGoalsSheet> {
                     fontWeight: FontWeight.bold,
                     color: c.text,
                   ),
-                ),
+                )),
                 IconButton(
                   icon: Icon(AppIcons.close, color: c.text2),
                   onPressed: () => Navigator.of(context).pop(),
@@ -145,10 +134,7 @@ class _EditGoalsSheetState extends ConsumerState<EditGoalsSheet> {
                 decoration: BoxDecoration(
                   color: c.bg3,
                   borderRadius: BorderRadius.circular(14),
-                  border: Border.all(
-                    color: c.isFlat ? c.line2 : c.line,
-                    width: c.isFlat ? 1.3 : 1.0,
-                  ),
+                  border: c.isFlat ? Border.all(color: c.line2, width: 1.5) : null,
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -165,11 +151,7 @@ class _EditGoalsSheetState extends ConsumerState<EditGoalsSheet> {
                     const SizedBox(height: 4),
                     Text(
                       context.l10n.perfilSobrescribeElAlgoritmoAdaptativoCon,
-                      style: TextStyle(
-                        fontFamily: ScFonts.ui,
-                        fontSize: 11,
-                        color: c.text2,
-                      ),
+                      style: TextStyle(fontFamily: ScFonts.ui, fontSize: 11, color: c.text2),
                     ),
                     const SizedBox(height: 10),
                     Row(
@@ -239,10 +221,10 @@ class _EditGoalsSheetState extends ConsumerState<EditGoalsSheet> {
               ),
               const SizedBox(height: 6),
               DropdownButtonFormField<DietPhase>(
+                isExpanded: true,
                 initialValue: _activeDietPhase,
                 decoration: const InputDecoration(
-                  contentPadding:
-                      EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  contentPadding: EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                 ),
                 items: <DropdownMenuItem<DietPhase>>[
                   DropdownMenuItem<DietPhase>(
@@ -274,15 +256,13 @@ class _EditGoalsSheetState extends ConsumerState<EditGoalsSheet> {
                 },
                 icon: const Icon(Icons.restaurant_menu_rounded, size: 16),
                 label: Text(context.l10n.perfilConfigurarArquetipoYCalorieCycling),
-                style: OutlinedButton.styleFrom(
-                  minimumSize: const Size.fromHeight(40),
-                ),
+                style: OutlinedButton.styleFrom(minimumSize: const Size.fromHeight(40)),
               ),
               const SizedBox(height: 12),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: <Widget>[
-                  Text(
+                  Flexible(child: Text(
                     context.l10n.perfilRitmoSemanal,
                     style: TextStyle(
                       fontFamily: ScFonts.ui,
@@ -290,13 +270,17 @@ class _EditGoalsSheetState extends ConsumerState<EditGoalsSheet> {
                       fontWeight: FontWeight.w700,
                       color: c.text,
                     ),
-                  ),
+                  )),
                   Text(
                     _weeklyRateKg == 0.0
-                        ? context.l10n.perfilMantenimiento: context.l10n.perfilKgSem2((_weeklyRateKg > 0 ? '+' : '').toString(), _weeklyRateKg.toStringAsFixed(2).toString()),
+                        ? context.l10n.perfilMantenimiento
+                        : context.l10n.perfilKgSem2(
+                            (_weeklyRateKg > 0 ? '+' : '').toString(),
+                            NumberFormats.fixed(_weeklyRateKg, 2),
+                          ),
                     style: TextStyle(
                       fontFamily: ScFonts.display,
-                      fontWeight: FontWeight.w800,
+                      fontWeight: FontWeight.w700,
                       color: c.accent,
                     ),
                   ),
@@ -307,7 +291,7 @@ class _EditGoalsSheetState extends ConsumerState<EditGoalsSheet> {
                 min: -1.0,
                 max: 0.5,
                 divisions: 6,
-                label: context.l10n.perfilKgSem(_weeklyRateKg.toStringAsFixed(2).toString()),
+                label: context.l10n.perfilKgSem(NumberFormats.fixed(_weeklyRateKg, 2)),
                 onChanged: (double v) => setState(() => _weeklyRateKg = v),
               ),
             ],
@@ -320,8 +304,7 @@ class _EditGoalsSheetState extends ConsumerState<EditGoalsSheet> {
                 Expanded(
                   child: TextField(
                     controller: _weightCtrl,
-                    keyboardType:
-                        const TextInputType.numberWithOptions(decimal: true),
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
                     decoration: InputDecoration(
                       labelText: context.l10n.perfilPesoObjetivo,
                       suffixText: 'kg',
@@ -358,8 +341,7 @@ class _EditGoalsSheetState extends ConsumerState<EditGoalsSheet> {
                 Expanded(
                   child: TextField(
                     controller: _sleepCtrl,
-                    keyboardType:
-                        const TextInputType.numberWithOptions(decimal: true),
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
                     decoration: InputDecoration(
                       labelText: context.l10n.perfilSuenoMeta,
                       suffixText: 'horas',
@@ -373,30 +355,26 @@ class _EditGoalsSheetState extends ConsumerState<EditGoalsSheet> {
             SizedBox(
               width: double.infinity,
               child: FilledButton(
-                style: FilledButton.styleFrom(
-                  minimumSize: const Size.fromHeight(48),
-                ),
+                style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(48)),
                 onPressed: () async {
-                  final double targetWeight = double.tryParse(
-                        _weightCtrl.text.replaceAll(',', '.'),
-                      ) ??
+                  final double targetWeight =
+                      double.tryParse(_weightCtrl.text.replaceAll(',', '.')) ??
                       widget.profile.targetWeightKg;
-                  final int water = int.tryParse(_waterCtrl.text) ??
-                      widget.profile.dailyWaterGoalMl;
-                  final int steps = int.tryParse(_stepsCtrl.text) ??
-                      widget.profile.dailyStepsGoal;
-                  final double sleep = double.tryParse(
-                        _sleepCtrl.text.replaceAll(',', '.'),
-                      ) ??
+                  final int water =
+                      int.tryParse(_waterCtrl.text) ?? widget.profile.dailyWaterGoalMl;
+                  final int steps = int.tryParse(_stepsCtrl.text) ?? widget.profile.dailyStepsGoal;
+                  final double sleep =
+                      double.tryParse(_sleepCtrl.text.replaceAll(',', '.')) ??
                       widget.profile.dailySleepGoalHours;
 
                   final int? manualKcal = int.tryParse(_manualKcalCtrl.text);
-                  final int? manualProtein =
-                      int.tryParse(_manualProteinCtrl.text);
+                  final int? manualProtein = int.tryParse(_manualProteinCtrl.text);
                   final int? manualCarbs = int.tryParse(_manualCarbsCtrl.text);
                   final int? manualFat = int.tryParse(_manualFatCtrl.text);
 
-                  await ref.read(profileServiceProvider).update(
+                  await ref
+                      .read(profileServiceProvider)
+                      .update(
                         UserProfilesCompanion(
                           targetWeightKg: drift.Value(targetWeight),
                           weeklyGoalRateKg: drift.Value(_weeklyRateKg),
@@ -404,18 +382,10 @@ class _EditGoalsSheetState extends ConsumerState<EditGoalsSheet> {
                           dailyStepsGoal: drift.Value(steps),
                           dailySleepGoalHours: drift.Value(sleep),
                           isManualMacroMode: drift.Value(_isManualMode),
-                          manualKcalTarget: drift.Value(
-                            _isManualMode ? manualKcal : null,
-                          ),
-                          manualProteinG: drift.Value(
-                            _isManualMode ? manualProtein : null,
-                          ),
-                          manualCarbsG: drift.Value(
-                            _isManualMode ? manualCarbs : null,
-                          ),
-                          manualFatG: drift.Value(
-                            _isManualMode ? manualFat : null,
-                          ),
+                          manualKcalTarget: drift.Value(_isManualMode ? manualKcal : null),
+                          manualProteinG: drift.Value(_isManualMode ? manualProtein : null),
+                          manualCarbsG: drift.Value(_isManualMode ? manualCarbs : null),
+                          manualFatG: drift.Value(_isManualMode ? manualFat : null),
                           activeDietPhase: drift.Value(_activeDietPhase),
                         ),
                       );
@@ -434,9 +404,7 @@ class _EditGoalsSheetState extends ConsumerState<EditGoalsSheet> {
             SizedBox(
               width: double.infinity,
               child: OutlinedButton(
-                style: OutlinedButton.styleFrom(
-                  minimumSize: const Size.fromHeight(46),
-                ),
+                style: OutlinedButton.styleFrom(minimumSize: const Size.fromHeight(46)),
                 onPressed: () => Navigator.of(context).pop(),
                 child: Text(context.l10n.commonCancel),
               ),

@@ -11,24 +11,20 @@ import '../../../../core/platform/system_permissions.dart';
 import '../../../../core/services/text_assistant.dart';
 import '../../../../shared/theme/sc_colors.dart';
 import '../../../../shared/theme/sc_theme.dart';
+import '../../../../shared/utils/number_formats.dart';
 import '../../../../shared/widgets/app_icons.dart';
 import '../../application/food_logging_service.dart';
 import 'meal_slot_selector.dart';
 
 /// Subpágina de escritura libre de comidas: extractor determinista local + vista previa editable.
 class AiMealDictationSheet extends ConsumerStatefulWidget {
-  const AiMealDictationSheet({
-    super.key,
-    required this.dateKey,
-    required this.initialMealType,
-  });
+  const AiMealDictationSheet({super.key, required this.dateKey, required this.initialMealType});
 
   final String dateKey;
   final MealType initialMealType;
 
   @override
-  ConsumerState<AiMealDictationSheet> createState() =>
-      _AiMealDictationSheetState();
+  ConsumerState<AiMealDictationSheet> createState() => _AiMealDictationSheetState();
 }
 
 class _AiMealDictationSheetState extends ConsumerState<AiMealDictationSheet> {
@@ -40,10 +36,10 @@ class _AiMealDictationSheetState extends ConsumerState<AiMealDictationSheet> {
   List<ParsedMealItem>? _previewItems;
 
   List<String> _examples(AppLocalizations l10n) => <String>[
-        l10n.food2Huevos80gAvenaY,
-        l10n.food200gPechugaDePollo150g,
-        l10n.food150gYogurGriegoY30g,
-      ];
+    l10n.food2Huevos80gAvenaY,
+    l10n.food200gPechugaDePollo150g,
+    l10n.food150gYogurGriegoY30g,
+  ];
 
   @override
   void initState() {
@@ -72,17 +68,24 @@ class _AiMealDictationSheetState extends ConsumerState<AiMealDictationSheet> {
       if (mounted) setState(() => _isListening = false);
       return;
     }
-    final bool granted = await ref.read(systemPermissionsProvider).request(AppPermission.microphone);
+    final bool granted = await ref
+        .read(systemPermissionsProvider)
+        .request(AppPermission.microphone);
     if (!granted) return;
     final String prefix = _textController.text.trim();
     final bool started = await speech.start(
       onText: (String text, bool isFinal) {
         if (!mounted) return;
         setState(() {
-          _textController.text = prefix.isEmpty ? text : context.l10n.foodTexto((prefix).toString(), (text).toString());
+          _textController.text = prefix.isEmpty
+              ? text
+              : context.l10n.foodTexto((prefix).toString(), (text).toString());
           _previewItems = null;
           if (isFinal) _isListening = false;
         });
+      },
+      onDone: () {
+        if (mounted) setState(() => _isListening = false);
       },
     );
     if (mounted) setState(() => _isListening = started);
@@ -94,8 +97,7 @@ class _AiMealDictationSheetState extends ConsumerState<AiMealDictationSheet> {
 
     setState(() => _isProcessing = true);
     try {
-      final result =
-          await ref.read(textAssistantProvider).parseMealText(text);
+      final result = await ref.read(textAssistantProvider).parseMealText(text);
       if (!mounted) return;
       setState(() {
         _previewItems = List<ParsedMealItem>.of(result.items);
@@ -142,11 +144,9 @@ class _AiMealDictationSheetState extends ConsumerState<AiMealDictationSheet> {
 
       if (itemsToLog.isEmpty) return;
 
-      final FoodLogResult logged = await ref.read(foodLoggingServiceProvider).logParsedItems(
-            items: itemsToLog,
-            mealType: _selectedMealType,
-            dateKey: widget.dateKey,
-          );
+      final FoodLogResult logged = await ref
+          .read(foodLoggingServiceProvider)
+          .logParsedItems(items: itemsToLog, mealType: _selectedMealType, dateKey: widget.dateKey);
 
       if (!mounted) return;
       final MealSlotMeta slot = MealSlotMeta.of(_selectedMealType);
@@ -154,7 +154,10 @@ class _AiMealDictationSheetState extends ConsumerState<AiMealDictationSheet> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            context.l10n.foodAlimentosAnadidosEn(logged.logIds.length.toString(), slot.title(context.l10n).toString()),
+            context.l10n.foodAlimentosAnadidosEn(
+              logged.logIds.length.toString(),
+              slot.title(context.l10n).toString(),
+            ),
           ),
         ),
       );
@@ -186,7 +189,7 @@ class _AiMealDictationSheetState extends ConsumerState<AiMealDictationSheet> {
                   style: TextStyle(
                     fontFamily: ScFonts.display,
                     fontSize: 20,
-                    fontWeight: FontWeight.w800,
+                    fontWeight: FontWeight.w700,
                     color: c.text,
                   ),
                 ),
@@ -201,11 +204,7 @@ class _AiMealDictationSheetState extends ConsumerState<AiMealDictationSheet> {
           Text(
             context.l10n.foodDescribeTuPlatoOUsa,
             softWrap: true,
-            style: TextStyle(
-              fontFamily: ScFonts.ui,
-              fontSize: 12.5,
-              color: c.text2,
-            ),
+            style: TextStyle(fontFamily: ScFonts.ui, fontSize: 12.5, color: c.text2),
           ),
 
           const SizedBox(height: 12),
@@ -216,10 +215,7 @@ class _AiMealDictationSheetState extends ConsumerState<AiMealDictationSheet> {
             runSpacing: 6,
             children: _examples(context.l10n).map((String sample) {
               return ActionChip(
-                label: Text(
-                  sample,
-                  style: const TextStyle(fontSize: 11.5),
-                ),
+                label: Text(sample, style: const TextStyle(fontSize: 11.5)),
                 onPressed: () {
                   unawaited(HapticFeedback.selectionClick());
                   setState(() {
@@ -239,10 +235,13 @@ class _AiMealDictationSheetState extends ConsumerState<AiMealDictationSheet> {
             textCapitalization: TextCapitalization.sentences,
             decoration: InputDecoration(
               hintText: _isListening
-                  ? context.l10n.foodTeEscuchoDiLoQue: context.l10n.foodEj200gPechugaDePollo,
+                  ? context.l10n.foodTeEscuchoDiLoQue
+                  : context.l10n.foodEj200gPechugaDePollo,
               suffixIcon: _speechAvailable
                   ? IconButton(
-                      tooltip: _isListening ? context.l10n.foodDetenerDictado: context.l10n.foodDictarSinConexion,
+                      tooltip: _isListening
+                          ? context.l10n.foodDetenerDictado
+                          : context.l10n.foodDictarSinConexion,
                       onPressed: _toggleDictation,
                       icon: Icon(
                         _isListening ? Icons.stop_circle_rounded : Icons.mic_rounded,
@@ -252,9 +251,7 @@ class _AiMealDictationSheetState extends ConsumerState<AiMealDictationSheet> {
                   : null,
               filled: true,
               fillColor: c.bg3,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
             ),
             onChanged: (_) {
               if (_previewItems != null) {
@@ -270,7 +267,7 @@ class _AiMealDictationSheetState extends ConsumerState<AiMealDictationSheet> {
             style: TextStyle(
               fontFamily: ScFonts.display,
               fontSize: 14.5,
-              fontWeight: FontWeight.w800,
+              fontWeight: FontWeight.w700,
               color: c.text,
             ),
           ),
@@ -287,12 +284,13 @@ class _AiMealDictationSheetState extends ConsumerState<AiMealDictationSheet> {
             const SizedBox(height: 16),
             Text(
               _previewItems!.isEmpty
-                  ? context.l10n.foodNoSeDetectaronAlimentosClaros: context.l10n.foodIngredientesDetectados(_previewItems!.length.toString()),
+                  ? context.l10n.foodNoSeDetectaronAlimentosClaros
+                  : context.l10n.foodIngredientesDetectados(_previewItems!.length.toString()),
               softWrap: true,
               style: TextStyle(
                 fontFamily: ScFonts.display,
                 fontSize: 14,
-                fontWeight: FontWeight.w800,
+                fontWeight: FontWeight.w700,
                 color: c.text,
               ),
             ),
@@ -300,14 +298,11 @@ class _AiMealDictationSheetState extends ConsumerState<AiMealDictationSheet> {
             for (int i = 0; i < _previewItems!.length; i++)
               Container(
                 margin: const EdgeInsets.only(bottom: 8),
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 decoration: BoxDecoration(
                   color: c.bg3,
                   borderRadius: BorderRadius.circular(14),
-                  border: Border.all(
-                    color: c.isFlat ? c.line2 : c.line,
-                  ),
+                  border: c.isFlat ? Border.all(color: c.line2, width: 1.5) : null,
                 ),
                 child: Row(
                   children: <Widget>[
@@ -329,11 +324,11 @@ class _AiMealDictationSheetState extends ConsumerState<AiMealDictationSheet> {
                       onPressed: () => _adjustPreviewGrams(i, -25),
                     ),
                     Text(
-                      context.l10n.foodG11(_previewItems![i].grams.round().toString()),
+                      context.l10n.foodG11(NumberFormats.group(_previewItems![i].grams)),
                       style: TextStyle(
                         fontFamily: ScFonts.display,
                         fontSize: 13.5,
-                        fontWeight: FontWeight.w800,
+                        fontWeight: FontWeight.w700,
                         color: c.accent,
                       ),
                     ),
@@ -364,9 +359,7 @@ class _AiMealDictationSheetState extends ConsumerState<AiMealDictationSheet> {
                   onPressed: _isProcessing ? null : _analyzeText,
                   style: OutlinedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
-                    ),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                   ),
                   child: Text(context.l10n.foodRevisarPorciones),
                 ),
@@ -379,14 +372,12 @@ class _AiMealDictationSheetState extends ConsumerState<AiMealDictationSheet> {
                     backgroundColor: c.accent,
                     foregroundColor: c.ink,
                     padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
-                    ),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                   ),
                   icon: const Icon(AppIcons.check, size: 18),
                   label: Text(
-                    _isProcessing ? context.l10n.foodGuardando: context.l10n.todayEntreno5s,
-                    style: const TextStyle(fontWeight: FontWeight.w800),
+                    _isProcessing ? context.l10n.foodGuardando : context.l10n.todayEntreno5s,
+                    style: const TextStyle(fontWeight: FontWeight.w700),
                   ),
                 ),
               ),

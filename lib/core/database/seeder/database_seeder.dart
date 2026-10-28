@@ -2,6 +2,7 @@ import 'package:drift/drift.dart';
 
 import '../../domain/enums.dart';
 import '../app_database.dart';
+import 'seed_foods.dart';
 
 /// Servicio de inicialización de datos base para NB Selfcare.
 ///
@@ -17,6 +18,9 @@ abstract final class DatabaseSeeder {
     if (foodCount == 0) {
       await _seedFoodItems(db);
     }
+    // Instalaciones anteriores: añade los alimentos nuevos de la semilla sin
+    // tocar los que ya existen (ni los del usuario).
+    await _topUpSeedFoods(db);
 
     // 2. Verificar estado de la mascota
     final petCountQuery = db.selectOnly(db.petStatus)..addColumns([db.petStatus.id.count()]);
@@ -552,4 +556,41 @@ abstract final class DatabaseSeeder {
       batch.insertAll(db.foodItems, seedItems);
     });
   }
+
+  static Future<void> _topUpSeedFoods(AppDatabase db) async {
+    final Set<String> existing = (await (db.selectOnly(db.foodItems)
+              ..addColumns(<Expression<Object>>[db.foodItems.name])
+              ..where(db.foodItems.source.equalsValue(FoodSource.usdaSeed)))
+            .map((TypedResult row) => row.read(db.foodItems.name)!)
+            .get())
+        .toSet();
+    final List<FoodItemsCompanion> missing = <FoodItemsCompanion>[
+      for (final SeedFood f in seedFoods)
+        if (!existing.contains(f.name)) _companion(f),
+    ];
+    if (missing.isEmpty) return;
+    await db.batch((Batch batch) => batch.insertAll(db.foodItems, missing));
+  }
+
+  static FoodItemsCompanion _companion(SeedFood f) => FoodItemsCompanion(
+        name: Value(f.name),
+        source: const Value(FoodSource.usdaSeed),
+        servingLabel: Value(f.servingLabel),
+        defaultServingGrams: Value(f.servingGrams),
+        kcalPer100g: Value(f.kcal),
+        proteinPer100g: Value(f.protein),
+        carbsPer100g: Value(f.carbs),
+        fatPer100g: Value(f.fat),
+        fiberPer100g: Value(f.fiber),
+        sugarPer100g: Value(f.sugar),
+        sodiumMgPer100g: Value(f.sodiumMg),
+        potassiumMgPer100g: Value(f.potassiumMg),
+        magnesiumMgPer100g: Value(f.magnesiumMg),
+        calciumMgPer100g: Value(f.calciumMg),
+        ironMgPer100g: Value(f.ironMg),
+        zincMgPer100g: Value(f.zincMg),
+        vitaminCMgPer100g: Value(f.vitaminCMg),
+        vitaminDUgPer100g: Value(f.vitaminDUg),
+        vitaminB12UgPer100g: Value(f.vitaminB12Ug),
+      );
 }

@@ -1,14 +1,11 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
 
 import 'package:drift/drift.dart' as drift;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:path/path.dart' as p;
-import 'package:path_provider/path_provider.dart';
 
 import '../../../../core/clock/clock.dart';
 import '../../../../core/constants/app_constants.dart';
@@ -17,9 +14,12 @@ import '../../../../core/l10n/l10n.dart';
 import '../../../../core/services/text_assistant.dart';
 import '../../../../shared/theme/sc_colors.dart';
 import '../../../../shared/theme/sc_theme.dart';
+import '../../../../shared/theme/sc_tokens.dart';
 import '../../../../shared/utils/current_date_provider.dart';
 import '../../../../shared/widgets/app_icons.dart';
+import '../../../../shared/widgets/card_header.dart';
 import '../../../../shared/widgets/health_card.dart';
+import '../../../../shared/widgets/tonal_badge.dart';
 import '../../../journal/application/journal_service.dart';
 import 'journal_recent_entries.dart';
 import 'journal_scale_bar.dart';
@@ -30,16 +30,12 @@ import 'journal_scale_bar.dart';
 /// niveles de energía y estrés, disparadores de escritura guiada, adjunto de foto local,
 /// sugerencia empática local (diccionario determinista) e historial reciente con opción de Deshacer.
 class HoyJournal4x4Widget extends ConsumerStatefulWidget {
-  const HoyJournal4x4Widget({
-    super.key,
-    required this.dateKey,
-  });
+  const HoyJournal4x4Widget({super.key, required this.dateKey});
 
   final String dateKey;
 
   @override
-  ConsumerState<HoyJournal4x4Widget> createState() =>
-      _HoyJournal4x4WidgetState();
+  ConsumerState<HoyJournal4x4Widget> createState() => _HoyJournal4x4WidgetState();
 }
 
 class _HoyJournal4x4WidgetState extends ConsumerState<HoyJournal4x4Widget> {
@@ -48,7 +44,7 @@ class _HoyJournal4x4WidgetState extends ConsumerState<HoyJournal4x4Widget> {
   int _selectedMood = 4;
   int _selectedEnergy = 4;
   int _selectedStress = 2;
-  String? _draftPhotoPath;
+  Uint8List? _draftPhoto;
   bool _isSaving = false;
 
   static List<({String chip, String starter})> _quickPrompts(AppLocalizations l10n) =>
@@ -80,13 +76,7 @@ class _HoyJournal4x4WidgetState extends ConsumerState<HoyJournal4x4Widget> {
     if (text.isEmpty) {
       ScaffoldMessenger.of(context)
         ..hideCurrentSnackBar()
-        ..showSnackBar(
-          SnackBar(
-            content: Text(
-              context.l10n.todayEscribePrimeroUnasPalabrasPara,
-            ),
-          ),
-        );
+        ..showSnackBar(SnackBar(content: Text(context.l10n.todayEscribePrimeroUnasPalabrasPara)));
       return;
     }
     unawaited(HapticFeedback.selectionClick());
@@ -101,38 +91,21 @@ class _HoyJournal4x4WidgetState extends ConsumerState<HoyJournal4x4Widget> {
 
   Future<void> _pickProgressPhoto() async {
     try {
-      final picker = ImagePicker();
-      final XFile? image = await picker.pickImage(
+      // Reducida a 1080 px: cabe en la base de datos y viaja en la copia de seguridad.
+      final XFile? image = await ImagePicker().pickImage(
         source: ImageSource.gallery,
         maxWidth: 1080,
         maxHeight: 1080,
-        imageQuality: 85,
+        imageQuality: 82,
       );
       if (image == null) return;
-
-      final Directory appDir = await getApplicationDocumentsDirectory();
-      final Directory photosDir =
-          Directory(p.join(appDir.path, 'journal_photos'));
-      if (!photosDir.existsSync()) {
-        photosDir.createSync(recursive: true);
-      }
-
-      final String ext =
-          p.extension(image.path).isEmpty ? '.jpg' : p.extension(image.path);
-      final File dest = File(
-        p.join(
-          photosDir.path,
-          'progress_${ref.read(clockProvider).now().millisecondsSinceEpoch}$ext',
-        ),
-      );
-      await File(image.path).copy(dest.path);
-
+      final Uint8List bytes = await image.readAsBytes();
       if (!mounted) return;
-      setState(() => _draftPhotoPath = dest.path);
-    } catch (e) {
+      setState(() => _draftPhoto = bytes);
+    } on Exception catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(context.l10n.todayNoSePudoAdjuntarLa((e).toString()))),
+          SnackBar(content: Text(context.l10n.todayNoSePudoAdjuntarLa(e.toString()))),
         );
       }
     }
@@ -152,12 +125,14 @@ class _HoyJournal4x4WidgetState extends ConsumerState<HoyJournal4x4Widget> {
       final analysis = await localAi.analyzeJournal(text);
 
       final companion = JournalEntriesCompanion(
-        dateKey: drift.Value(widget.dateKey.isNotEmpty
-            ? widget.dateKey
-            : '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}'),
+        dateKey: drift.Value(
+          widget.dateKey.isNotEmpty
+              ? widget.dateKey
+              : '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}',
+        ),
         createdAt: drift.Value(timestamp),
         content: drift.Value(text),
-        progressPhotoPath: drift.Value(_draftPhotoPath),
+        progressPhoto: drift.Value(_draftPhoto),
         moodScore: drift.Value(_selectedMood),
         energyLevel: drift.Value(_selectedEnergy),
         stressLevel: drift.Value(_selectedStress),
@@ -165,19 +140,21 @@ class _HoyJournal4x4WidgetState extends ConsumerState<HoyJournal4x4Widget> {
         aiInsightSummary: drift.Value(analysis.oneLineInsight),
       );
 
-      final ({int entryId, int coins}) saved =
-          await ref.read(journalServiceProvider).save(companion);
+      final ({int entryId, int coins}) saved = await ref
+          .read(journalServiceProvider)
+          .save(companion);
 
       _journalController.clear();
       if (mounted) {
-        setState(() => _draftPhotoPath = null);
+        setState(() => _draftPhoto = null);
         ScaffoldMessenger.of(context)
           ..hideCurrentSnackBar()
           ..showSnackBar(
             SnackBar(
               content: Text(
                 saved.coins > 0
-                    ? context.l10n.todayReflexionGuardadaEnTuDiario((saved.coins).toString()): context.l10n.todayReflexionGuardadaEnTuDiario2,
+                    ? context.l10n.todayReflexionGuardadaEnTuDiario((saved.coins).toString())
+                    : context.l10n.todayReflexionGuardadaEnTuDiario2,
               ),
             ),
           );
@@ -216,93 +193,24 @@ class _HoyJournal4x4WidgetState extends ConsumerState<HoyJournal4x4Widget> {
 
     return HealthCard(
       margin: EdgeInsets.zero,
-      padding: const EdgeInsets.all(18),
+      padding: const EdgeInsets.all(ScSpace.l + 2),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          // Cabecera amplia sin cortes de texto
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              Container(
-                width: 40,
-                height: 40,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: c.isFlat ? c.bg3 : c.soft,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: c.isFlat ? c.line2 : c.accent.withValues(alpha: 0.35),
-                    width: c.isFlat ? 1.5 : 1.0,
-                  ),
-                ),
-                child: Icon(Icons.menu_book_rounded, size: 20, color: c.accent),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    Text(
-                      context.l10n.todayDiarioPersonal,
-                      style: TextStyle(
-                        fontFamily: ScFonts.display,
-                        fontSize: 18,
-                        fontWeight: FontWeight.w800,
-                        color: c.text,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      context.l10n.todayEspacioPrivado44RegistraTu,
-                      softWrap: true,
-                      style: TextStyle(
-                        fontFamily: ScFonts.ui,
-                        fontSize: 12,
-                        color: c.text2,
-                        height: 1.3,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 8),
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                decoration: BoxDecoration(
-                  color: c.bg3,
-                  borderRadius: BorderRadius.circular(999),
-                  border: Border.all(
-                    color: c.isFlat ? c.line2 : c.line,
-                    width: c.isFlat ? 1.4 : 1.0,
-                  ),
-                ),
-                child: Text(
-                  context.l10n.todayTexto3(AppConstants.coinsJournalEntry.toString()),
-                  style: TextStyle(
-                    fontFamily: ScFonts.display,
-                    fontSize: 11.5,
-                    fontWeight: FontWeight.w800,
-                    color: c.accent,
-                  ),
-                ),
-              ),
-            ],
+          CardHeader(
+            title: context.l10n.todayDiarioPersonal,
+            subtitle: context.l10n.todayEspacioPrivado44RegistraTu,
+            icon: Icons.menu_book_rounded,
+            tone: c.accent,
+            trailing: TonalBadge(
+              label: context.l10n.todayTexto3(AppConstants.coinsJournalEntry.toString()),
+            ),
           ),
 
           const SizedBox(height: 16),
 
           // 1. Selector expresivo de Estado de Ánimo (5 tarjetas flexibles sin truncar)
-          Text(
-            context.l10n.todayComoTeSientesEnEste,
-            style: TextStyle(
-              fontFamily: ScFonts.ui,
-              fontSize: 13,
-              fontWeight: FontWeight.w700,
-              color: c.text,
-            ),
-          ),
+          Text(context.l10n.todayComoTeSientesEnEste, style: context.type.label),
           const SizedBox(height: 8),
           JournalMoodPicker(
             selected: _selectedMood,
@@ -340,13 +248,7 @@ class _HoyJournal4x4WidgetState extends ConsumerState<HoyJournal4x4Widget> {
                   ],
                 );
               }
-              return Column(
-                children: <Widget>[
-                  energyBox,
-                  const SizedBox(height: 8),
-                  stressBox,
-                ],
-              );
+              return Column(children: <Widget>[energyBox, const SizedBox(height: 8), stressBox]);
             },
           ),
 
@@ -359,20 +261,7 @@ class _HoyJournal4x4WidgetState extends ConsumerState<HoyJournal4x4Widget> {
             children: _quickPrompts(context.l10n).map((prompt) {
               return ActionChip(
                 visualDensity: VisualDensity.compact,
-                backgroundColor: c.bg,
-                side: BorderSide(
-                  color: c.isFlat ? c.line2 : c.line,
-                  width: c.isFlat ? 1.2 : 1.0,
-                ),
-                label: Text(
-                  prompt.chip,
-                  style: TextStyle(
-                    fontFamily: ScFonts.ui,
-                    fontSize: 11.5,
-                    fontWeight: FontWeight.w600,
-                    color: c.text2,
-                  ),
-                ),
+                label: Text(prompt.chip),
                 onPressed: () => _applyPrompt(prompt.starter),
               );
             }).toList(),
@@ -385,57 +274,30 @@ class _HoyJournal4x4WidgetState extends ConsumerState<HoyJournal4x4Widget> {
             controller: _journalController,
             minLines: 4,
             maxLines: 7,
-            style: TextStyle(
-              fontFamily: ScFonts.ui,
-              fontSize: 14,
-              color: c.text,
-              height: 1.4,
-            ),
-            decoration: InputDecoration(
-              hintText:
-                  context.l10n.todayEscribeSinPrisaLoQue,
-              hintStyle: TextStyle(
-                fontFamily: ScFonts.ui,
-                fontSize: 13.5,
-                color: c.text3,
-              ),
-              filled: true,
-              fillColor: c.bg,
-              contentPadding: const EdgeInsets.all(14),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(14),
-                borderSide: BorderSide(
-                  color: c.isFlat ? c.line2 : c.line,
-                  width: c.isFlat ? 1.5 : 1.0,
-                ),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(14),
-                borderSide: BorderSide(color: c.accent, width: 1.8),
-              ),
-            ),
+            style: TextStyle(fontFamily: ScFonts.ui, fontSize: 14.5, color: c.text, height: 1.45),
+            decoration: InputDecoration(hintText: context.l10n.todayEscribeSinPrisaLoQue),
           ),
 
-          if (_draftPhotoPath != null &&
-              File(_draftPhotoPath!).existsSync()) ...<Widget>[
+          if (_draftPhoto case final Uint8List photo) ...<Widget>[
             const SizedBox(height: 10),
             Stack(
               alignment: Alignment.topRight,
               children: <Widget>[
                 ClipRRect(
                   borderRadius: BorderRadius.circular(12),
-                  child: Image.file(
-                    File(_draftPhotoPath!),
+                  child: Image.memory(
+                    photo,
                     height: 140,
                     width: double.infinity,
                     fit: BoxFit.cover,
+                    cacheHeight: 420,
                   ),
                 ),
                 IconButton(
                   tooltip: context.l10n.todayQuitarFoto,
                   icon: const Icon(AppIcons.close, color: Colors.white),
                   style: IconButton.styleFrom(backgroundColor: Colors.black54),
-                  onPressed: () => setState(() => _draftPhotoPath = null),
+                  onPressed: () => setState(() => _draftPhoto = null),
                 ),
               ],
             ),
@@ -443,54 +305,35 @@ class _HoyJournal4x4WidgetState extends ConsumerState<HoyJournal4x4Widget> {
 
           const SizedBox(height: 12),
 
-          // 5. Acciones secundarias + Botón principal cómodo abajo (cero cortes)
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: <Widget>[
-              OutlinedButton.icon(
-                onPressed: _pickProgressPhoto,
-                icon: Icon(
-                  Icons.add_photo_alternate_outlined,
-                  size: 17,
-                  color: c.text2,
-                ),
-                label: Text(
-                  context.l10n.todayAdjuntarFoto,
-                  style: TextStyle(
-                    fontFamily: ScFonts.ui,
-                    fontSize: 12.5,
-                    fontWeight: FontWeight.w600,
-                    color: c.text,
+          // 5. Acciones secundarias (misma altura aunque una ocupe dos líneas)
+          // + botón principal abajo.
+          IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: <Widget>[
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: _pickProgressPhoto,
+                    icon: Icon(Icons.add_photo_alternate_outlined, size: 17, color: c.text2),
+                    label: Text(context.l10n.todayAdjuntarFoto),
                   ),
                 ),
-              ),
-              OutlinedButton.icon(
-                onPressed: _autoSuggestEmotionFromText,
-                icon: Icon(AppIcons.suggest, size: 16, color: c.accent),
-                label: Text(
-                  context.l10n.todaySugerirEstado,
-                  style: TextStyle(
-                    fontFamily: ScFonts.ui,
-                    fontSize: 12.5,
-                    fontWeight: FontWeight.w600,
-                    color: c.text,
+                const SizedBox(width: ScSpace.s),
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: _autoSuggestEmotionFromText,
+                    icon: Icon(AppIcons.suggest, size: 17, color: c.isFlat ? c.text : c.accent),
+                    label: Text(context.l10n.todaySugerirEstado),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
           const SizedBox(height: 10),
           SizedBox(
             width: double.infinity,
             child: FilledButton.icon(
               onPressed: _isSaving ? null : _saveEntry,
-              style: FilledButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 13),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14),
-                ),
-              ),
               icon: _isSaving
                   ? const SizedBox(
                       width: 16,
@@ -500,7 +343,6 @@ class _HoyJournal4x4WidgetState extends ConsumerState<HoyJournal4x4Widget> {
                   : const Icon(Icons.check_circle_outline_rounded, size: 18),
               label: Text(
                 context.l10n.todayGuardarEnMiDiario(AppConstants.coinsJournalEntry.toString()),
-                style: const TextStyle(fontWeight: FontWeight.w700),
               ),
             ),
           ),
@@ -512,4 +354,3 @@ class _HoyJournal4x4WidgetState extends ConsumerState<HoyJournal4x4Widget> {
     );
   }
 }
-

@@ -31,7 +31,7 @@ enum BiologicalSex implements DbEnum {
   bool get isFemale => this == BiologicalSex.female;
 }
 
-/// Fase de periodización de la dieta (`docs/14` Fase 4).
+/// Fase de periodización de la dieta.
 enum DietPhase implements DbEnum {
   deficit('deficit'),
   maintenance('maintenance'),
@@ -44,7 +44,7 @@ enum DietPhase implements DbEnum {
   final String dbValue;
 }
 
-/// Estilo alimentario activo (`docs/13` Lista 3 #2).
+/// Estilo alimentario activo.
 enum DietArchetype implements DbEnum {
   flexible('flexible'),
   mediterranean('mediterranean'),

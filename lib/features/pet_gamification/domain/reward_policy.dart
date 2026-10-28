@@ -1,6 +1,6 @@
 import '../../../core/domain/enums.dart';
 
-/// Acciones que otorgan monedas (docs/08 §4). Cada una se reclama como máximo
+/// Acciones que otorgan monedas (docs/08 §6). Cada una se reclama como máximo
 /// una vez al día: la clave [ledgerKey] es única por fecha en `coin_ledger`.
 sealed class RewardAction {
   const RewardAction();
@@ -14,8 +14,11 @@ sealed class RewardAction {
   static const RewardAction milestoneReached = _SimpleReward('milestone_reached', 25);
   static const RewardAction sundayCheckIn = _SimpleReward('sunday_checkin', 15);
 
+  /// Una sesión de respiración completa con Nibi (la primera del día).
+  static const RewardAction mindfulBreath = _SimpleReward('mindful_breath', 10);
+
   /// Desayuno, almuerzo y cena dan monedas (máx. 30/día). Los snacks no, para
-  /// no premiar picar entre horas (docs/08 §4).
+  /// no premiar picar entre horas (docs/08 §6).
   static RewardAction? mealLogged(MealType meal) =>
       meal == MealType.snack ? null : _MealReward(meal);
 
@@ -57,7 +60,7 @@ abstract final class RewardPolicy {
   /// Umbral de sueño reparador por fases (REM + profundo), cuando la fuente las aporta.
   static const int restorativeStageMinutes = 90;
 
-  /// Multiplicador del día (docs/08 §4): 1.5× si se alcanzó la meta de sueño
+  /// Multiplicador del día (docs/08 §6): 1.5× si se alcanzó la meta de sueño
   /// del perfil o si REM + profundo suman al menos [restorativeStageMinutes].
   static double sleepMultiplier({
     required int sleepMinutes,
@@ -70,7 +73,7 @@ abstract final class RewardPolicy {
     return metGoal || restorativeStages ? restorativeSleepMultiplier : 1.0;
   }
 
-  /// Monedas finales, redondeando hacia arriba (docs/08 §4).
+  /// Monedas finales, redondeando hacia arriba (docs/08 §6).
   static int amountFor(RewardAction action, double multiplier) =>
       (action.baseAmount * multiplier).ceil();
 }

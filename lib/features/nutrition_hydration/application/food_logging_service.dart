@@ -162,7 +162,7 @@ class FoodLoggingService {
   }) async {
     final DateTime? target = DateTime.tryParse(toDateKey);
     final String fromDateKey =
-        (target ?? _clock.now()).subtract(const Duration(days: 1)).dateKey;
+        (target ?? _clock.now()).addDays(-1).dateKey;
 
     final List<int> ids = <int>[];
     int coins = 0;

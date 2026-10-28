@@ -106,7 +106,9 @@ class BackupService {
         return BackupInspection(isValid: false, schemaVersion: version);
       }
       return BackupInspection(isValid: true, schemaVersion: version);
-    } on sqlite.SqliteException {
+    } on Object {
+      // SqliteException, pero también FormatException: con páginas corrompidas
+      // el mensaje de error de SQLite puede no ser UTF-8 válido.
       return const BackupInspection.invalid();
     } finally {
       rawDb?.close();

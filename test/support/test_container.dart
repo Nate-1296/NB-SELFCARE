@@ -13,15 +13,16 @@ import 'fake_platform.dart';
 ProviderContainer createTestContainer(
   AppDatabase db, {
   DateTime? now,
-  FakeHealthConnectGateway? healthConnect,
-  FakeNotificationGateway? notifications,
+  HealthConnectGateway? healthConnect,
+  NotificationGateway? notifications,
 }) {
   return ProviderContainer(
     overrides: [
       appDatabaseProvider.overrideWithValue(db),
       clockProvider.overrideWithValue(Clock.fixed(now ?? DateTime(2026, 10, 23, 12))),
-      healthConnectGatewayProvider
-          .overrideWithValue(healthConnect ?? FakeHealthConnectGateway(granted: false)),
+      healthConnectGatewayProvider.overrideWithValue(
+        healthConnect ?? FakeHealthConnectGateway(granted: false),
+      ),
       notificationGatewayProvider.overrideWithValue(notifications ?? FakeNotificationGateway()),
     ],
   );

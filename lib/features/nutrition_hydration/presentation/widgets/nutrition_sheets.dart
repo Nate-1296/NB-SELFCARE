@@ -10,17 +10,14 @@ import '../../../../core/domain/enums.dart';
 import '../../../../core/l10n/l10n.dart';
 import '../../../../shared/theme/sc_colors.dart';
 import '../../../../shared/theme/sc_theme.dart';
+import '../../../../shared/utils/number_formats.dart';
 import '../../../../shared/widgets/app_icons.dart';
 import '../../application/food_catalog_service.dart';
 import 'meal_slot_selector.dart';
 
 /// Hoja interactiva para editar gramos, cambiar momento del día o eliminar un alimento registrado.
 class EditFoodLogSheet extends ConsumerStatefulWidget {
-  const EditFoodLogSheet({
-    super.key,
-    required this.entry,
-    required this.onDeleteRequested,
-  });
+  const EditFoodLogSheet({super.key, required this.entry, required this.onDeleteRequested});
 
   final FoodLogWithItem entry;
   final VoidCallback onDeleteRequested;
@@ -40,7 +37,7 @@ class _EditFoodLogSheetState extends ConsumerState<EditFoodLogSheet> {
     super.initState();
     _grams = widget.entry.log.gramsConsumed;
     _mealType = widget.entry.log.mealType;
-    _gramsCtrl = TextEditingController(text: _grams.toStringAsFixed(0));
+    _gramsCtrl = TextEditingController(text: NumberFormats.input(_grams, maxDigits: 0));
   }
 
   @override
@@ -53,7 +50,7 @@ class _EditFoodLogSheetState extends ConsumerState<EditFoodLogSheet> {
     final double clamped = val.clamp(1.0, 5000.0);
     setState(() {
       _grams = clamped;
-      _gramsCtrl.text = clamped.toStringAsFixed(0);
+      _gramsCtrl.text = NumberFormats.input(clamped, maxDigits: 0);
     });
   }
 
@@ -64,8 +61,7 @@ class _EditFoodLogSheetState extends ConsumerState<EditFoodLogSheet> {
     final FoodItem? food = widget.entry.foodItem;
     final String name = food?.name ?? context.l10n.foodAlimentoRegistrado;
 
-    final double scale =
-        log.gramsConsumed > 0 ? _grams / log.gramsConsumed : 1.0;
+    final double scale = log.gramsConsumed > 0 ? _grams / log.gramsConsumed : 1.0;
     final double previewKcal = food != null
         ? food.kcalPer100g * (_grams / 100.0)
         : log.totalKcal * scale;
@@ -98,7 +94,7 @@ class _EditFoodLogSheetState extends ConsumerState<EditFoodLogSheet> {
                       style: TextStyle(
                         fontFamily: ScFonts.display,
                         fontSize: 20,
-                        fontWeight: FontWeight.w800,
+                        fontWeight: FontWeight.w700,
                         color: c.text,
                         height: 1.2,
                       ),
@@ -107,11 +103,7 @@ class _EditFoodLogSheetState extends ConsumerState<EditFoodLogSheet> {
                     Text(
                       context.l10n.foodAjustaLaCantidadConsumidaO,
                       softWrap: true,
-                      style: TextStyle(
-                        fontFamily: ScFonts.ui,
-                        fontSize: 12.5,
-                        color: c.text2,
-                      ),
+                      style: TextStyle(fontFamily: ScFonts.ui, fontSize: 12.5, color: c.text2),
                     ),
                   ],
                 ),
@@ -132,40 +124,33 @@ class _EditFoodLogSheetState extends ConsumerState<EditFoodLogSheet> {
             decoration: BoxDecoration(
               color: c.bg3,
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: c.isFlat ? c.line2 : c.line,
-                width: c.isFlat ? 1.4 : 1.0,
-              ),
+              border: c.isFlat ? Border.all(color: c.line2, width: 1.5) : null,
             ),
             child: Row(
               children: <Widget>[
-                Icon(
-                  AppIcons.fuego,
-                  color: c.isFlat ? c.text : c.calories,
-                  size: 22,
-                ),
+                Icon(AppIcons.fuego, color: c.isFlat ? c.text : c.calories, size: 22),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: <Widget>[
                       Text(
-                        context.l10n.foodKcal3(previewKcal.round().toString()),
+                        context.l10n.foodKcal3(NumberFormats.group(previewKcal)),
                         style: TextStyle(
                           fontFamily: ScFonts.display,
                           fontSize: 18,
-                          fontWeight: FontWeight.w800,
+                          fontWeight: FontWeight.w700,
                           color: c.text,
                         ),
                       ),
                       Text(
-                        context.l10n.foodProteinaGCarbosGGrasas(previewP.toStringAsFixed(1).toString(), previewC.toStringAsFixed(1).toString(), previewF.toStringAsFixed(1).toString()),
-                        softWrap: true,
-                        style: TextStyle(
-                          fontFamily: ScFonts.ui,
-                          fontSize: 12,
-                          color: c.text2,
+                        context.l10n.foodProteinaGCarbosGGrasas(
+                          NumberFormats.fixed(previewP, 1),
+                          NumberFormats.fixed(previewC, 1),
+                          NumberFormats.fixed(previewF, 1),
                         ),
+                        softWrap: true,
+                        style: TextStyle(fontFamily: ScFonts.ui, fontSize: 12, color: c.text2),
                       ),
                     ],
                   ),
@@ -181,7 +166,7 @@ class _EditFoodLogSheetState extends ConsumerState<EditFoodLogSheet> {
             style: TextStyle(
               fontFamily: ScFonts.display,
               fontSize: 14.5,
-              fontWeight: FontWeight.w800,
+              fontWeight: FontWeight.w700,
               color: c.text,
             ),
           ),
@@ -194,11 +179,8 @@ class _EditFoodLogSheetState extends ConsumerState<EditFoodLogSheet> {
                   _setGrams(_grams - 25);
                 },
                 style: OutlinedButton.styleFrom(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 13),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 13),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
                 child: Text(context.l10n.food25G),
               ),
@@ -207,29 +189,22 @@ class _EditFoodLogSheetState extends ConsumerState<EditFoodLogSheet> {
                 child: TextField(
                   controller: _gramsCtrl,
                   textAlign: TextAlign.center,
-                  keyboardType:
-                      const TextInputType.numberWithOptions(decimal: true),
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
                   style: TextStyle(
                     fontFamily: ScFonts.display,
                     fontSize: 18,
-                    fontWeight: FontWeight.w800,
+                    fontWeight: FontWeight.w700,
                     color: c.text,
                   ),
                   decoration: InputDecoration(
                     suffixText: 'g',
                     filled: true,
                     fillColor: c.bg3,
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 12,
-                    ),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(14),
-                    ),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
                   ),
                   onChanged: (String v) {
-                    final double? parsed =
-                        double.tryParse(v.trim().replaceAll(',', '.'));
+                    final double? parsed = double.tryParse(v.trim().replaceAll(',', '.'));
                     if (parsed != null && parsed > 0) {
                       setState(() => _grams = parsed.clamp(1.0, 5000.0));
                     }
@@ -243,11 +218,8 @@ class _EditFoodLogSheetState extends ConsumerState<EditFoodLogSheet> {
                   _setGrams(_grams + 25);
                 },
                 style: OutlinedButton.styleFrom(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 13),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 13),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
                 child: Text(context.l10n.food25G2),
               ),
@@ -260,7 +232,7 @@ class _EditFoodLogSheetState extends ConsumerState<EditFoodLogSheet> {
               min: 5.0,
               max: 600.0,
               divisions: 119,
-              label: context.l10n.foodG10(_grams.round().toString()),
+              label: context.l10n.foodG10(NumberFormats.group(_grams)),
               onChanged: _setGrams,
             ),
           ] else
@@ -271,7 +243,7 @@ class _EditFoodLogSheetState extends ConsumerState<EditFoodLogSheet> {
             style: TextStyle(
               fontFamily: ScFonts.display,
               fontSize: 14.5,
-              fontWeight: FontWeight.w800,
+              fontWeight: FontWeight.w700,
               color: c.text,
             ),
           ),
@@ -297,11 +269,8 @@ class _EditFoodLogSheetState extends ConsumerState<EditFoodLogSheet> {
                       },
                 style: OutlinedButton.styleFrom(
                   foregroundColor: c.isFlat ? c.text : c.danger,
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
-                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                 ),
                 icon: const Icon(AppIcons.delete, size: 18),
                 label: Text(context.l10n.commonDelete),
@@ -314,7 +283,9 @@ class _EditFoodLogSheetState extends ConsumerState<EditFoodLogSheet> {
                       : () async {
                           setState(() => _isSaving = true);
                           unawaited(HapticFeedback.lightImpact());
-                          await ref.read(foodCatalogServiceProvider).updateLogEntry(
+                          await ref
+                              .read(foodCatalogServiceProvider)
+                              .updateLogEntry(
                                 log: log,
                                 food: food,
                                 grams: _grams,
@@ -328,14 +299,12 @@ class _EditFoodLogSheetState extends ConsumerState<EditFoodLogSheet> {
                     backgroundColor: c.accent,
                     foregroundColor: c.ink,
                     padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
-                    ),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                   ),
                   icon: const Icon(AppIcons.check, size: 18),
                   label: Text(
                     context.l10n.foodGuardarCambios,
-                    style: const TextStyle(fontWeight: FontWeight.w800),
+                    style: const TextStyle(fontWeight: FontWeight.w700),
                   ),
                 ),
               ),
@@ -346,4 +315,3 @@ class _EditFoodLogSheetState extends ConsumerState<EditFoodLogSheet> {
     );
   }
 }
-

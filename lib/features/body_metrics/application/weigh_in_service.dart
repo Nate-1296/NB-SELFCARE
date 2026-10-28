@@ -11,6 +11,7 @@ import '../../../core/database/daos/tdee_dao.dart';
 import '../../../core/database/daos/user_profile_dao.dart';
 import '../../../core/domain/enums.dart';
 import '../../../core/platform/health_connect_gateway.dart';
+import '../../../core/platform/native_call.dart';
 import '../../../shared/utils/biometric_formulas.dart';
 import '../../../shared/utils/cycle_phase_calculator.dart';
 import '../../../shared/utils/date_time_extensions.dart';
@@ -42,7 +43,7 @@ class WeighInResult {
 }
 
 /// Caso de uso "Registrar pesaje": aplica la cascada biométrica completa de
-/// docs/02 §3 (métricas → EMA → falsa subida → monedas → Health Connect → TDEE).
+/// docs/02 §4 (métricas → EMA → falsa subida → monedas → Health Connect → TDEE).
 class WeighInService {
   WeighInService({
     required this._db,
@@ -148,11 +149,14 @@ class WeighInService {
       return (id, reward);
     });
 
-    await _healthConnect.writeWeight(
-      weightKg: weightKg,
-      bodyFatPercentage: analysis.hasImpedance ? m.bodyFatPercentage : null,
-      at: now,
-      fromScale: source == MeasurementSource.miScale2Ble,
+    await bestEffort(
+      () => _healthConnect.writeWeight(
+        weightKg: weightKg,
+        bodyFatPercentage: analysis.hasImpedance ? m.bodyFatPercentage : null,
+        at: now,
+        fromScale: source == MeasurementSource.miScale2Ble,
+      ),
+      false,
     );
 
     return WeighInResult(
@@ -168,14 +172,16 @@ class WeighInService {
     final nutrition = await _foodDao.getRetentionNutritionContext(now.dateKey);
     final bool tracksCycle = profile.biologicalSex.isFemale && profile.isCycleTrackingEnabled;
     final bool isLuteal =
-        tracksCycle && (await _cycleDao.calculateCurrentPhase(now)).phase == FemaleCyclePhase.luteal;
+        tracksCycle &&
+        (await _cycleDao.calculateCurrentPhase(now)).phase == FemaleCyclePhase.luteal;
     return RetentionContext(
       yesterdaySodiumMg: nutrition.yesterdaySodiumMg,
       yesterdayCarbsG: nutrition.yesterdayCarbsG,
       avg7dCarbsG: nutrition.avg7dCarbsG,
       isLutealPhase: isLuteal,
-      takesWaterRetainingSupplement:
-          await _supplementDao.hasActiveWaterRetentionSupplement(now.dateKey),
+      takesWaterRetainingSupplement: await _supplementDao.hasActiveWaterRetentionSupplement(
+        now.dateKey,
+      ),
     );
   }
 }

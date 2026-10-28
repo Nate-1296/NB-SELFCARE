@@ -9,17 +9,14 @@ import '../../../../core/l10n/l10n.dart';
 import '../../../../shared/theme/sc_colors.dart';
 import '../../../../shared/theme/sc_theme.dart';
 import '../../../../shared/utils/biometric_formulas.dart';
+import '../../../../shared/utils/number_formats.dart';
 import '../../../../shared/widgets/app_icons.dart';
 import '../../../../shared/widgets/sheet.dart';
 import 'preview_mini_stat.dart';
 
 /// Hoja modal guiada para validación antropométrica quincenal (Fórmula US Navy).
 class NavyTapeMeasureSheet extends StatefulWidget {
-  const NavyTapeMeasureSheet({
-    super.key,
-    required this.profile,
-    this.latestMeasurement,
-  });
+  const NavyTapeMeasureSheet({super.key, required this.profile, this.latestMeasurement});
 
   final UserProfile profile;
   final BodyMeasurement? latestMeasurement;
@@ -31,10 +28,7 @@ class NavyTapeMeasureSheet extends StatefulWidget {
   }) {
     return mostrarHojaMenu<({double waistCm, double neckCm, double? hipCm})>(
       context,
-      builder: (_) => NavyTapeMeasureSheet(
-        profile: profile,
-        latestMeasurement: latestMeasurement,
-      ),
+      builder: (_) => NavyTapeMeasureSheet(profile: profile, latestMeasurement: latestMeasurement),
     );
   }
 
@@ -53,13 +47,13 @@ class _NavyTapeMeasureSheetState extends State<NavyTapeMeasureSheet> {
   void initState() {
     super.initState();
     _waistCtrl = TextEditingController(
-      text: (widget.latestMeasurement?.waistCm ?? 80.0).toStringAsFixed(1),
+      text: NumberFormats.input((widget.latestMeasurement?.waistCm ?? 80.0), maxDigits: 1),
     )..addListener(_refresh);
     _neckCtrl = TextEditingController(
-      text: (widget.latestMeasurement?.neckCm ?? 38.0).toStringAsFixed(1),
+      text: NumberFormats.input((widget.latestMeasurement?.neckCm ?? 38.0), maxDigits: 1),
     )..addListener(_refresh);
     _hipCtrl = TextEditingController(
-      text: (widget.latestMeasurement?.hipCm ?? 95.0).toStringAsFixed(1),
+      text: NumberFormats.input((widget.latestMeasurement?.hipCm ?? 95.0), maxDigits: 1),
     )..addListener(_refresh);
   }
 
@@ -95,11 +89,7 @@ class _NavyTapeMeasureSheetState extends State<NavyTapeMeasureSheet> {
     if (_isFemale && hip == null) return;
 
     unawaited(HapticFeedback.mediumImpact());
-    Navigator.of(context).pop((
-      waistCm: waist,
-      neckCm: neck,
-      hipCm: hip,
-    ));
+    Navigator.of(context).pop((waistCm: waist, neckCm: neck, hipCm: hip));
   }
 
   @override
@@ -108,8 +98,7 @@ class _NavyTapeMeasureSheetState extends State<NavyTapeMeasureSheet> {
     final double? waist = _parsePositive(_waistCtrl);
     final double? neck = _parsePositive(_neckCtrl);
     final double? hip = _isFemale ? _parsePositive(_hipCtrl) : null;
-    final bool validInputs =
-        waist != null && neck != null && (!_isFemale || hip != null);
+    final bool validInputs = waist != null && neck != null && (!_isFemale || hip != null);
 
     double? navyFat;
     double? validatedFat;
@@ -122,8 +111,7 @@ class _NavyTapeMeasureSheetState extends State<NavyTapeMeasureSheet> {
         isMale: !_isFemale,
         hipCm: hip,
       );
-      final double biaFat =
-          widget.latestMeasurement?.bodyFatPercentage ?? navyFat;
+      final double biaFat = widget.latestMeasurement?.bodyFatPercentage ?? navyFat;
       validatedFat = BiometricFormulas.calculateValidatedBodyFat(
         biaBodyFatPercentage: biaFat,
         navyBodyFatPercentage: navyFat,
@@ -147,9 +135,7 @@ class _NavyTapeMeasureSheetState extends State<NavyTapeMeasureSheet> {
                 decoration: BoxDecoration(
                   color: c.soft,
                   borderRadius: BorderRadius.circular(14),
-                  border: c.isFlat
-                      ? Border.all(color: c.line2, width: 1.5)
-                      : null,
+                  border: c.isFlat ? Border.all(color: c.line2, width: 1.5) : null,
                 ),
                 child: Icon(AppIcons.tape, color: c.accent, size: 22),
               ),
@@ -163,17 +149,13 @@ class _NavyTapeMeasureSheetState extends State<NavyTapeMeasureSheet> {
                       style: TextStyle(
                         fontFamily: ScFonts.display,
                         fontSize: 18.5,
-                        fontWeight: FontWeight.w800,
+                        fontWeight: FontWeight.w700,
                         color: c.text,
                       ),
                     ),
                     Text(
                       context.l10n.bodyControlQuincenalSinSesgoPor,
-                      style: TextStyle(
-                        fontFamily: ScFonts.ui,
-                        fontSize: 12.5,
-                        color: c.text2,
-                      ),
+                      style: TextStyle(fontFamily: ScFonts.ui, fontSize: 12.5, color: c.text2),
                     ),
                   ],
                 ),
@@ -187,20 +169,13 @@ class _NavyTapeMeasureSheetState extends State<NavyTapeMeasureSheet> {
             decoration: BoxDecoration(
               color: c.bg3,
               borderRadius: BorderRadius.circular(14),
-              border: Border.all(
-                color: c.isFlat ? c.line2 : c.line,
-                width: c.isFlat ? 1.5 : 1.0,
-              ),
+              border: c.isFlat ? Border.all(color: c.line2, width: 1.5) : null,
             ),
             child: Text(
               _isFemale
-                  ? context.l10n.bodyMideEnAyunasSinComprimir: context.l10n.bodyMideEnAyunasSinComprimir2,
-              style: TextStyle(
-                fontFamily: ScFonts.ui,
-                fontSize: 12,
-                height: 1.35,
-                color: c.text2,
-              ),
+                  ? context.l10n.bodyMideEnAyunasSinComprimir
+                  : context.l10n.bodyMideEnAyunasSinComprimir2,
+              style: TextStyle(fontFamily: ScFonts.ui, fontSize: 12, height: 1.35, color: c.text2),
             ),
           ),
           const SizedBox(height: 14),
@@ -226,8 +201,7 @@ class _NavyTapeMeasureSheetState extends State<NavyTapeMeasureSheet> {
             const SizedBox(height: 10),
             TextField(
               controller: _hipCtrl,
-              keyboardType:
-                  const TextInputType.numberWithOptions(decimal: true),
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
               decoration: InputDecoration(
                 labelText: context.l10n.bodyCircunferenciaDeCadera,
                 suffixText: 'cm',
@@ -242,10 +216,7 @@ class _NavyTapeMeasureSheetState extends State<NavyTapeMeasureSheet> {
               decoration: BoxDecoration(
                 color: c.bg3,
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(
-                  color: c.accent,
-                  width: c.isFlat ? 1.5 : 1.2,
-                ),
+                border: Border.all(color: c.accent, width: c.isFlat ? 1.5 : 1.2),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -255,13 +226,13 @@ class _NavyTapeMeasureSheetState extends State<NavyTapeMeasureSheet> {
                       Expanded(
                         child: PreviewMiniStat(
                           label: context.l10n.bodyUsNavyCinta,
-                          value: '${navyFat.toStringAsFixed(1)}%',
+                          value: '${NumberFormats.fixed(navyFat, 1)}%',
                         ),
                       ),
                       Expanded(
                         child: PreviewMiniStat(
                           label: context.l10n.bodyGrasaValidada6040,
-                          value: '${validatedFat.toStringAsFixed(1)}%',
+                          value: '${NumberFormats.fixed(validatedFat, 1)}%',
                           highlight: true,
                         ),
                       ),
@@ -272,12 +243,14 @@ class _NavyTapeMeasureSheetState extends State<NavyTapeMeasureSheet> {
                     Divider(height: 1, color: c.line),
                     const SizedBox(height: 8),
                     Text(
-                      context.l10n.bodyIndiceCinturaEstatura(waistToHeight.toStringAsFixed(2).toString(), (waistToHeight < 0.50 ? 'Rango metabólico saludable < 0.50' : 'Objetivo saludable < 0.50').toString()),
-                      style: TextStyle(
-                        fontFamily: ScFonts.ui,
-                        fontSize: 12,
-                        color: c.text2,
+                      context.l10n.bodyIndiceCinturaEstatura(
+                        NumberFormats.fixed(waistToHeight, 2),
+                        (waistToHeight < 0.50
+                                ? 'Rango metabólico saludable < 0.50'
+                                : 'Objetivo saludable < 0.50')
+                            .toString(),
                       ),
+                      style: TextStyle(fontFamily: ScFonts.ui, fontSize: 12, color: c.text2),
                     ),
                   ],
                 ],
@@ -290,16 +263,12 @@ class _NavyTapeMeasureSheetState extends State<NavyTapeMeasureSheet> {
             onPressed: validInputs ? _submit : null,
             icon: const Icon(AppIcons.check, size: 18),
             label: Text(context.l10n.bodyGuardarValidacion),
-            style: FilledButton.styleFrom(
-              minimumSize: const Size.fromHeight(48),
-            ),
+            style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(48)),
           ),
           const SizedBox(height: 8),
           OutlinedButton(
             onPressed: () => Navigator.of(context).pop(),
-            style: OutlinedButton.styleFrom(
-              minimumSize: const Size.fromHeight(46),
-            ),
+            style: OutlinedButton.styleFrom(minimumSize: const Size.fromHeight(46)),
             child: Text(context.l10n.commonCancel),
           ),
         ],

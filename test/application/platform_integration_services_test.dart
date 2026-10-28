@@ -43,6 +43,9 @@ void main() {
         biologicalSex: BiologicalSex.female,
         heightCm: 165,
         targetWeightKg: 60,
+        // Perfil creado antes de los días que se sincronizan (los días previos
+        // a la instalación no dan monedas).
+        createdAt: Value(DateTime(2026, 10, 1)),
         hasImpedanceContraindication: Value(impedanceContraindication),
         hasEatingDisorderHistory: Value(edHistory),
         takesHypoglycemicMedication: Value(hypoglycemic),

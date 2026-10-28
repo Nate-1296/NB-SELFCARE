@@ -3,15 +3,20 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../../core/l10n/l10n.dart';
 import '../../../../../shared/theme/sc_colors.dart';
-import '../../../../../shared/theme/sc_theme.dart';
+import '../../../../../shared/theme/sc_tokens.dart';
 import '../../../../../shared/utils/daily_targets_calculator.dart';
+import '../../../../../shared/utils/number_formats.dart';
 import '../../../../../shared/widgets/app_icons.dart';
+import '../../../../../shared/widgets/card_header.dart';
 import '../../../../../shared/widgets/health_card.dart';
+import '../../../../../shared/widgets/metric_value.dart';
+import '../../../../../shared/widgets/progress_bar.dart';
+import '../../../../../shared/widgets/progress_ring.dart';
+import '../../../../../shared/widgets/quick_action_button.dart';
 import '../../../domain/hoy_widget_config.dart';
 
-// ============================================================================
-// 2. WIDGET OBJETIVOS DEL DÍA (CALORÍAS + MACROS + ACCIONES DE COMIDA) — 4×2 / 2×2
-// ============================================================================
+/// Energía del día: kcal que quedan en un anillo, macros en barras y accesos
+/// a registrar comida. En 2×2 el anillo cede su sitio a una barra.
 class HoyNutritionBentoCard extends StatelessWidget {
   const HoyNutritionBentoCard({
     super.key,
@@ -35,26 +40,65 @@ class HoyNutritionBentoCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ScColors c = context.sc;
+    final AppLocalizations l10n = context.l10n;
+    final String locale = l10n.localeName;
     final bool compact = size.isHalfWidth;
 
-    final int effectiveGoalKcal = targets.effectiveCalorieTargetKcal;
-    final int remainingKcal = effectiveGoalKcal - consumedKcal.round();
-    final double kcalRatio = effectiveGoalKcal > 0
-        ? (consumedKcal / effectiveGoalKcal).clamp(0.0, 1.0)
-        : 0.0;
-    final double proteinRatio = targets.proteinTargetG > 0
-        ? (consumedProtein / targets.proteinTargetG).clamp(0.0, 1.0)
-        : 0.0;
-    final double carbsRatio = targets.carbsTargetG > 0
-        ? (consumedCarbs / targets.carbsTargetG).clamp(0.0, 1.0)
-        : 0.0;
-    final double fatRatio = targets.fatTargetG > 0
-        ? (consumedFat / targets.fatTargetG).clamp(0.0, 1.0)
-        : 0.0;
+    final int goal = targets.effectiveCalorieTargetKcal;
+    final int remaining = goal - consumedKcal.round();
+    final double kcalRatio = goal > 0 ? (consumedKcal / goal).clamp(0.0, 1.0) : 0.0;
+
+    final List<Widget> macros = <Widget>[
+      _MacroRow(
+        label: l10n.todayProteina,
+        current: consumedProtein,
+        target: targets.proteinTargetG.toDouble(),
+        color: c.protein,
+      ),
+      _MacroRow(
+        label: compact ? l10n.todayCarbos : l10n.todayCarbohidratos,
+        current: consumedCarbs,
+        target: targets.carbsTargetG.toDouble(),
+        color: c.carbs,
+      ),
+      _MacroRow(
+        label: compact ? l10n.todayGrasas : l10n.todayGrasasSaludables,
+        current: consumedFat,
+        target: targets.fatTargetG.toDouble(),
+        color: c.fat,
+      ),
+    ];
+
+    final Widget remainingMetric = Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: compact ? CrossAxisAlignment.start : CrossAxisAlignment.center,
+      children: <Widget>[
+        AnimatedMetricValue(
+          value: remaining.abs().toDouble(),
+          format: (double v) => NumberFormats.integer(v, locale),
+          unit: compact ? l10n.unitKcal : null,
+          size: compact ? 28 : 26,
+        ),
+        const SizedBox(height: 2),
+        Text(
+          remaining >= 0 ? l10n.todayKcalLeft : l10n.todayKcalOver,
+          style: context.type.caption.copyWith(
+            color: remaining >= 0 ? c.text2 : (c.isFlat ? c.text : c.warning),
+          ),
+        ),
+      ],
+    );
+
+    final String goalLine = targets.netWorkoutKcal > 0
+        ? l10n.todayMetaKcalEntreno(
+            NumberFormats.integer(goal, locale),
+            NumberFormats.group(targets.netWorkoutKcal),
+          )
+        : l10n.todayMetaKcal(NumberFormats.integer(goal, locale));
 
     return HealthCard(
       margin: EdgeInsets.zero,
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.fromLTRB(ScSpace.l, ScSpace.l - 2, ScSpace.l, ScSpace.l),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -62,237 +106,89 @@ class HoyNutritionBentoCard extends StatelessWidget {
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
-              Wrap(
-                spacing: 8,
-                runSpacing: 4,
-                alignment: WrapAlignment.spaceBetween,
-                crossAxisAlignment: WrapCrossAlignment.center,
-                children: <Widget>[
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: <Widget>[
-                      Icon(AppIcons.calories, size: 19, color: c.calories),
-                      const SizedBox(width: 7),
-                      Flexible(
-                        child: Text(
-                          context.l10n.todayObjetivosDelDia,
-                          softWrap: true,
-                          style: TextStyle(
-                            fontFamily: ScFonts.display,
-                            fontSize: 16,
-                            fontWeight: FontWeight.w800,
-                            color: c.text,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  Text(
-                    targets.netWorkoutKcal > 0
-                        ? context.l10n.todayMetaKcalEntreno((effectiveGoalKcal).toString(), targets.netWorkoutKcal.toString()): context.l10n.todayMetaKcal((effectiveGoalKcal).toString()),
-                    softWrap: true,
-                    style: TextStyle(
-                      fontFamily: ScFonts.ui,
-                      fontSize: 11.5,
-                      fontWeight: FontWeight.w600,
-                      color: c.text2,
-                    ),
-                  ),
-                ],
+              SizedBox(
+                height: 32,
+                child: MetricLabel(
+                  icon: AppIcons.calories,
+                  label: l10n.todayObjetivosDelDia,
+                  tone: c.calories,
+                  trailing: compact ? null : Text(goalLine, style: context.type.caption),
+                ),
               ),
-              const SizedBox(height: 14),
+              const SizedBox(height: ScSpace.s),
               if (compact) ...<Widget>[
-                Text(
-                  context.l10n.todayKcal(remainingKcal.abs().toString()),
-                  softWrap: true,
-                  style: TextStyle(
-                    fontFamily: ScFonts.display,
-                    fontSize: 22,
-                    fontWeight: FontWeight.w800,
-                    color: c.text,
-                  ),
-                ),
-                Text(
-                  remainingKcal >= 0
-                      ? context.l10n.todayDisponiblesConsumidas(consumedKcal.round().toString()): context.l10n.todayPorEncimaConsumidas(consumedKcal.round().toString()),
-                  softWrap: true,
-                  style: TextStyle(
-                    fontFamily: ScFonts.ui,
-                    fontSize: 11.5,
-                    color: c.text2,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                LinearProgressIndicator(
-                  value: kcalRatio,
-                  minHeight: 7,
-                  backgroundColor: c.bg3,
-                  valueColor: AlwaysStoppedAnimation<Color>(c.calories),
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                const SizedBox(height: 10),
-                _MacroLinearRow(
-                  label: context.l10n.todayProteina,
-                  currentG: consumedProtein,
-                  targetG: targets.proteinTargetG,
-                  ratio: proteinRatio,
-                  color: c.protein,
-                ),
-                const SizedBox(height: 6),
-                _MacroLinearRow(
-                  label: context.l10n.todayCarbos,
-                  currentG: consumedCarbs,
-                  targetG: targets.carbsTargetG,
-                  ratio: carbsRatio,
-                  color: c.carbs,
-                ),
-                const SizedBox(height: 6),
-                _MacroLinearRow(
-                  label: context.l10n.todayGrasas,
-                  currentG: consumedFat,
-                  targetG: targets.fatTargetG,
-                  ratio: fatRatio,
-                  color: c.fat,
-                ),
-              ] else ...<Widget>[
+                remainingMetric,
+                const SizedBox(height: ScSpace.m),
+                ScProgressBar(value: kcalRatio, color: c.calories, height: 6),
+                const SizedBox(height: ScSpace.m),
+                for (final Widget m in macros) ...<Widget>[m, const SizedBox(height: ScSpace.s)],
+              ] else
                 Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: <Widget>[
-                    SizedBox(
-                      width: 88,
-                      height: 88,
-                      child: Stack(
-                        alignment: Alignment.center,
-                        children: <Widget>[
-                          SizedBox(
-                            width: 88,
-                            height: 88,
-                            child: CircularProgressIndicator(
-                              value: kcalRatio,
-                              strokeWidth: 9,
-                              strokeCap:
-                                  c.isFlat ? StrokeCap.butt : StrokeCap.round,
-                              backgroundColor: c.bg3,
-                              valueColor:
-                                  AlwaysStoppedAnimation<Color>(c.calories),
-                            ),
-                          ),
-                          Padding(
-                            padding: const EdgeInsets.all(8),
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: <Widget>[
-                                Text(
-                                  '${remainingKcal.abs()}',
-                                  style: TextStyle(
-                                    fontFamily: ScFonts.display,
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w800,
-                                    color: c.text,
-                                  ),
-                                ),
-                                Text(
-                                  remainingKcal >= 0 ? 'restan' : 'extra',
-                                  style: TextStyle(
-                                    fontSize: 10,
-                                    color: c.text2,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
+                    ScProgressRing(
+                      value: kcalRatio,
+                      size: 112,
+                      stroke: 10,
+                      color: c.calories,
+                      semanticsLabel: l10n.todayObjetivosDelDia,
+                      child: FittedBox(fit: BoxFit.scaleDown, child: remainingMetric),
                     ),
-                    const SizedBox(width: 18),
+                    const SizedBox(width: ScSpace.l + 4),
                     Expanded(
                       child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: <Widget>[
-                          _MacroLinearRow(
-                            label: context.l10n.todayProteina,
-                            currentG: consumedProtein,
-                            targetG: targets.proteinTargetG,
-                            ratio: proteinRatio,
-                            color: c.protein,
-                          ),
-                          const SizedBox(height: 8),
-                          _MacroLinearRow(
-                            label: context.l10n.todayCarbohidratos,
-                            currentG: consumedCarbs,
-                            targetG: targets.carbsTargetG,
-                            ratio: carbsRatio,
-                            color: c.carbs,
-                          ),
-                          const SizedBox(height: 8),
-                          _MacroLinearRow(
-                            label: context.l10n.todayGrasasSaludables,
-                            currentG: consumedFat,
-                            targetG: targets.fatTargetG,
-                            ratio: fatRatio,
-                            color: c.fat,
-                          ),
+                          for (int i = 0; i < macros.length; i++) ...<Widget>[
+                            if (i > 0) const SizedBox(height: ScSpace.m),
+                            macros[i],
+                          ],
                         ],
                       ),
                     ),
                   ],
                 ),
-              ],
             ],
           ),
-          const SizedBox(height: 14),
-          if (compact) ...<Widget>[
-            SizedBox(
-              width: double.infinity,
-              child: FilledButton.tonalIcon(
-                onPressed: () => context.go('/comer'),
-                style: FilledButton.styleFrom(
-                  visualDensity: VisualDensity.compact,
-                  padding: const EdgeInsets.symmetric(vertical: 10),
+          const SizedBox(height: ScSpace.l),
+          if (compact)
+            Column(
+              children: <Widget>[
+                QuickActionButton(
+                  label: l10n.todayRegistrarComida,
+                  icon: AppIcons.comer,
+                  tone: c.accent,
+                  emphasized: true,
+                  onPressed: () => context.go('/comer'),
                 ),
-                icon: const Icon(AppIcons.comer, size: 16),
-                label: Text(context.l10n.todayRegistrarComida),
-              ),
-            ),
-            const SizedBox(height: 6),
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton.icon(
-                onPressed: onRepeatYesterday,
-                style: OutlinedButton.styleFrom(
-                  visualDensity: VisualDensity.compact,
-                  padding: const EdgeInsets.symmetric(vertical: 8),
+                const SizedBox(height: ScSpace.s - 2),
+                QuickActionButton(
+                  label: l10n.todayRepetirAyer,
+                  icon: AppIcons.repeat,
+                  tone: c.text2,
+                  onPressed: onRepeatYesterday,
                 ),
-                icon: const Icon(AppIcons.repeat, size: 15),
-                label: Text(context.l10n.todayRepetirAyer),
-              ),
-            ),
-          ] else
+              ],
+            )
+          else
             Row(
               children: <Widget>[
                 Expanded(
                   flex: 3,
-                  child: FilledButton.tonalIcon(
+                  child: QuickActionButton(
+                    label: l10n.todayRegistrarComida,
+                    icon: AppIcons.comer,
+                    tone: c.accent,
+                    emphasized: true,
                     onPressed: () => context.go('/comer'),
-                    style: FilledButton.styleFrom(
-                      visualDensity: VisualDensity.compact,
-                      padding: const EdgeInsets.symmetric(vertical: 11),
-                    ),
-                    icon: const Icon(AppIcons.comer, size: 16),
-                    label: Text(context.l10n.todayRegistrarComida),
                   ),
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: ScSpace.s - 2),
                 Expanded(
                   flex: 2,
-                  child: OutlinedButton.icon(
+                  child: QuickActionButton(
+                    label: l10n.todayRepetirAyer,
+                    icon: AppIcons.repeat,
+                    tone: c.text2,
                     onPressed: onRepeatYesterday,
-                    style: OutlinedButton.styleFrom(
-                      visualDensity: VisualDensity.compact,
-                      padding: const EdgeInsets.symmetric(vertical: 11),
-                    ),
-                    icon: const Icon(AppIcons.repeat, size: 15),
-                    label: Text(context.l10n.todayRepetirAyer),
                   ),
                 ),
               ],
@@ -303,62 +199,61 @@ class HoyNutritionBentoCard extends StatelessWidget {
   }
 }
 
-class _MacroLinearRow extends StatelessWidget {
-  const _MacroLinearRow({
+class _MacroRow extends StatelessWidget {
+  const _MacroRow({
     required this.label,
-    required this.currentG,
-    required this.targetG,
-    required this.ratio,
+    required this.current,
+    required this.target,
     required this.color,
   });
 
   final String label;
-  final double currentG;
-  final double targetG;
-  final double ratio;
+  final double current;
+  final double target;
   final Color color;
 
   @override
   Widget build(BuildContext context) {
     final ScColors c = context.sc;
+    final double ratio = target > 0 ? (current / target).clamp(0.0, 1.0) : 0.0;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
         Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: <Widget>[
-            Flexible(
+            Expanded(
               child: Text(
                 label,
-                softWrap: true,
-                style: TextStyle(
-                  fontFamily: ScFonts.ui,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: c.text,
-                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: context.type.caption.copyWith(color: c.text, fontWeight: FontWeight.w600),
               ),
             ),
-            const SizedBox(width: 6),
-            Text(
-              context.l10n.todayG(currentG.toInt().toString(), targetG.toInt().toString()),
-              style: TextStyle(
-                fontFamily: ScFonts.display,
-                fontSize: 12,
-                fontWeight: FontWeight.w700,
-                color: color,
+            // Con texto grande la cifra se encoge antes que desbordar la fila.
+            Flexible(
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerRight,
+                child: Text.rich(
+                  TextSpan(
+                    children: <InlineSpan>[
+                      TextSpan(
+                        text: '${current.round()}',
+                        style: context.type.metricS.copyWith(fontSize: 13.5),
+                      ),
+                      TextSpan(
+                        text: ' / ${target.round()} g',
+                        style: context.type.caption.copyWith(color: c.text3, fontSize: 11.5),
+                      ),
+                    ],
+                  ),
+                ),
               ),
             ),
           ],
         ),
-        const SizedBox(height: 3),
-        LinearProgressIndicator(
-          value: ratio,
-          minHeight: 5,
-          backgroundColor: c.bg3,
-          valueColor: AlwaysStoppedAnimation<Color>(color),
-          borderRadius: BorderRadius.circular(3),
-        ),
+        const SizedBox(height: 5),
+        ScProgressBar(value: ratio, color: color, height: 5),
       ],
     );
   }

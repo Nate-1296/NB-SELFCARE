@@ -146,7 +146,7 @@ void main() {
         profile: dummyProfile,
         latestMeasurement: dummyMeasurement,
         recentMeasurements: <BodyMeasurement>[dummyMeasurement],
-        averageDailyKcal: 2120,
+        averageDailyKcal: 2120, foodDays: 7,
         averageProteinG: 155.0,
         averageCarbsG: 210.0,
         averageFatG: 62.0,

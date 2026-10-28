@@ -45,16 +45,11 @@ class CustomFoodExtras extends StatelessWidget {
             onToggle();
           },
           child: Container(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 14,
-              vertical: 12,
-            ),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
             decoration: BoxDecoration(
               color: c.bg3,
               borderRadius: BorderRadius.circular(14),
-              border: Border.all(
-                color: c.isFlat ? c.line2 : c.line,
-              ),
+              border: c.isFlat ? Border.all(color: c.line2, width: 1.5) : null,
             ),
             child: Row(
               children: <Widget>[
@@ -73,9 +68,7 @@ class CustomFoodExtras extends StatelessWidget {
                   ),
                 ),
                 Icon(
-                  expanded
-                      ? Icons.keyboard_arrow_up_rounded
-                      : Icons.keyboard_arrow_down_rounded,
+                  expanded ? Icons.keyboard_arrow_up_rounded : Icons.keyboard_arrow_down_rounded,
                   color: c.text2,
                 ),
               ],
@@ -120,9 +113,7 @@ class CustomFoodExtras extends StatelessWidget {
                     labelText: context.l10n.foodCodigoEanOpcional,
                     filled: true,
                     fillColor: c.bg3,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(14),
-                    ),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
                   ),
                 ),
               ),
@@ -142,8 +133,7 @@ class CustomFoodExtras extends StatelessWidget {
           Wrap(
             spacing: 8,
             runSpacing: 8,
-            children: const <String>['A', 'B', 'C', 'D', 'E']
-                .map((String grade) {
+            children: const <String>['A', 'B', 'C', 'D', 'E'].map((String grade) {
               final bool active = nutriScore == grade;
               return ChoiceChip(
                 label: Text(context.l10n.foodGrado((grade).toString())),
@@ -185,13 +175,8 @@ class CustomFoodNumberField extends StatelessWidget {
         hintText: hint,
         filled: true,
         fillColor: c.bg3,
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: 12,
-          vertical: 13,
-        ),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-        ),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 13),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
       ),
     );
   }

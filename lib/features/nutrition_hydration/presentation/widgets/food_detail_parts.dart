@@ -7,7 +7,8 @@ import '../../../../shared/theme/sc_colors.dart';
 import '../../../../shared/theme/sc_theme.dart';
 
 class MacroDetailBox extends StatelessWidget {
-  const MacroDetailBox({super.key, 
+  const MacroDetailBox({
+    super.key,
     required this.title,
     required this.value,
     required this.sublabel,
@@ -27,10 +28,7 @@ class MacroDetailBox extends StatelessWidget {
       decoration: BoxDecoration(
         color: c.bg2,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: c.isFlat ? c.line2 : c.line,
-          width: c.isFlat ? 1.3 : 1.0,
-        ),
+        border: c.isFlat ? Border.all(color: c.line2, width: 1.5) : null,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -52,7 +50,7 @@ class MacroDetailBox extends StatelessWidget {
             style: TextStyle(
               fontFamily: ScFonts.display,
               fontSize: 16,
-              fontWeight: FontWeight.w800,
+              fontWeight: FontWeight.w700,
               color: accentColor,
             ),
           ),
@@ -60,11 +58,7 @@ class MacroDetailBox extends StatelessWidget {
           Text(
             sublabel,
             softWrap: true,
-            style: TextStyle(
-              fontFamily: ScFonts.ui,
-              fontSize: 11,
-              color: c.text3,
-            ),
+            style: TextStyle(fontFamily: ScFonts.ui, fontSize: 11, color: c.text3),
           ),
         ],
       ),
@@ -73,10 +67,7 @@ class MacroDetailBox extends StatelessWidget {
 }
 
 class GramStepButton extends StatelessWidget {
-  const GramStepButton({super.key, 
-    required this.label,
-    required this.onTap,
-  });
+  const GramStepButton({super.key, required this.label, required this.onTap});
 
   final String label;
   final VoidCallback onTap;
@@ -97,17 +88,14 @@ class GramStepButton extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 13),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: c.isFlat ? c.line2 : c.line,
-              width: c.isFlat ? 1.4 : 1.0,
-            ),
+            border: Border.all(color: c.isFlat ? c.line2 : c.line, width: c.isFlat ? 1.4 : 1.0),
           ),
           child: Text(
             label,
             style: TextStyle(
               fontFamily: ScFonts.display,
               fontSize: 13,
-              fontWeight: FontWeight.w800,
+              fontWeight: FontWeight.w700,
               color: c.text,
             ),
           ),
@@ -118,10 +106,7 @@ class GramStepButton extends StatelessWidget {
 }
 
 class MacroLegendDot extends StatelessWidget {
-  const MacroLegendDot({super.key, 
-    required this.color,
-    required this.label,
-  });
+  const MacroLegendDot({super.key, required this.color, required this.label});
 
   final Color color;
   final String label;
@@ -135,10 +120,7 @@ class MacroLegendDot extends StatelessWidget {
         Container(
           width: 8,
           height: 8,
-          decoration: BoxDecoration(
-            color: color,
-            shape: BoxShape.circle,
-          ),
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
         ),
         const SizedBox(width: 5),
         Text(
@@ -156,7 +138,8 @@ class MacroLegendDot extends StatelessWidget {
 }
 
 class ElectrolyteDetailRow extends StatelessWidget {
-  const ElectrolyteDetailRow({super.key, 
+  const ElectrolyteDetailRow({
+    super.key,
     required this.label,
     required this.valueText,
     required this.isReported,
@@ -190,7 +173,7 @@ class ElectrolyteDetailRow extends StatelessWidget {
           style: TextStyle(
             fontFamily: ScFonts.display,
             fontSize: 12.5,
-            fontWeight: isReported ? FontWeight.w800 : FontWeight.w600,
+            fontWeight: isReported ? FontWeight.w700 : FontWeight.w600,
             fontStyle: isReported ? FontStyle.normal : FontStyle.italic,
             color: isReported ? c.text : c.text3,
           ),

@@ -5,7 +5,7 @@ import '../../../../shared/theme/sc_colors.dart';
 import '../../../../shared/theme/sc_tokens.dart';
 import '../../../../shared/widgets/health_card.dart';
 
-/// Invitación dominical a la revisión semanal con Nibi (docs/14 Fase 7).
+/// Invitación dominical a la revisión semanal con Nibi (docs/01 §3).
 class SundayCeremonyBanner extends StatelessWidget {
   const SundayCeremonyBanner({super.key, required this.onTap});
 

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../../../../shared/theme/sc_colors.dart';
 import '../../../../shared/theme/sc_theme.dart';
 
@@ -23,11 +24,7 @@ class PreviewMiniStat extends StatelessWidget {
       children: [
         Text(
           label,
-          style: TextStyle(
-            fontFamily: ScFonts.ui,
-            fontSize: 11,
-            color: c.text3,
-          ),
+          style: TextStyle(fontFamily: ScFonts.ui, fontSize: 11, color: c.text3),
         ),
         const SizedBox(height: 2),
         Text(
@@ -35,7 +32,7 @@ class PreviewMiniStat extends StatelessWidget {
           style: TextStyle(
             fontFamily: ScFonts.display,
             fontSize: 15,
-            fontWeight: FontWeight.w800,
+            fontWeight: FontWeight.w700,
             color: highlight ? c.accent : c.text,
           ),
         ),

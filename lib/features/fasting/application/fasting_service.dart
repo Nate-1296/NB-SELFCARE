@@ -4,6 +4,7 @@ import '../../../core/clock/clock.dart';
 import '../../../core/database/app_database.dart';
 import '../../../core/database/daos/fasting_dao.dart';
 import '../../../core/database/daos/user_profile_dao.dart';
+import '../../../core/platform/native_call.dart';
 import '../../../core/platform/notification_gateway.dart';
 import '../../../core/services/fasting_dosage_advisor.dart';
 import '../../../shared/utils/date_time_extensions.dart';
@@ -17,16 +18,22 @@ class FastFinishResult {
   final double hours;
   final int coins;
 
-  /// Ayunos ≥ 18 h muestran la guía de re-alimentación segura (docs/14 Fase 5).
+  /// Ayunos ≥ 18 h muestran la guía de re-alimentación segura (docs/09 §1).
   bool get suggestsRefeedingGuide => hours >= FastingService.refeedingGuideMinHours;
 }
 
 /// Casos de uso del cronómetro de ayuno (docs/09).
 class FastingService {
-  FastingService(this._db, this._fastingDao, this._profileDao, this._rewards, this._notifications,
-      this._clock);
+  FastingService(
+    this._db,
+    this._fastingDao,
+    this._profileDao,
+    this._rewards,
+    this._notifications,
+    this._clock,
+  );
 
-  /// Ayuno mínimo que otorga monedas (docs/08 §4).
+  /// Ayuno mínimo que otorga monedas (docs/08 §6).
   static const double rewardMinHours = 14.0;
   static const double refeedingGuideMinHours = 18.0;
 
@@ -38,7 +45,7 @@ class FastingService {
   final Clock _clock;
 
   /// Seguridad personal (respuestas del onboarding) y dosificación semanal que
-  /// limita protocolos agresivos encadenados (docs/14 Fase 5).
+  /// limita protocolos agresivos encadenados (docs/09 §1).
   Future<FastingSafetyVerdict> checkSafety(int targetHours) async {
     final UserProfile? profile = await _profileDao.getProfile();
     if (profile != null) {
@@ -56,22 +63,25 @@ class FastingService {
     );
   }
 
+  /// Inicia un ayuno. Si ya hay uno en curso (doble toque, otra pantalla) lo
+  /// devuelve en vez de abrir un segundo; un inicio en el futuro se acota a ahora.
   Future<int> start({
     required String protocolName,
     required int targetHours,
     DateTime? startedAt,
   }) async {
-    final DateTime start = startedAt ?? _clock.now();
-    final int id = await _fastingDao.startFast(
-      protocolName: protocolName,
-      targetHours: targetHours,
-      startedAt: start,
-    );
-    await _notifications.showFastingTimer(
-      startedAt: start,
-      targetHours: targetHours,
-      protocol: protocolName,
-    );
+    final DateTime now = _clock.now();
+    final DateTime start = startedAt == null || startedAt.isAfter(now) ? now : startedAt;
+    final int id = await _db.transaction(() async {
+      final FastingSession? active = await _fastingDao.getActiveSession();
+      if (active != null) return active.id;
+      return _fastingDao.startFast(
+        protocolName: protocolName,
+        targetHours: targetHours,
+        startedAt: start,
+      );
+    });
+    await reconcileTimerNotification();
     return id;
   }
 
@@ -79,21 +89,24 @@ class FastingService {
   /// app, restauración de un respaldo, sesión editada desde otra pantalla).
   Future<void> reconcileTimerNotification() async {
     final FastingSession? active = await _fastingDao.getActiveSession();
-    if (active == null) {
-      await _notifications.cancelFastingTimer();
-    } else {
-      await _notifications.showFastingTimer(
-        startedAt: active.startedAt,
-        targetHours: active.targetHours,
-        protocol: active.protocolName,
-      );
-    }
+    await bestEffort(
+      () => active == null
+          ? _notifications.cancelFastingTimer()
+          : _notifications.showFastingTimer(
+              startedAt: active.startedAt,
+              targetHours: active.targetHours,
+              protocol: active.protocolName,
+            ),
+      null,
+    );
   }
 
   Future<FastFinishResult?> finish(int sessionId) async {
     final FastFinishResult? result = await _db.transaction(() async {
-      final FastingSession? closed =
-          await _fastingDao.endFast(sessionId: sessionId, notes: 'Sesión registrada.');
+      final FastingSession? closed = await _fastingDao.endFast(
+        sessionId: sessionId,
+        notes: 'Sesión registrada.',
+      );
       if (closed == null) return null;
 
       final DateTime end = closed.actualEndedAt ?? _clock.now();
@@ -104,13 +117,17 @@ class FastingService {
       }
       return FastFinishResult(session: closed, hours: hours, coins: coins);
     });
-    await _notifications.cancelFastingTimer();
+    await reconcileTimerNotification();
     return result;
   }
 
   Future<bool> adjustStart({required int sessionId, required DateTime newStartedAt}) async {
-    final bool updated =
-        await _fastingDao.updateActiveFastStart(sessionId: sessionId, newStartedAt: newStartedAt);
+    // Un ayuno no puede empezar en el futuro.
+    if (newStartedAt.isAfter(_clock.now())) return false;
+    final bool updated = await _fastingDao.updateActiveFastStart(
+      sessionId: sessionId,
+      newStartedAt: newStartedAt,
+    );
     if (updated) await reconcileTimerNotification();
     return updated;
   }

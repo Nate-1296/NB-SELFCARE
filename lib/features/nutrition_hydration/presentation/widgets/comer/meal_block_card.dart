@@ -4,14 +4,19 @@ import '../../../../../core/database/app_database.dart';
 import '../../../../../core/database/models/food_models.dart';
 import '../../../../../core/l10n/l10n.dart';
 import '../../../../../shared/theme/sc_colors.dart';
-import '../../../../../shared/theme/sc_theme.dart';
+import '../../../../../shared/theme/sc_tokens.dart';
+import '../../../../../shared/utils/number_formats.dart';
 import '../../../../../shared/widgets/app_icons.dart';
 import '../../../../../shared/widgets/health_card.dart';
+import '../../../../../shared/widgets/metric_value.dart';
+import '../../../../../shared/widgets/quick_action_button.dart';
+import '../../../../../shared/widgets/tonal_badge.dart';
 import '../meal_slot_selector.dart';
 
 /// Bloque horario individual (Desayuno, Almuerzo, Cena, Snacks) con acciones inferiores cómodas.
 class MealBlockCard extends StatelessWidget {
-  const MealBlockCard({super.key, 
+  const MealBlockCard({
+    super.key,
     required this.slot,
     required this.isSuggestedNow,
     required this.items,
@@ -48,188 +53,121 @@ class MealBlockCard extends StatelessWidget {
       0.0,
       (double acc, FoodLogWithItem e) => acc + e.log.totalCarbsG,
     );
-    final double mealF = items.fold(
-      0.0,
-      (double acc, FoodLogWithItem e) => acc + e.log.totalFatG,
+    final double mealF = items.fold(0.0, (double acc, FoodLogWithItem e) => acc + e.log.totalFatG);
+
+    final AppLocalizations l10n = context.l10n;
+    final Color iconTint = c.isFlat ? c.text : tint;
+
+    final Widget title = Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: <Widget>[
+        Icon(slot.icon, size: 22, color: iconTint),
+        const SizedBox(width: ScSpace.m),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Wrap(
+                spacing: ScSpace.s,
+                runSpacing: ScSpace.xs,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: <Widget>[
+                  Text(slot.title(l10n), style: context.text.titleLarge),
+                  if (isSuggestedNow) TonalBadge(label: l10n.comerAhora, tone: tint),
+                ],
+              ),
+              const SizedBox(height: 2),
+              Text(
+                items.isEmpty
+                    ? slot.timeHint(l10n)
+                    : l10n.comerPGCGG(
+                        NumberFormats.group(mealP),
+                        NumberFormats.group(mealC),
+                        NumberFormats.group(mealF),
+                      ),
+                style: context.type.caption,
+              ),
+            ],
+          ),
+        ),
+      ],
     );
 
+    // Comida vacía: una sola fila compacta con sus dos accesos.
+    if (items.isEmpty) {
+      return HealthCard(
+        padding: const EdgeInsets.fromLTRB(ScSpace.l + 2, ScSpace.m, ScSpace.s, ScSpace.m),
+        borderColor: isSuggestedNow && !c.isFlat ? tint.withValues(alpha: 0.5) : null,
+        child: Row(
+          children: <Widget>[
+            Expanded(child: title),
+            IconButton(
+              tooltip: l10n.todayRepetirAyer,
+              onPressed: onRepeatYesterday,
+              icon: Icon(AppIcons.repeat, size: 20, color: c.text2),
+            ),
+            QuickActionButton(
+              label: l10n.comerAnadir,
+              icon: AppIcons.add,
+              tone: tint,
+              emphasized: isSuggestedNow,
+              expand: false,
+              onPressed: onAddFood,
+            ),
+          ],
+        ),
+      );
+    }
+
     return HealthCard(
-      borderColor: isSuggestedNow && !c.isFlat
-          ? tint.withValues(alpha: 0.45)
-          : null,
+      borderColor: isSuggestedNow && !c.isFlat ? tint.withValues(alpha: 0.5) : null,
+      padding: const EdgeInsets.fromLTRB(ScSpace.l + 2, ScSpace.l, ScSpace.l, ScSpace.s),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          // Cabecera del bloque
           Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
             children: <Widget>[
-              Container(
-                width: 40,
-                height: 40,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: c.isFlat ? c.bg3 : tint.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(13),
-                  border: Border.all(
-                    color: c.isFlat ? c.line2 : tint.withValues(alpha: 0.35),
-                  ),
-                ),
-                child: Icon(
-                  slot.icon,
-                  size: 20,
-                  color: c.isFlat ? c.text : tint,
-                ),
-              ),
-              const SizedBox(width: 12),
+              Expanded(child: title),
+              const SizedBox(width: ScSpace.s),
+              MetricValue(value: NumberFormats.group(mealKcal), unit: l10n.unitKcal, size: 20),
+            ],
+          ),
+          const SizedBox(height: ScSpace.m),
+          for (int i = 0; i < items.length; i++) ...<Widget>[
+            if (i > 0) const Divider(height: 1),
+            _LoggedFoodRow(
+              entry: items[i],
+              onTap: () => onTapEntry(items[i]),
+              onDelete: () => onDeleteEntry(items[i]),
+            ),
+          ],
+          const SizedBox(height: ScSpace.xs),
+          Row(
+            children: <Widget>[
+              // En pantallas estrechas las dos acciones bajan de línea en vez de desbordar.
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                child: Wrap(
                   children: <Widget>[
-                    Wrap(
-                      spacing: 6,
-                      runSpacing: 4,
-                      crossAxisAlignment: WrapCrossAlignment.center,
-                      children: <Widget>[
-                        Text(
-                          slot.title(context.l10n),
-                          style: TextStyle(
-                            fontFamily: ScFonts.display,
-                            fontSize: 16.5,
-                            fontWeight: FontWeight.w800,
-                            color: c.text,
-                          ),
-                        ),
-                        if (isSuggestedNow)
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 7,
-                              vertical: 2,
-                            ),
-                            decoration: BoxDecoration(
-                              color: c.bg3,
-                              borderRadius: BorderRadius.circular(8),
-                              border: Border.all(
-                                color: c.isFlat ? c.line2 : tint,
-                              ),
-                            ),
-                            child: Text(
-                              context.l10n.comerAhora,
-                              style: TextStyle(
-                                fontFamily: ScFonts.ui,
-                                fontSize: 10.5,
-                                fontWeight: FontWeight.w700,
-                                color: c.isFlat ? c.text : tint,
-                              ),
-                            ),
-                          ),
-                      ],
+                    TextButton.icon(
+                      onPressed: onAddFood,
+                      style: TextButton.styleFrom(foregroundColor: iconTint),
+                      icon: const Icon(AppIcons.add, size: 18),
+                      label: Text(l10n.comerAnadir),
                     ),
-                    Text(
-                      items.isEmpty
-                          ? slot.timeHint(context.l10n)
-                          : context.l10n.comerPGCGG(mealP.round().toString(), mealC.round().toString(), mealF.round().toString()),
-                      softWrap: true,
-                      style: TextStyle(
-                        fontFamily: ScFonts.ui,
-                        fontSize: 12,
-                        color: c.text2,
-                      ),
+                    TextButton.icon(
+                      onPressed: onRepeatYesterday,
+                      style: TextButton.styleFrom(foregroundColor: c.text2),
+                      icon: const Icon(AppIcons.repeat, size: 17),
+                      label: Text(l10n.todayRepetirAyer),
                     ),
                   ],
                 ),
               ),
-              Text(
-                context.l10n.comerKcal2(mealKcal.round().toString()),
-                style: TextStyle(
-                  fontFamily: ScFonts.display,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w800,
-                  color: items.isEmpty ? c.text3 : c.text,
-                ),
-              ),
-            ],
-          ),
-
-          const SizedBox(height: 12),
-
-          if (items.isEmpty)
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-              decoration: BoxDecoration(
-                color: c.bg3.withValues(alpha: c.isFlat ? 1.0 : 0.6),
-                borderRadius: BorderRadius.circular(13),
-              ),
-              child: Text(
-                context.l10n.comerSinAlimentosRegistradosTodaviaEn(slot.title(context.l10n).toLowerCase().toString()),
-                softWrap: true,
-                style: TextStyle(
-                  fontFamily: ScFonts.ui,
-                  fontSize: 12.5,
-                  color: c.text3,
-                ),
-              ),
-            )
-          else
-            Column(
-              children: <Widget>[
-                for (int i = 0; i < items.length; i++) ...<Widget>[
-                  if (i > 0) Divider(height: 12, color: c.line),
-                  _LoggedFoodRow(
-                    entry: items[i],
-                    onTap: () => onTapEntry(items[i]),
-                    onDelete: () => onDeleteEntry(items[i]),
-                  ),
-                ],
-              ],
-            ),
-
-          const SizedBox(height: 12),
-
-          // Botones inferiores cómodos (envolventes, nunca cortados)
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: <Widget>[
-              FilledButton.tonalIcon(
-                onPressed: onAddFood,
-                style: FilledButton.styleFrom(
-                  visualDensity: VisualDensity.compact,
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(13),
-                  ),
-                ),
-                icon: const Icon(AppIcons.add, size: 17),
-                label: Text(
-                  context.l10n.comerAnadir,
-                  style: const TextStyle(fontWeight: FontWeight.w700),
-                ),
-              ),
-              OutlinedButton.icon(
-                onPressed: onRepeatYesterday,
-                style: OutlinedButton.styleFrom(
-                  visualDensity: VisualDensity.compact,
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(13),
-                  ),
-                ),
-                icon: const Icon(AppIcons.repeat, size: 16),
-                label: Text(context.l10n.todayRepetirAyer),
-              ),
               if (items.length >= 2)
-                IconButton.outlined(
+                IconButton(
                   onPressed: () => onSaveCombo(items),
-                  tooltip: context.l10n.comerGuardarCombo,
-                  style: IconButton.styleFrom(
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(13)),
-                    side: BorderSide(color: c.isFlat ? c.line2 : c.line, width: c.isFlat ? 1.5 : 1),
-                  ),
-                  icon: const Icon(AppIcons.combos, size: 18),
+                  tooltip: l10n.comerGuardarCombo,
+                  icon: Icon(AppIcons.combos, size: 20, color: c.text2),
                 ),
             ],
           ),
@@ -240,11 +178,7 @@ class MealBlockCard extends StatelessWidget {
 }
 
 class _LoggedFoodRow extends StatelessWidget {
-  const _LoggedFoodRow({
-    required this.entry,
-    required this.onTap,
-    required this.onDelete,
-  });
+  const _LoggedFoodRow({required this.entry, required this.onTap, required this.onDelete});
 
   final FoodLogWithItem entry;
   final VoidCallback onTap;
@@ -257,10 +191,10 @@ class _LoggedFoodRow extends StatelessWidget {
     final String name = entry.foodItem?.name ?? context.l10n.comerAlimento;
 
     return InkWell(
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(ScRadius.controlOf(c)),
       onTap: onTap,
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 4),
+        padding: const EdgeInsets.symmetric(vertical: ScSpace.s),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: <Widget>[
@@ -270,37 +204,26 @@ class _LoggedFoodRow extends StatelessWidget {
                 children: <Widget>[
                   Text(
                     name,
-                    softWrap: true,
-                    style: TextStyle(
-                      fontFamily: ScFonts.ui,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w700,
-                      color: c.text,
-                      height: 1.25,
-                    ),
+                    style: context.type.label.copyWith(fontSize: 14.5, fontWeight: FontWeight.w600),
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    context.l10n.comerGPGCG(log.gramsConsumed.round().toString(), log.totalProteinG.toStringAsFixed(0).toString(), log.totalCarbsG.toStringAsFixed(0).toString(), log.totalFatG.toStringAsFixed(0).toString()),
-                    softWrap: true,
-                    style: TextStyle(
-                      fontFamily: ScFonts.ui,
-                      fontSize: 11.5,
-                      color: c.text2,
+                    context.l10n.comerGPGCG(
+                      NumberFormats.group(log.gramsConsumed),
+                      NumberFormats.fixed(log.totalProteinG, 0),
+                      NumberFormats.fixed(log.totalCarbsG, 0),
+                      NumberFormats.fixed(log.totalFatG, 0),
                     ),
+                    softWrap: true,
+                    style: context.type.caption.copyWith(fontSize: 12, color: c.text3),
                   ),
                 ],
               ),
             ),
             const SizedBox(width: 8),
             Text(
-              context.l10n.comerKcal3(log.totalKcal.round().toString()),
-              style: TextStyle(
-                fontFamily: ScFonts.display,
-                fontSize: 13.5,
-                fontWeight: FontWeight.w800,
-                color: c.text,
-              ),
+              context.l10n.comerKcal3(NumberFormats.group(log.totalKcal)),
+              style: context.type.metricS.copyWith(fontSize: 14.5),
             ),
             IconButton(
               tooltip: context.l10n.comerEliminarRegistro,

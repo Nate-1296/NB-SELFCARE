@@ -17,7 +17,7 @@ import org.json.JSONObject
 import java.time.LocalDateTime
 import java.time.ZoneId
 
-/** Recordatorio local programado (docs/01 §4, ReminderScheduler). */
+/** Recordatorio local programado (docs/07 §1.2). */
 data class ReminderSpec(
     val id: Int,
     val title: String,
@@ -85,7 +85,7 @@ data class ReminderSpec(
 
 /**
  * Programa los recordatorios con `AlarmManager`: exactos si el usuario concedió
- * SCHEDULE_EXACT_ALARM y, si no, inexactos (degradación elegante, docs/01 §4).
+ * SCHEDULE_EXACT_ALARM y, si no, inexactos (degradación elegante, docs/07 §1.1).
  * La lista se guarda localmente para reprogramarla tras un reinicio.
  */
 class ReminderScheduler(private val context: Context) {

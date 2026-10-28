@@ -9,6 +9,7 @@ import '../../../../core/domain/enums.dart';
 import '../../../../core/l10n/l10n.dart';
 import '../../../../shared/theme/sc_colors.dart';
 import '../../../../shared/theme/sc_theme.dart';
+import '../../../../shared/utils/number_formats.dart';
 import '../../../../shared/widgets/app_icons.dart';
 import '../../../../shared/widgets/health_card.dart';
 import '../../../../shared/widgets/sheet.dart';
@@ -225,7 +226,7 @@ class SavedRecipesSheet extends ConsumerWidget {
                                 ),
                                 const SizedBox(height: 2),
                                 Text(
-                                  context.l10n.foodPGCGG2(r.proteinPerServing.toStringAsFixed(1).toString(), r.carbsPerServing.toStringAsFixed(1).toString(), r.fatPerServing.toStringAsFixed(1).toString()),
+                                  context.l10n.foodPGCGG2(NumberFormats.fixed(r.proteinPerServing, 1), NumberFormats.fixed(r.carbsPerServing, 1), NumberFormats.fixed(r.fatPerServing, 1)),
                                   style: TextStyle(
                                     fontFamily: ScFonts.ui,
                                     fontSize: 11,

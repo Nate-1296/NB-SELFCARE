@@ -49,8 +49,7 @@ void main() {
       overrides: [
         appDatabaseProvider.overrideWithValue(db),
         userProfileDaoProvider.overrideWithValue(profileDao),
-        latestTdeeCalibrationStreamProvider
-            .overrideWith((ref) => Stream.value(null)),
+        latestTdeeCalibrationStreamProvider.overrideWith((ref) => Stream.value(null)),
         userProfileStreamProvider.overrideWith(
           (ref) => Stream.value(
             UserProfile(
@@ -91,56 +90,61 @@ void main() {
   }
 
   testWidgets(
-      'PerfilYoScreen renderiza avatar ampliado, gráfico centrado, 2x2 stat cards y botones expandidos',
-      (WidgetTester tester) async {
-    tester.view.physicalSize = const Size(1080, 2400);
-    tester.view.devicePixelRatio = 2.75;
-    addTearDown(tester.view.resetPhysicalSize);
-    addTearDown(tester.view.resetDevicePixelRatio);
+    'PerfilYoScreen renderiza avatar ampliado, gráfico centrado, 2x2 stat cards y botones expandidos',
+    (WidgetTester tester) async {
+      tester.view.physicalSize = const Size(1080, 2400);
+      tester.view.devicePixelRatio = 2.75;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
 
-    await tester.pumpWidget(buildTestPerfil());
-    await tester.pumpAndSettle();
+      await tester.pumpWidget(buildTestPerfil());
+      await tester.pumpAndSettle();
 
-    // 1. Identidad
-    expect(find.text('Nathan'), findsOneWidget);
-    expect(find.textContaining('años'), findsOneWidget);
-    expect(find.text('Hombre'), findsOneWidget);
-    expect(find.text('180 cm'), findsOneWidget);
-    expect(find.text('75.0 kg meta'), findsOneWidget);
+      // 1. Identidad
+      expect(find.text('Nathan'), findsOneWidget);
+      // Edad, sexo y estatura van en una sola línea de datos bajo el nombre.
+      expect(find.textContaining('años · Hombre · 180 cm'), findsOneWidget);
+      expect(find.text('75,0 kg meta'), findsOneWidget);
 
-    // 2. Metas y gasto diario
-    expect(find.text('Metas y gasto diario'), findsOneWidget);
-    expect(find.text('kcal / día'), findsOneWidget);
+      // 2. Metas y gasto diario
+      expect(find.text('Metas y gasto diario'), findsOneWidget);
+      expect(find.text('kcal / día'), findsOneWidget);
 
-    // 3. 2x2 Stat Cards
-    expect(find.text('Gasto diario'), findsOneWidget);
-    expect(find.text('Meta de peso'), findsOneWidget);
-    expect(find.text('Agua'), findsOneWidget);
-    expect(find.text('Pasos y sueño'), findsOneWidget);
+      // 3. 2x2 Stat Cards
+      expect(find.text('Gasto diario'), findsOneWidget);
+      expect(find.text('Meta de peso'), findsOneWidget);
+      expect(find.text('Agua'), findsOneWidget);
+      expect(find.text('Pasos y sueño'), findsOneWidget);
 
-    // 4. Botones ordenados y expandidos
-    expect(find.text('Ajustar metas'), findsOneWidget);
-    expect(find.text('Recalcular mi gasto (14 días)'), findsOneWidget);
+      // 4. Botones ordenados y expandidos
+      expect(find.text('Ajustar metas'), findsOneWidget);
+      expect(find.text('Recalcular mi gasto (14 días)'), findsOneWidget);
 
-    // 5. Patrones vacíos / iniciales
-    await tester.scrollUntilVisible(
-      find.text('Aún reuniendo datos'),
-      200,
-      scrollable: find.byType(Scrollable).first,
-    );
-    await tester.pumpAndSettle();
-    expect(find.text('Tus patrones'), findsOneWidget);
+      // 5. Patrones vacíos / iniciales
+      await tester.scrollUntilVisible(
+        find.text('Aún reuniendo datos'),
+        200,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Tus patrones'), findsOneWidget);
 
-    // 6. Ajustes desde la cabecera
-    await tester.scrollUntilVisible(find.byTooltip('Ajustes'), -400, scrollable: find.byType(Scrollable).first);
-    await tester.tap(find.byTooltip('Ajustes'));
-    await tester.pumpAndSettle();
-    expect(find.byType(AppSettingsScreen), findsOneWidget);
-    await unmountAndFlush(tester);
-  });
+      // 6. Ajustes desde la cabecera
+      await tester.scrollUntilVisible(
+        find.byTooltip('Ajustes'),
+        -400,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.tap(find.byTooltip('Ajustes'));
+      await tester.pumpAndSettle();
+      expect(find.byType(AppSettingsScreen), findsOneWidget);
+      await unmountAndFlush(tester);
+    },
+  );
 
-  testWidgets('PerfilYoScreen renderiza nítidamente en Modo Papel NXTPAPER E-Ink',
-      (WidgetTester tester) async {
+  testWidgets('PerfilYoScreen renderiza nítidamente en Modo Papel NXTPAPER E-Ink', (
+    WidgetTester tester,
+  ) async {
     tester.view.physicalSize = const Size(1080, 2400);
     tester.view.devicePixelRatio = 2.75;
     addTearDown(tester.view.resetPhysicalSize);
@@ -154,8 +158,7 @@ void main() {
     await unmountAndFlush(tester);
   });
 
-  test('Temas NXTPAPER E-Ink asignan tonos de gris o colores distintos a los macronutrientes',
-      () {
+  test('Temas NXTPAPER E-Ink asignan tonos de gris o colores distintos a los macronutrientes', () {
     final ScColors einkLight = scThemeByKey('nxtpaper_eink_light').colors;
     expect(einkLight.protein, isNot(equals(einkLight.carbs)));
     expect(einkLight.carbs, isNot(equals(einkLight.fat)));

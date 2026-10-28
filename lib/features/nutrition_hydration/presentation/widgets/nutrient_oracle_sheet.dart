@@ -9,6 +9,7 @@ import '../../../../core/l10n/l10n.dart';
 import '../../../../core/services/smart_meal_suggester.dart';
 import '../../../../shared/theme/sc_colors.dart';
 import '../../../../shared/theme/sc_theme.dart';
+import '../../../../shared/utils/number_formats.dart';
 import '../../../../shared/widgets/app_icons.dart';
 import '../../../../shared/widgets/health_card.dart';
 import '../../../../shared/widgets/sheet.dart';
@@ -97,7 +98,7 @@ class NutrientOracleSheet extends ConsumerWidget {
           ),
           const SizedBox(height: 4),
           Text(
-            context.l10n.foodTeFaltanKcalPG(remainingKcal.round().toString(), remainingProteinG.round().toString(), remainingCarbsG.round().toString(), remainingFatG.round().toString()),
+            context.l10n.foodTeFaltanKcalPG(NumberFormats.group(remainingKcal), NumberFormats.group(remainingProteinG), NumberFormats.group(remainingCarbsG), NumberFormats.group(remainingFatG)),
             style: TextStyle(
               fontFamily: ScFonts.ui,
               fontSize: 12,
@@ -169,7 +170,7 @@ class NutrientOracleSheet extends ConsumerWidget {
                                 ),
                                 const SizedBox(height: 2),
                                 Text(
-                                  context.l10n.foodServirGKcal(item.grams.round().toString(), item.kcal.round().toString()),
+                                  context.l10n.foodServirGKcal(NumberFormats.group(item.grams), NumberFormats.group(item.kcal)),
                                   style: TextStyle(
                                     fontFamily: ScFonts.ui,
                                     fontSize: 11.5,
@@ -179,7 +180,7 @@ class NutrientOracleSheet extends ConsumerWidget {
                                 ),
                                 const SizedBox(height: 2),
                                 Text(
-                                  context.l10n.foodPGCGG4(item.proteinG.toString(), item.carbsG.toString(), item.fatG.toString()),
+                                  context.l10n.foodPGCGG4(NumberFormats.group(item.proteinG), NumberFormats.group(item.carbsG), NumberFormats.group(item.fatG)),
                                   style: TextStyle(
                                     fontFamily: ScFonts.ui,
                                     fontSize: 11,
@@ -205,7 +206,7 @@ class NutrientOracleSheet extends ConsumerWidget {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(
                                     content: Text(
-                                      context.l10n.foodGDeRegistrados(item.grams.round().toString(), item.food.name.toString()),
+                                      context.l10n.foodGDeRegistrados(NumberFormats.group(item.grams), item.food.name.toString()),
                                     ),
                                   ),
                                 );

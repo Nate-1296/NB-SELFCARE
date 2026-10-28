@@ -1,6 +1,7 @@
 import 'package:drift/drift.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../shared/utils/date_time_extensions.dart';
 import '../../clock/clock.dart';
 import '../../domain/enums.dart';
 import '../app_database.dart';
@@ -256,9 +257,9 @@ class FoodDao {
         '${d.year.toString().padLeft(4, '0')}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
 
     final String yesterdayKey =
-        fmtDate(refDate.subtract(const Duration(days: 1)));
+        fmtDate(refDate.addDays(-1));
     final String eightDaysAgoKey =
-        fmtDate(refDate.subtract(const Duration(days: 8)));
+        fmtDate(refDate.addDays(-8));
 
     final yesterdayRows = await _db.customSelect(
       '''

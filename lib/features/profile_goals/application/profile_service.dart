@@ -6,11 +6,12 @@ import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
 import '../../../core/clock/clock.dart';
+import '../../../core/constants/app_constants.dart';
 import '../../../core/database/app_database.dart';
 import '../../../core/database/daos/user_profile_dao.dart';
 import '../../../core/domain/enums.dart';
 
-/// Casos de uso de edición del perfil vivo (docs/01 §4, página 5).
+/// Casos de uso de edición del perfil vivo (docs/01 §3).
 class ProfileService {
   ProfileService(this._profileDao, this._clock);
 
@@ -24,6 +25,17 @@ class ProfileService {
     if (current == null) return;
 
     UserProfilesCompanion effective = changes;
+    final Value<String> name = changes.name;
+    if (name.present) {
+      final String trimmed = name.value.trim();
+      if (trimmed.isEmpty) {
+        effective = effective.copyWith(name: const Value<String>.absent());
+      } else if (trimmed.length > AppConstants.maxProfileNameLength) {
+        effective = effective.copyWith(
+          name: Value(trimmed.substring(0, AppConstants.maxProfileNameLength).trimRight()),
+        );
+      }
+    }
     final Value<DietPhase> phase = changes.activeDietPhase;
     if (phase.present && phase.value != current.activeDietPhase) {
       effective = changes.copyWith(activeDietPhaseStartedAt: Value(_clock.now()));

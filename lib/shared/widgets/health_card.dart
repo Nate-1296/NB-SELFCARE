@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 
 import '../theme/sc_colors.dart';
+import '../theme/sc_tokens.dart';
+import 'pressable.dart';
 
-/// Tarjeta principal de salud inspirada en la nueva interfaz de Samsung Health.
+/// Tarjeta base del sistema.
 ///
-/// Ofrece esquinas redondeadas continuas (22 px), superficie elevada limpia y
-/// conmutación automática a modo plano con bordes de 1.5 px en Modo Papel (NXTPAPER).
+/// En color: superficie elevada con un filo apenas visible y esquinas amplias;
+/// si es pulsable, se hunde levemente al tocarla. En Modo Papel: ficha con
+/// borde de tinta de 1,5 px, esquinas más cerradas y sin efectos.
 class HealthCard extends StatelessWidget {
   const HealthCard({
     super.key,
@@ -27,34 +30,25 @@ class HealthCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ScColors c = context.sc;
-    final Color bg = backgroundColor ?? c.bg2;
+    final BorderRadius radius = BorderRadius.circular(ScRadius.cardOf(c));
     final BorderSide side = BorderSide(
       color: borderColor ?? (c.isFlat ? c.line2 : c.line),
       width: c.isFlat ? 1.5 : 1.0,
     );
 
-    final Widget card = Container(
-      margin: margin,
-      decoration: BoxDecoration(
-        color: bg,
-        borderRadius: BorderRadius.circular(22.0),
-        border: Border.fromBorderSide(side),
-      ),
+    Widget content = Padding(padding: padding, child: child);
+    if (onTap != null) content = InkWell(onTap: onTap, child: content);
+
+    final Widget card = Padding(
+      padding: margin,
       child: Material(
-        color: Colors.transparent,
-        borderRadius: BorderRadius.circular(22.0),
+        color: backgroundColor ?? c.bg2,
+        shape: RoundedRectangleBorder(borderRadius: radius, side: side),
         clipBehavior: Clip.antiAlias,
-        child: InkWell(
-          onTap: onTap,
-          child: Padding(
-            padding: padding,
-            child: child,
-          ),
-        ),
+        child: content,
       ),
     );
 
-    return card;
+    return onTap == null ? card : Pressable(scale: 0.985, child: card);
   }
 }
-

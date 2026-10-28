@@ -19,8 +19,7 @@ import 'widgets/fasting_bar.dart';
 
 /// Semilla fija por sesión de aplicación: se calcula una única vez al abrir la app
 /// y no cambia mientras la sesión siga abierta (solo varía al cerrar y reabrir la app).
-final hoySessionSeedProvider =
-    Provider<({int seed, int startupHour})>((Ref ref) {
+final hoySessionSeedProvider = Provider<({int seed, int startupHour})>((Ref ref) {
   final math.Random rng = math.Random();
   return (seed: rng.nextInt(10000) + 1, startupHour: ref.read(clockProvider).now().hour);
 });
@@ -42,15 +41,11 @@ class HoyVisitSeedNotifier extends Notifier<int> {
   }
 }
 
-final hoyVisitSeedProvider =
-    NotifierProvider<HoyVisitSeedNotifier, int>(HoyVisitSeedNotifier.new);
+final hoyVisitSeedProvider = NotifierProvider<HoyVisitSeedNotifier, int>(HoyVisitSeedNotifier.new);
 
 enum BackAction { irInicio, confirmarSalida, salir }
 
-BackAction decidirAtras({
-  required int indiceActual,
-  required bool dentroVentana,
-}) {
+BackAction decidirAtras({required int indiceActual, required bool dentroVentana}) {
   if (indiceActual != 0) {
     return BackAction.irInicio;
   }
@@ -68,8 +63,7 @@ class AppShell extends ConsumerStatefulWidget {
   ConsumerState<AppShell> createState() => _AppShellState();
 }
 
-class _AppShellState extends ConsumerState<AppShell>
-    with WidgetsBindingObserver {
+class _AppShellState extends ConsumerState<AppShell> with WidgetsBindingObserver {
   static const Duration _ventanaSalida = Duration(seconds: 2);
   DateTime? _ultimoAtras;
 
@@ -139,8 +133,8 @@ class _AppShellState extends ConsumerState<AppShell>
   void _onPop(bool didPop) {
     if (didPop) return;
     final DateTime ahora = ref.read(clockProvider).now();
-    final bool dentroVentana = _ultimoAtras != null &&
-        ahora.difference(_ultimoAtras!) <= _ventanaSalida;
+    final bool dentroVentana =
+        _ultimoAtras != null && ahora.difference(_ultimoAtras!) <= _ventanaSalida;
 
     switch (decidirAtras(
       indiceActual: widget.navigationShell.currentIndex,
@@ -155,10 +149,7 @@ class _AppShellState extends ConsumerState<AppShell>
         ScaffoldMessenger.of(context)
           ..hideCurrentSnackBar()
           ..showSnackBar(
-            SnackBar(
-              duration: _ventanaSalida,
-              content: Text(context.l10n.appPressBackToExit),
-            ),
+            SnackBar(duration: _ventanaSalida, content: Text(context.l10n.appPressBackToExit)),
           );
       case BackAction.salir:
         unawaited(SystemNavigator.pop());
@@ -169,8 +160,12 @@ class _AppShellState extends ConsumerState<AppShell>
   Widget build(BuildContext context) {
     final ScColors c = context.sc;
     final bool isOnHoy = widget.navigationShell.currentIndex == 0;
-    final UserProfile? profile = ref.watch(userProfileStreamProvider).value;
-    final bool isFastingActive = profile?.isFastingEnabled ?? true;
+    // Solo esta bandera: el resto del perfil no debe reconstruir el armazón.
+    final bool isFastingActive = ref.watch(
+      userProfileStreamProvider.select(
+        (AsyncValue<UserProfile?> p) => p.value?.isFastingEnabled ?? true,
+      ),
+    );
 
     return PopScope<Object?>(
       canPop: false,
@@ -182,14 +177,10 @@ class _AppShellState extends ConsumerState<AppShell>
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
             if (!isOnHoy && isFastingActive) const FastingBar(),
-            BottomNav(
-              currentIndex: widget.navigationShell.currentIndex,
-              onTap: _onTap,
-            ),
+            BottomNav(currentIndex: widget.navigationShell.currentIndex, onTap: _onTap),
           ],
         ),
       ),
     );
   }
 }
-

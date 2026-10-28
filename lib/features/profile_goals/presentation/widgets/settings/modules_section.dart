@@ -45,12 +45,10 @@ class ModulesSection extends ConsumerWidget {
                     height: 44,
                     decoration: BoxDecoration(
                       color: c.isFlat ? c.bg3 : c.soft,
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(
-                        color: c.isFlat ? c.line2 : c.accent.withValues(alpha: 0.3),
-                      ),
+                      shape: BoxShape.circle,
+                      border: c.isFlat ? Border.all(color: c.line2, width: 1.5) : null,
                     ),
-                    child: Icon(AppIcons.fasting, color: c.accent, size: 22),
+                    child: Icon(AppIcons.fasting, color: c.isFlat ? c.text : c.accent, size: 22),
                   ),
                   const SizedBox(width: 14),
                   Expanded(
@@ -99,12 +97,14 @@ class ModulesSection extends ConsumerWidget {
                       height: 44,
                       decoration: BoxDecoration(
                         color: c.isFlat ? c.bg3 : c.soft,
-                        borderRadius: BorderRadius.circular(14),
-                        border: Border.all(
-                          color: c.isFlat ? c.line2 : c.accent.withValues(alpha: 0.3),
-                        ),
+                        shape: BoxShape.circle,
+                        border: c.isFlat ? Border.all(color: c.line2, width: 1.5) : null,
                       ),
-                      child: Icon(Icons.female_rounded, color: c.accent, size: 24),
+                      child: Icon(
+                        Icons.female_rounded,
+                        color: c.isFlat ? c.text : c.accent,
+                        size: 24,
+                      ),
                     ),
                     const SizedBox(width: 14),
                     Expanded(

@@ -9,6 +9,7 @@ import '../../../../core/l10n/l10n.dart';
 import '../../../../shared/theme/sc_colors.dart';
 import '../../../../shared/theme/sc_theme.dart';
 import '../../../../shared/utils/date_time_extensions.dart';
+import '../../../../shared/utils/number_formats.dart';
 import '../../../../shared/widgets/app_icons.dart';
 import '../../../../shared/widgets/sheet.dart';
 import '../../../pet_gamification/application/reward_service.dart';
@@ -69,7 +70,7 @@ class _SundayCheckInSheetState extends ConsumerState<SundayCheckInSheet> {
                         style: TextStyle(
                           fontFamily: ScFonts.display,
                           fontSize: 18,
-                          fontWeight: FontWeight.w800,
+                          fontWeight: FontWeight.w700,
                           color: c.text,
                         ),
                       ),
@@ -105,10 +106,7 @@ class _SundayCheckInSheetState extends ConsumerState<SundayCheckInSheet> {
                         decoration: BoxDecoration(
                           color: c.bg3,
                           borderRadius: BorderRadius.circular(16),
-                          border: Border.all(
-                            color: c.isFlat ? c.line2 : c.line,
-                            width: c.isFlat ? 1.5 : 1.0,
-                          ),
+                          border: c.isFlat ? Border.all(color: c.line2, width: 1.5) : null,
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -118,7 +116,7 @@ class _SundayCheckInSheetState extends ConsumerState<SundayCheckInSheet> {
                               style: TextStyle(
                                 fontFamily: ScFonts.ui,
                                 fontSize: 10.5,
-                                fontWeight: FontWeight.w800,
+                                fontWeight: FontWeight.w700,
                                 letterSpacing: 0.7,
                                 color: c.accent,
                               ),
@@ -129,7 +127,7 @@ class _SundayCheckInSheetState extends ConsumerState<SundayCheckInSheet> {
                                 _statCell(
                                   c,
                                   context.l10n.todayIngestaMedia,
-                                  context.l10n.todayKcalD((avgKcal).toString()),
+                                  context.l10n.todayKcalD(NumberFormats.group(avgKcal)),
                                 ),
                                 const SizedBox(width: 8),
                                 _statCell(
@@ -145,7 +143,7 @@ class _SundayCheckInSheetState extends ConsumerState<SundayCheckInSheet> {
                                 _statCell(
                                   c,
                                   context.l10n.todaySuenoPromedio,
-                                  context.l10n.todayHNoche(avgSleep.toStringAsFixed(1).toString()),
+                                  context.l10n.todayHNoche(NumberFormats.fixed(avgSleep, 1)),
                                 ),
                                 const SizedBox(width: 8),
                                 _statCell(
@@ -153,7 +151,7 @@ class _SundayCheckInSheetState extends ConsumerState<SundayCheckInSheet> {
                                   context.l10n.todayDeltaDePeso,
                                   context.l10n.todayKg(
                                     (weightDelta >= 0 ? '+' : '').toString(),
-                                    weightDelta.toStringAsFixed(2).toString(),
+                                    NumberFormats.fixed(weightDelta, 2),
                                   ),
                                 ),
                               ],
@@ -298,7 +296,7 @@ class _SundayCheckInSheetState extends ConsumerState<SundayCheckInSheet> {
                 style: const TextStyle(
                   fontFamily: ScFonts.display,
                   fontSize: 14.5,
-                  fontWeight: FontWeight.w800,
+                  fontWeight: FontWeight.w700,
                 ),
               ),
               style: FilledButton.styleFrom(
@@ -328,7 +326,7 @@ class _SundayCheckInSheetState extends ConsumerState<SundayCheckInSheet> {
         decoration: BoxDecoration(
           color: c.bg,
           borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: c.isFlat ? c.line2 : c.line, width: c.isFlat ? 1.2 : 1.0),
+          border: c.isFlat ? Border.all(color: c.line2, width: 1.5) : null,
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -366,7 +364,7 @@ class _SundayCheckInSheetState extends ConsumerState<SundayCheckInSheet> {
       decoration: BoxDecoration(
         color: c.bg3,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: c.isFlat ? c.line2 : c.line, width: c.isFlat ? 1.3 : 1.0),
+        border: c.isFlat ? Border.all(color: c.line2, width: 1.5) : null,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -374,7 +372,7 @@ class _SundayCheckInSheetState extends ConsumerState<SundayCheckInSheet> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: <Widget>[
-              Text(
+              Flexible(child: Text(
                 label,
                 style: TextStyle(
                   fontFamily: ScFonts.ui,
@@ -382,7 +380,7 @@ class _SundayCheckInSheetState extends ConsumerState<SundayCheckInSheet> {
                   fontWeight: FontWeight.w600,
                   color: c.text,
                 ),
-              ),
+              )),
               Text(
                 context.l10n.today5((value).toString()),
                 style: TextStyle(
@@ -421,10 +419,10 @@ class _SundayCheckInSheetState extends ConsumerState<SundayCheckInSheet> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: <Widget>[
-              Text(
+              Flexible(child: Text(
                 minLabel,
                 style: TextStyle(fontFamily: ScFonts.ui, fontSize: 10, color: c.text3),
-              ),
+              )),
               Text(
                 maxLabel,
                 style: TextStyle(fontFamily: ScFonts.ui, fontSize: 10, color: c.text3),

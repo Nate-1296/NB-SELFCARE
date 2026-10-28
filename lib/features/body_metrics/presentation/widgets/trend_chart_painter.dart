@@ -1,8 +1,11 @@
 import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart' hide TextDirection;
+
 import '../../../../core/database/app_database.dart';
 import '../../../../shared/theme/sc_theme.dart';
+import '../../../../shared/utils/number_formats.dart';
 import 'weight_trend_chart_card.dart';
 
 class TrendChartPainter extends CustomPainter {
@@ -106,7 +109,7 @@ class TrendChartPainter extends CustomPainter {
       );
 
       textPainter.text = TextSpan(
-        text: val.toStringAsFixed(metric == ChartMetric.visceralFat || metric == ChartMetric.bodyScore ? 0 : 1),
+        text: NumberFormats.fixed(val, metric == ChartMetric.visceralFat || metric == ChartMetric.bodyScore ? 0 : 1),
         style: TextStyle(fontFamily: ScFonts.ui, fontSize: 10, color: textColor),
       );
       textPainter.layout();

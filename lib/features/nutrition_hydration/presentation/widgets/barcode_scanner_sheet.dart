@@ -9,6 +9,7 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 import '../../../../core/database/app_database.dart';
 import '../../../../core/domain/enums.dart';
 import '../../../../core/l10n/l10n.dart';
+import '../../../../core/platform/system_permissions.dart';
 import '../../../../core/services/nutrition_label_ocr_service.dart';
 import '../../../../core/services/open_food_facts_service.dart';
 import '../../../../shared/theme/sc_colors.dart';
@@ -33,8 +34,7 @@ class BarcodeScannerSheet extends ConsumerStatefulWidget {
   final String targetDateKey;
 
   @override
-  ConsumerState<BarcodeScannerSheet> createState() =>
-      _BarcodeScannerSheetState();
+  ConsumerState<BarcodeScannerSheet> createState() => _BarcodeScannerSheetState();
 }
 
 class _BarcodeScannerSheetState extends ConsumerState<BarcodeScannerSheet> {
@@ -64,16 +64,14 @@ class _BarcodeScannerSheetState extends ConsumerState<BarcodeScannerSheet> {
 
     setState(() {
       _isResolving = true;
-      _statusMessage =
-          context.l10n.foodBuscandoEnCatalogoLocalY((cleanCode).toString());
+      _statusMessage = context.l10n.foodBuscandoEnCatalogoLocalY((cleanCode).toString());
     });
 
     unawaited(HapticFeedback.mediumImpact());
     await _scannerController.stop();
 
     try {
-      final OpenFoodFactsService offService =
-          ref.read(openFoodFactsServiceProvider);
+      final OpenFoodFactsService offService = ref.read(openFoodFactsServiceProvider);
       final FoodItem? food = await offService.resolveBarcode(cleanCode);
 
       if (!mounted) return;
@@ -82,6 +80,7 @@ class _BarcodeScannerSheetState extends ConsumerState<BarcodeScannerSheet> {
         Navigator.of(context).pop();
         await showModalBottomSheet<bool>(
           context: context,
+          useSafeArea: true,
           isScrollControlled: true,
           backgroundColor: Colors.transparent,
           builder: (_) => FoodDetailSheet(
@@ -103,9 +102,7 @@ class _BarcodeScannerSheetState extends ConsumerState<BarcodeScannerSheet> {
             return AlertDialog(
               backgroundColor: dialogColors.bg2,
               title: Text(context.l10n.foodProductoNoRegistrado),
-              content: Text(
-                context.l10n.foodElCodigoAunNoFigura((cleanCode).toString()),
-              ),
+              content: Text(context.l10n.foodElCodigoAunNoFigura((cleanCode).toString())),
               actions: <Widget>[
                 TextButton(
                   onPressed: () => Navigator.of(ctx).pop(false),
@@ -131,8 +128,7 @@ class _BarcodeScannerSheetState extends ConsumerState<BarcodeScannerSheet> {
       if (!mounted) return;
       setState(() {
         _isResolving = false;
-        _statusMessage =
-            context.l10n.foodSinConexionOTiempoAgotado;
+        _statusMessage = context.l10n.foodSinConexionOTiempoAgotado;
       });
       await _scannerController.start();
     }
@@ -144,6 +140,7 @@ class _BarcodeScannerSheetState extends ConsumerState<BarcodeScannerSheet> {
     Navigator.of(context).pop();
     final FoodItem? created = await showModalBottomSheet<FoodItem>(
       context: context,
+      useSafeArea: true,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (_) => CustomFoodSheet(initialBarcode: code),
@@ -151,6 +148,7 @@ class _BarcodeScannerSheetState extends ConsumerState<BarcodeScannerSheet> {
     if (created != null && mounted) {
       await showModalBottomSheet<bool>(
         context: context,
+        useSafeArea: true,
         isScrollControlled: true,
         backgroundColor: Colors.transparent,
         builder: (_) => FoodDetailSheet(
@@ -166,23 +164,22 @@ class _BarcodeScannerSheetState extends ConsumerState<BarcodeScannerSheet> {
     await _scannerController.stop();
     try {
       final ImagePicker picker = ImagePicker();
-      final XFile? photo = await picker.pickImage(
-        source: ImageSource.camera,
-        imageQuality: 92,
-      );
+      final XFile? photo = await picker.pickImage(source: ImageSource.camera, imageQuality: 92);
       if (photo == null) {
         await _scannerController.start();
         return;
       }
 
       if (!mounted) return;
-      final OcrNutritionData data =
-          await ref.read(nutritionLabelOcrServiceProvider).processImage(photo);
+      final OcrNutritionData data = await ref
+          .read(nutritionLabelOcrServiceProvider)
+          .processImage(photo);
 
       if (!mounted) return;
       Navigator.of(context).pop();
       final FoodItem? created = await showModalBottomSheet<FoodItem>(
         context: context,
+        useSafeArea: true,
         isScrollControlled: true,
         backgroundColor: Colors.transparent,
         builder: (_) => CustomFoodSheet(initialOcrData: data),
@@ -190,6 +187,7 @@ class _BarcodeScannerSheetState extends ConsumerState<BarcodeScannerSheet> {
       if (created != null && mounted) {
         await showModalBottomSheet<bool>(
           context: context,
+          useSafeArea: true,
           isScrollControlled: true,
           backgroundColor: Colors.transparent,
           builder: (_) => FoodDetailSheet(
@@ -225,9 +223,7 @@ class _BarcodeScannerSheetState extends ConsumerState<BarcodeScannerSheet> {
       decoration: BoxDecoration(
         color: Colors.black,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-        border: c.isFlat
-            ? Border(top: BorderSide(color: c.line2, width: 1.5))
-            : null,
+        border: c.isFlat ? Border(top: BorderSide(color: c.line2, width: 1.5)) : null,
       ),
       clipBehavior: Clip.antiAlias,
       child: Stack(
@@ -235,6 +231,10 @@ class _BarcodeScannerSheetState extends ConsumerState<BarcodeScannerSheet> {
         children: <Widget>[
           MobileScanner(
             controller: _scannerController,
+            errorBuilder: (BuildContext context, MobileScannerException error) => _CameraUnavailable(
+              permissionDenied: error.errorCode == MobileScannerErrorCode.permissionDenied,
+              onOpenSettings: () => unawaited(ref.read(systemPermissionsProvider).openAppSettings()),
+            ),
             onDetect: (BarcodeCapture capture) {
               for (final Barcode barcode in capture.barcodes) {
                 final String? raw = barcode.rawValue;
@@ -252,9 +252,7 @@ class _BarcodeScannerSheetState extends ConsumerState<BarcodeScannerSheet> {
               width: 268,
               height: 168,
               child: CustomPaint(
-                painter: _ReticleCornerPainter(
-                  color: _isResolving ? c.warning : c.accent,
-                ),
+                painter: _ReticleCornerPainter(color: _isResolving ? c.warning : c.accent),
               ),
             ),
           ),
@@ -269,10 +267,7 @@ class _BarcodeScannerSheetState extends ConsumerState<BarcodeScannerSheet> {
               decoration: BoxDecoration(
                 color: c.bg2.withValues(alpha: c.isFlat ? 1.0 : 0.92),
                 borderRadius: BorderRadius.circular(18),
-                border: Border.all(
-                  color: c.isFlat ? c.line2 : c.line,
-                  width: c.isFlat ? 1.5 : 1.0,
-                ),
+                border: c.isFlat ? Border.all(color: c.line2, width: 1.5) : null,
               ),
               child: Row(
                 children: <Widget>[
@@ -289,31 +284,22 @@ class _BarcodeScannerSheetState extends ConsumerState<BarcodeScannerSheet> {
                           style: TextStyle(
                             fontFamily: ScFonts.display,
                             fontSize: 15,
-                            fontWeight: FontWeight.w800,
+                            fontWeight: FontWeight.w700,
                             color: c.text,
                           ),
                         ),
                         Text(
                           context.l10n.foodDestino(slot.title(context.l10n).toString()),
                           softWrap: true,
-                          style: TextStyle(
-                            fontFamily: ScFonts.ui,
-                            fontSize: 11.5,
-                            color: c.text2,
-                          ),
+                          style: TextStyle(fontFamily: ScFonts.ui, fontSize: 11.5, color: c.text2),
                         ),
                       ],
                     ),
                   ),
                   ValueListenableBuilder<MobileScannerState>(
                     valueListenable: _scannerController,
-                    builder: (
-                      BuildContext context,
-                      MobileScannerState state,
-                      Widget? child,
-                    ) {
-                      final bool isFrontCamera =
-                          state.cameraDirection == CameraFacing.front;
+                    builder: (BuildContext context, MobileScannerState state, Widget? child) {
+                      final bool isFrontCamera = state.cameraDirection == CameraFacing.front;
                       final bool isTorchOn = state.torchState == TorchState.on;
 
                       return Row(
@@ -327,9 +313,7 @@ class _BarcodeScannerSheetState extends ConsumerState<BarcodeScannerSheet> {
                                 await _scannerController.toggleTorch();
                               },
                               icon: Icon(
-                                isTorchOn
-                                    ? Icons.flash_on_rounded
-                                    : Icons.flash_off_rounded,
+                                isTorchOn ? Icons.flash_on_rounded : Icons.flash_off_rounded,
                                 color: isTorchOn ? c.carbs : c.text,
                               ),
                             ),
@@ -339,8 +323,7 @@ class _BarcodeScannerSheetState extends ConsumerState<BarcodeScannerSheet> {
                             onPressed: () async {
                               await _scannerController.switchCamera();
                             },
-                            icon:
-                                Icon(Icons.cameraswitch_rounded, color: c.text),
+                            icon: Icon(Icons.cameraswitch_rounded, color: c.text),
                           ),
                           IconButton(
                             tooltip: context.l10n.commonClose,
@@ -369,10 +352,7 @@ class _BarcodeScannerSheetState extends ConsumerState<BarcodeScannerSheet> {
                 decoration: BoxDecoration(
                   color: c.bg2.withValues(alpha: c.isFlat ? 1.0 : 0.95),
                   borderRadius: BorderRadius.circular(22),
-                  border: Border.all(
-                    color: c.isFlat ? c.line2 : c.line,
-                    width: c.isFlat ? 1.5 : 1.0,
-                  ),
+                  border: c.isFlat ? Border.all(color: c.line2, width: 1.5) : null,
                 ),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -383,15 +363,11 @@ class _BarcodeScannerSheetState extends ConsumerState<BarcodeScannerSheet> {
                         child: SizedBox(
                           width: 24,
                           height: 24,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2.5,
-                            color: c.accent,
-                          ),
+                          child: CircularProgressIndicator(strokeWidth: 2.5, color: c.accent),
                         ),
                       ),
                     Text(
-                      _statusMessage ??
-                          context.l10n.foodEnfocaElCodigoDeBarras,
+                      _statusMessage ?? context.l10n.foodEnfocaElCodigoDeBarras,
                       textAlign: TextAlign.center,
                       softWrap: true,
                       style: TextStyle(
@@ -407,8 +383,7 @@ class _BarcodeScannerSheetState extends ConsumerState<BarcodeScannerSheet> {
                       children: <Widget>[
                         Expanded(
                           child: OutlinedButton.icon(
-                            onPressed:
-                                _isResolving ? null : _promptManualBarcode,
+                            onPressed: _isResolving ? null : _promptManualBarcode,
                             style: OutlinedButton.styleFrom(
                               padding: const EdgeInsets.symmetric(vertical: 12),
                               shape: RoundedRectangleBorder(
@@ -422,8 +397,7 @@ class _BarcodeScannerSheetState extends ConsumerState<BarcodeScannerSheet> {
                         const SizedBox(width: 10),
                         Expanded(
                           child: FilledButton.tonalIcon(
-                            onPressed:
-                                _isResolving ? null : _openCustomFoodWithCode,
+                            onPressed: _isResolving ? null : _openCustomFoodWithCode,
                             style: FilledButton.styleFrom(
                               padding: const EdgeInsets.symmetric(vertical: 12),
                               shape: RoundedRectangleBorder(
@@ -443,18 +417,10 @@ class _BarcodeScannerSheetState extends ConsumerState<BarcodeScannerSheet> {
                         onPressed: _isResolving ? null : _scanTableWithOcr,
                         style: OutlinedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 11),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14),
-                          ),
-                          side: BorderSide(
-                            color: c.isFlat ? c.line2 : c.accent,
-                          ),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                          side: BorderSide(color: c.isFlat ? c.line2 : c.accent),
                         ),
-                        icon: Icon(
-                          Icons.document_scanner_rounded,
-                          size: 18,
-                          color: c.accent,
-                        ),
+                        icon: Icon(Icons.document_scanner_rounded, size: 18, color: c.accent),
                         label: Text(
                           context.l10n.foodEscanearTablaNutricionalOcr,
                           style: TextStyle(
@@ -512,8 +478,7 @@ class _ReticleCornerPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant _ReticleCornerPainter oldDelegate) =>
-      oldDelegate.color != color;
+  bool shouldRepaint(covariant _ReticleCornerPainter oldDelegate) => oldDelegate.color != color;
 }
 
 class _ManualBarcodeDialog extends StatefulWidget {
@@ -546,9 +511,7 @@ class _ManualBarcodeDialogState extends State<_ManualBarcodeDialog> {
           hintText: context.l10n.foodEj8480000123456,
           filled: true,
           fillColor: c.bg3,
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(14),
-          ),
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
         ),
         onSubmitted: (String val) {
           if (val.trim().length >= 6) {
@@ -571,6 +534,58 @@ class _ManualBarcodeDialogState extends State<_ManualBarcodeDialog> {
           child: Text(context.l10n.foodBuscar),
         ),
       ],
+    );
+  }
+}
+
+/// Cámara no disponible: sin permiso (con acceso a Ajustes) u otro fallo. Los
+/// botones de abajo siguen permitiendo escribir el código o leer la etiqueta.
+class _CameraUnavailable extends StatelessWidget {
+  const _CameraUnavailable({required this.permissionDenied, required this.onOpenSettings});
+
+  final bool permissionDenied;
+  final VoidCallback onOpenSettings;
+
+  @override
+  Widget build(BuildContext context) {
+    final AppLocalizations l10n = context.l10n;
+    return ColoredBox(
+      color: Colors.black,
+      child: Center(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(32, 0, 32, 120),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              const Icon(Icons.no_photography_outlined, color: Colors.white, size: 40),
+              const SizedBox(height: 12),
+              Text(
+                permissionDenied ? l10n.scanCameraDeniedTitle : l10n.scanCameraErrorTitle,
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.w700),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                permissionDenied ? l10n.scanCameraDeniedBody : l10n.scanCameraErrorBody,
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: Color(0xCCFFFFFF), fontSize: 14, height: 1.35),
+              ),
+              if (permissionDenied) ...<Widget>[
+                const SizedBox(height: 16),
+                OutlinedButton.icon(
+                  onPressed: onOpenSettings,
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.white,
+                    side: const BorderSide(color: Colors.white, width: 1.5),
+                  ),
+                  icon: const Icon(Icons.settings_outlined),
+                  label: Text(l10n.scanOpenSettings),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

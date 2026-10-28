@@ -19,34 +19,37 @@
    * Respetar las reglas de `analysis_options.yaml` (`strict-casts`, `strict-inference`, `strict-raw-types`).
 4. **Persistencia Reactiva en Drift:**
    * Las fechas se almacenan como texto ISO-8601 (`store_date_time_values_as_text: true`).
-   * La edad nunca se almacena como un entero estático; se calcula dinámicamente con `DateTime.now().difference(birthDate).inDays / 365.25`.
+   * La edad nunca se almacena; se calcula al vuelo desde `birthDate` con la fecha del `Clock`.
+   * La hora actual sale siempre de `Clock` (`clockProvider`); nunca `DateTime.now()` fuera de `core/clock`.
+   * La presentación lee y escribe a través de `features/*/application/`, nunca con DAOs.
    * Los respaldos se realizan mediante `VACUUM INTO` sobre un archivo temporal seguro.
 5. **Hardware Específico y Modo Dual:**
-   * Toda vista debe verse y funcionar impecablemente tanto en **Material You** como en **Modo Papel NXTPAPER E-Ink** (elevación 0, bordes sólidos de 1.5px, sin sombras difusas, sin estelas ni ghosting en gráficas).
+   * Toda vista debe verse y funcionar impecablemente en los temas de color y en **Modo Papel NXTPAPER E-Ink** (elevación 0, bordes sólidos de 1.5px, sin sombras difusas, sin animaciones ni estelas). Usa los tokens de `context.sc`, `context.type`, `ScRadius` y `ScMotion`.
+   * Todo texto visible va en `lib/core/l10n/arb/app_es.arb`; las cifras con `NumberFormats` ("82,5", "2.500").
 6. **Positividad Radical:**
    * La mascota virtual `Nibi` nunca muere, no enferma ni muestra mensajes de culpa o reproche.
+7. **Registro de cambios:**
+   * Todo cambio visible para el usuario se anota en `CHANGELOG.md`; las decisiones técnicas nuevas, como ADR en `docs/11_DECISIONS.md`.
 
 ---
 
-## 2. Mapa Rápido de Documentación (`docs/`)
+## 2. Mapa de la documentación (`docs/`)
 
-Antes de implementar cualquier característica, consulta su especificación técnica:
+Antes de tocar una funcionalidad, lee su documento:
 
-* [`docs/01_PRODUCT_SPEC.md`](docs/01_PRODUCT_SPEC.md): Alcance funcional, páginas y reglas de interacción (< 15 segundos).
-* [`docs/02_ARCHITECTURE.md`](docs/02_ARCHITECTURE.md): Capas del sistema, flujo reactivo y estructura de directorios.
-* [`docs/03_DATABASE_SPEC.md`](docs/03_DATABASE_SPEC.md): Esquema de las 14 tablas en Drift, triggers FTS5 y backup SQLite.
-* [`docs/04_BIOMETRICS_AND_SCALE.md`](docs/04_BIOMETRICS_AND_SCALE.md): Parser de 13 bytes BLE Mi Scale 2, las 13 métricas, EMA, detector de retención y TDEE adaptativo.
-* [`docs/05_NUTRITION_ENGINE.md`](docs/05_NUTRITION_ENGINE.md): Open Food Facts, semilla USDA en español, combos caseros y triángulo de electrolitos.
-* [`docs/06_WORKOUT_AND_NEAT.md`](docs/06_WORKOUT_AND_NEAT.md): Bloques rápidos RPE en 5 segundos y fórmulas de gasto calórico neto por METs.
-* [`docs/07_ANDROID16_AND_NXTPAPER_UI.md`](docs/07_ANDROID16_AND_NXTPAPER_UI.md): Permisos Android 16 (API 36), Health Connect y tema de alto contraste NXTPAPER.
-* [`docs/08_LOCAL_AI_AND_GAMIFICATION.md`](docs/08_LOCAL_AI_AND_GAMIFICATION.md): Ciclo de vida de memoria GPU (120s TTL), prompts deterministas, lienzo procedural de Nibi y CoinLedger.
-* [`docs/09_FASTING_JOURNAL_ANALYTICS.md`](docs/09_FASTING_JOURNAL_ANALYTICS.md): Cronómetro de ayuno con fases metabólicas, diario privado y motor de correlaciones.
-* [`docs/10_SECURITY_AND_TESTING.md`](docs/10_SECURITY_AND_TESTING.md): Suite de pruebas unitarias y verificación de fugas de red.
-* [`docs/11_ROADMAP.md`](docs/11_ROADMAP.md): Plan de ejecución modular en 6 fases.
-* [`docs/12_DECISIONS.md`](docs/12_DECISIONS.md): Registro de decisiones de arquitectura (ADR-01 a ADR-12).
-* [`docs/13_COMPETITIVE_ANALYSIS_AND_VALUE_GAPS.md`](docs/13_COMPETITIVE_ANALYSIS_AND_VALUE_GAPS.md): Benchmark de mercado y brechas de valor.
-* [`docs/14_MASTER_IMPLEMENTATION_PLAN.md`](docs/14_MASTER_IMPLEMENTATION_PLAN.md): Plan maestro de las 7 fases de expansión.
-* [`docs/15_AUDITORIA_AAA.md`](docs/15_AUDITORIA_AAA.md): Auditoría de calidad (documentado vs. implementado), hallazgos P0/P1 y arquitectura objetivo. **Leer antes de tocar código.**
+* [`docs/01_PRODUCT.md`](docs/01_PRODUCT.md): pantallas, principios, presupuesto de fricción (< 15 s) y alcance.
+* [`docs/02_ARCHITECTURE.md`](docs/02_ARCHITECTURE.md): capas, estructura, flujo de datos, canales nativos y guardrails.
+* [`docs/03_DATABASE.md`](docs/03_DATABASE.md): las 26 tablas (esquema v6), FTS5, migraciones y copias de seguridad.
+* [`docs/04_BIOMETRICS_AND_SCALE.md`](docs/04_BIOMETRICS_AND_SCALE.md): trama BLE de la Mi Scale 2, 13 métricas, EMA, falsa subida y TDEE adaptativo.
+* [`docs/05_NUTRITION.md`](docs/05_NUTRITION.md): Open Food Facts, semilla USDA, combos, texto y dictado, electrolitos, agua.
+* [`docs/06_WORKOUT_AND_NEAT.md`](docs/06_WORKOUT_AND_NEAT.md): entrenamientos en 5 s y gasto neto por METs.
+* [`docs/07_ANDROID_AND_DESIGN.md`](docs/07_ANDROID_AND_DESIGN.md): permisos, código Kotlin, modos color y papel, sistema de diseño.
+* [`docs/08_NIBI_AND_REWARDS.md`](docs/08_NIBI_AND_REWARDS.md): Nibi (ánimo, animación, respiración, cosméticos) y monedas.
+* [`docs/09_FASTING_JOURNAL_ANALYTICS.md`](docs/09_FASTING_JOURNAL_ANALYTICS.md): ayuno y sus fases, diario, cafeína y correlaciones.
+* [`docs/10_PRIVACY_AND_TESTING.md`](docs/10_PRIVACY_AND_TESTING.md): privacidad y estrategia de pruebas.
+* [`docs/11_DECISIONS.md`](docs/11_DECISIONS.md): decisiones de arquitectura (ADR-01 a ADR-13).
+
+El historial de versiones está en [`CHANGELOG.md`](CHANGELOG.md).
 
 ---
 
@@ -56,10 +59,14 @@ Antes de implementar cualquier característica, consulta su especificación téc
 # Análisis estático (objetivo: 0 errores, 0 warnings)
 flutter analyze
 
-# Generación de código de Drift y Riverpod
+# Generación de código de Drift y de los textos (ARB)
 dart run build_runner build -d
+flutter gen-l10n
 
-# Ejecución de pruebas unitarias
+# Pruebas (unitarias, widgets, migraciones, casos límite)
 flutter test
+
+# Capturas de todas las pantallas para revisión visual
+flutter test tool/screenshots --update-goldens
 ```
 

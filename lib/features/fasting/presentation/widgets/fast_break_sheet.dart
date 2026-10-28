@@ -4,30 +4,24 @@ import '../../../../core/l10n/l10n.dart';
 import '../../../../core/services/fasting_dosage_advisor.dart';
 import '../../../../shared/theme/sc_colors.dart';
 import '../../../../shared/theme/sc_theme.dart';
+import '../../../../shared/utils/number_formats.dart';
 import '../../../../shared/widgets/app_icons.dart';
 import '../../../../shared/widgets/sheet.dart';
 
 /// Modal informativo para romper el ayuno de forma segura y progresiva.
 class FastBreakSheet extends StatelessWidget {
-  const FastBreakSheet({
-    super.key,
-    required this.actualHours,
-  });
+  const FastBreakSheet({super.key, required this.actualHours});
 
   final double actualHours;
 
   static Future<void> show(BuildContext context, {required double actualHours}) {
-    return mostrarHojaMenu<void>(
-      context,
-      builder: (_) => FastBreakSheet(actualHours: actualHours),
-    );
+    return mostrarHojaMenu<void>(context, builder: (_) => FastBreakSheet(actualHours: actualHours));
   }
 
   @override
   Widget build(BuildContext context) {
     final ScColors c = context.sc;
-    final List<FastBreakStage> stages =
-        FastingDosageAdvisor.getRefeedingGuidance(actualHours);
+    final List<FastBreakStage> stages = FastingDosageAdvisor.getRefeedingGuidance(actualHours);
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
@@ -44,11 +38,7 @@ class FastBreakSheet extends StatelessWidget {
                     color: c.isFlat ? c.bg3 : c.accent.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: Icon(
-                    Icons.soup_kitchen_rounded,
-                    color: c.accent,
-                    size: 22,
-                  ),
+                  child: Icon(Icons.soup_kitchen_rounded, color: c.accent, size: 22),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -60,17 +50,15 @@ class FastBreakSheet extends StatelessWidget {
                         style: TextStyle(
                           fontFamily: ScFonts.display,
                           fontSize: 17,
-                          fontWeight: FontWeight.w800,
+                          fontWeight: FontWeight.w700,
                           color: c.text,
                         ),
                       ),
                       Text(
-                        context.l10n.fastingCompletasteHorasDeAyunoMetabolico(actualHours.toStringAsFixed(1).toString()),
-                        style: TextStyle(
-                          fontFamily: ScFonts.ui,
-                          fontSize: 12,
-                          color: c.text2,
+                        context.l10n.fastingCompletasteHorasDeAyunoMetabolico(
+                          NumberFormats.fixed(actualHours, 1),
                         ),
+                        style: TextStyle(fontFamily: ScFonts.ui, fontSize: 12, color: c.text2),
                       ),
                     ],
                   ),
@@ -88,10 +76,7 @@ class FastBreakSheet extends StatelessWidget {
               decoration: BoxDecoration(
                 color: c.bg3,
                 borderRadius: BorderRadius.circular(14),
-                border: Border.all(
-                  color: c.isFlat ? c.line2 : c.line,
-                  width: c.isFlat ? 1.4 : 1.0,
-                ),
+                border: c.isFlat ? Border.all(color: c.line2, width: 1.5) : null,
               ),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -149,10 +134,7 @@ class _StageCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: c.bg3,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: c.isFlat ? c.line2 : c.line,
-          width: c.isFlat ? 1.3 : 1.0,
-        ),
+        border: c.isFlat ? Border.all(color: c.line2, width: 1.5) : null,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -184,7 +166,7 @@ class _StageCard extends StatelessWidget {
                   style: TextStyle(
                     fontFamily: ScFonts.display,
                     fontSize: 14.5,
-                    fontWeight: FontWeight.w800,
+                    fontWeight: FontWeight.w700,
                     color: c.text,
                   ),
                 ),
@@ -210,12 +192,7 @@ class _StageCard extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             stage.description,
-            style: TextStyle(
-              fontFamily: ScFonts.ui,
-              fontSize: 12,
-              color: c.text2,
-              height: 1.35,
-            ),
+            style: TextStyle(fontFamily: ScFonts.ui, fontSize: 12, color: c.text2, height: 1.35),
           ),
           const SizedBox(height: 10),
 
@@ -249,11 +226,7 @@ class _StageCard extends StatelessWidget {
               Expanded(
                 child: Text(
                   stage.foodsToAvoid.join(' · '),
-                  style: TextStyle(
-                    fontFamily: ScFonts.ui,
-                    fontSize: 11.5,
-                    color: c.text2,
-                  ),
+                  style: TextStyle(fontFamily: ScFonts.ui, fontSize: 11.5, color: c.text2),
                 ),
               ),
             ],
@@ -263,4 +236,3 @@ class _StageCard extends StatelessWidget {
     );
   }
 }
-

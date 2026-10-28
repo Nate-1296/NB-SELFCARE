@@ -41,7 +41,7 @@ class CyclePhaseInfo {
 /// Predicción de la fase del ciclo a partir del último inicio de sangrado.
 ///
 /// La fase lútea dura ~14 días con independencia de la longitud del ciclo, así
-/// que la ovulación se estima 14 días antes del siguiente sangrado (docs/14 Fase 6).
+/// que la ovulación se estima 14 días antes del siguiente sangrado.
 abstract final class CyclePhaseCalculator {
   static const int lutealLengthDays = 14;
   static const int menstrualLengthDays = 5;

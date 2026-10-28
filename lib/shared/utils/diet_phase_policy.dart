@@ -1,7 +1,7 @@
 import '../../core/constants/app_constants.dart';
 import '../../core/domain/enums.dart';
 
-/// Reglas de periodización de la dieta (docs/14 Fase 4).
+/// Reglas de periodización de la dieta.
 abstract final class DietPhasePolicy {
   /// Incremento semanal del reverse diet (rango recomendado: +50 a +100 kcal).
   static const int reverseDietStepKcal = 75;
@@ -12,7 +12,7 @@ abstract final class DietPhasePolicy {
   /// Ritmo de pérdida máximo permitido para cualquier perfil (~1 kg/semana).
   static const int maxDailyDeficitKcal = 1100;
 
-  /// Con historial de TCA se limita a ~0,25 kg/semana (docs/01 §6).
+  /// Con historial de TCA se limita a ~0,25 kg/semana (docs/01 §5).
   static const int maxDailyDeficitKcalWithEdHistory = 275;
 
   /// Ajuste diario respecto al TDEE según la fase activa.

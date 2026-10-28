@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 
 import '../../../core/clock/clock.dart';
 import '../../../core/database/app_database.dart';
@@ -14,6 +13,8 @@ import '../../../shared/theme/sc_colors.dart';
 import '../../../shared/theme/sc_tokens.dart';
 import '../../../shared/utils/current_date_provider.dart';
 import '../../../shared/utils/date_formats.dart';
+import '../../../shared/utils/number_formats.dart';
+import '../../../shared/widgets/entrance.dart';
 import '../../../shared/widgets/section_head.dart';
 import '../../../shared/widgets/top_bar.dart';
 import '../../../shared/widgets/undo_snackbar.dart';
@@ -84,11 +85,17 @@ class _CuerpoScreenState extends ConsumerState<CuerpoScreen> {
       builder: (BuildContext ctx) => AlertDialog(
         title: Text(l10n.cuerpoGuestTitle),
         content: Text(
-          l10n.cuerpoGuestBody(weightKg.toStringAsFixed(1), (deviation * 100).toStringAsFixed(0)),
+          l10n.cuerpoGuestBody(NumberFormats.fixed(weightKg, 1), NumberFormats.fixed(deviation * 100, 0)),
         ),
         actions: <Widget>[
-          TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: Text(l10n.cuerpoGuestNo)),
-          FilledButton(onPressed: () => Navigator.of(ctx).pop(true), child: Text(l10n.cuerpoGuestYes)),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: Text(l10n.cuerpoGuestNo),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: Text(l10n.cuerpoGuestYes),
+          ),
         ],
       ),
     );
@@ -102,28 +109,31 @@ class _CuerpoScreenState extends ConsumerState<CuerpoScreen> {
     required UserProfile profile,
     String? detectedDeviceMac,
   }) async {
-    final WeighInResult result = await ref.read(weighInServiceProvider).record(
-          weightKg: weightKg,
-          impedanceOhms: impedanceOhms,
-          source: source,
-        );
+    final WeighInResult result = await ref
+        .read(weighInServiceProvider)
+        .record(weightKg: weightKg, impedanceOhms: impedanceOhms, source: source);
     if (!mounted) return;
     final AppLocalizations l10n = context.l10n;
-    final bool canBindMac = detectedDeviceMac != null &&
+    final bool canBindMac =
+        detectedDeviceMac != null &&
         detectedDeviceMac.isNotEmpty &&
         (profile.scaleMacAddress == null || profile.scaleMacAddress!.isEmpty);
-    final String kg = weightKg.toStringAsFixed(1);
+    final String kg = NumberFormats.fixed(weightKg, 1);
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
       ..showSnackBar(
         SnackBar(
           content: Text(
-            result.reward.granted ? l10n.cuerpoWeighInSavedCoins(kg, result.reward.coins) : l10n.cuerpoWeighInSaved(kg),
+            result.reward.granted
+                ? l10n.cuerpoWeighInSavedCoins(kg, result.reward.coins)
+                : l10n.cuerpoWeighInSaved(kg),
           ),
           action: canBindMac
               ? SnackBarAction(
                   label: l10n.cuerpoBindScale,
-                  onPressed: () => unawaited(ref.read(profileServiceProvider).setScaleMacAddress(detectedDeviceMac)),
+                  onPressed: () => unawaited(
+                    ref.read(profileServiceProvider).setScaleMacAddress(detectedDeviceMac),
+                  ),
                 )
               : null,
         ),
@@ -138,7 +148,7 @@ class _CuerpoScreenState extends ConsumerState<CuerpoScreen> {
     showUndoSnackBar(
       context,
       message: context.l10n.cuerpoWeighInDeleted(
-        m.weightKg.toStringAsFixed(1),
+        NumberFormats.fixed(m.weightKg, 1),
         DateFormats.shortDate(m.measuredAt, context.l10n.localeName),
       ),
       onUndo: () => unawaited(service.restoreMeasurement(m)),
@@ -180,38 +190,44 @@ class _CuerpoScreenState extends ConsumerState<CuerpoScreen> {
       latestMeasurement: latest,
     );
     if (!mounted || tape == null) return;
-    final TapeMeasurementResult result = await ref.read(tapeMeasurementServiceProvider).save(
-          waistCm: tape.waistCm,
-          neckCm: tape.neckCm,
-          hipCm: tape.hipCm,
-        );
+    final TapeMeasurementResult result = await ref
+        .read(tapeMeasurementServiceProvider)
+        .save(waistCm: tape.waistCm, neckCm: tape.neckCm, hipCm: tape.hipCm);
     if (!mounted) return;
     final AppLocalizations l10n = context.l10n;
     showUndoSnackBar(
       context,
       message: result.saved
           ? l10n.cuerpoTapeSaved(
-              result.navyBodyFatPercentage.toStringAsFixed(1),
-              result.validatedBodyFatPercentage.toStringAsFixed(1),
+              NumberFormats.fixed(result.navyBodyFatPercentage, 1),
+              NumberFormats.fixed(result.validatedBodyFatPercentage, 1),
             )
           : l10n.cuerpoTapeNeedsWeighIn,
     );
   }
 
   Future<void> _openScaleSettings(UserProfile profile) async {
-    final String? newMac = await ScaleMacConfigSheet.show(context: context, currentMac: profile.scaleMacAddress);
+    final String? newMac = await ScaleMacConfigSheet.show(
+      context: context,
+      currentMac: profile.scaleMacAddress,
+    );
     if (!mounted || newMac == null) return;
     await ref.read(profileServiceProvider).setScaleMacAddress(newMac);
     if (!mounted) return;
     showUndoSnackBar(
       context,
-      message: newMac.isEmpty ? context.l10n.cuerpoScaleAuto : context.l10n.cuerpoScaleBound(newMac),
+      message: newMac.isEmpty
+          ? context.l10n.cuerpoScaleAuto
+          : context.l10n.cuerpoScaleBound(newMac),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    ref.listen<ScaleSessionState>(scaleSessionProvider, (ScaleSessionState? prev, ScaleSessionState next) {
+    ref.listen<ScaleSessionState>(scaleSessionProvider, (
+      ScaleSessionState? prev,
+      ScaleSessionState next,
+    ) {
       final ScaleMeasurementEvent? capture = next.capture;
       if (capture != null && !identical(capture, prev?.capture)) unawaited(_onCapture(capture));
     });
@@ -222,7 +238,10 @@ class _CuerpoScreenState extends ConsumerState<CuerpoScreen> {
     final String todayKey = ref.watch(currentDateKeyProvider);
     final UserProfile? profile = ref.watch(userProfileStreamProvider).value;
     if (profile == null) {
-      return Scaffold(backgroundColor: c.bg, body: const Center(child: CircularProgressIndicator()));
+      return Scaffold(
+        backgroundColor: c.bg,
+        body: const Center(child: CircularProgressIndicator()),
+      );
     }
     final BodyMeasurement? latest = ref.watch(latestMeasurementStreamProvider).value;
     final List<BodyMeasurement> recent =
@@ -240,13 +259,12 @@ class _CuerpoScreenState extends ConsumerState<CuerpoScreen> {
             TopBar(
               title: l10n.cuerpoTitle,
               subtitle: formattedDate[0].toUpperCase() + formattedDate.substring(1),
-              subtitleBelowTitle: true,
-              uppercaseSubtitle: false,
               large: true,
-              pageIcon: Icons.accessibility_new_rounded,
-              onProfile: () => context.go('/perfil'),
             ),
-            WeightHeroCard(profile: profile, latest: latest),
+            Entrance(
+              index: 0,
+              child: WeightHeroCard(profile: profile, latest: latest),
+            ),
             MiniMilestonesCard(
               currentWeightKg: latest?.trendWeightKg ?? latest?.weightKg ?? profile.targetWeightKg,
               targetWeightKg: profile.targetWeightKg,
@@ -269,7 +287,10 @@ class _CuerpoScreenState extends ConsumerState<CuerpoScreen> {
               targetWeightKg: profile.targetWeightKg,
               onDeleteMeasurement: _deleteMeasurementWithUndo,
             ),
-            SectionHead(title: l10n.cuerpoCompositionTitle, subtitle: l10n.cuerpoCompositionSubtitle),
+            SectionHead(
+              title: l10n.cuerpoCompositionTitle,
+              subtitle: l10n.cuerpoCompositionSubtitle,
+            ),
             BodyCompositionSection(
               profile: profile,
               latest: latest,
@@ -280,7 +301,8 @@ class _CuerpoScreenState extends ConsumerState<CuerpoScreen> {
             MovementSection(
               dateKey: todayKey,
               stepsGoal: profile.dailyStepsGoal,
-              onLogWorkout: () => QuickRpeWorkoutSheet.show(context: context, ref: ref, profile: profile),
+              onLogWorkout: () =>
+                  QuickRpeWorkoutSheet.show(context: context, ref: ref, profile: profile),
               onDeleteWorkout: _deleteWorkoutWithUndo,
             ),
           ],

@@ -38,7 +38,9 @@ class FastingDao {
   }) async {
     final DateTime plannedEndAt = startedAt.add(Duration(hours: targetHours));
 
-    return _db.into(_db.fastingSessions).insert(
+    return _db
+        .into(_db.fastingSessions)
+        .insert(
           FastingSessionsCompanion(
             protocolName: Value(protocolName),
             targetHours: Value(targetHours),
@@ -52,16 +54,15 @@ class FastingDao {
   /// Finaliza la sesión de ayuno y devuelve la sesión cerrada (o `null` si no existe).
   ///
   /// `isCompleted` indica si se alcanzó la meta de horas del protocolo.
-  Future<FastingSession?> endFast({
-    required int sessionId,
-    String? notes,
-  }) async {
+  Future<FastingSession?> endFast({required int sessionId, String? notes}) async {
     final now = _clock.now();
 
     return _db.transaction(() async {
-      final sessionQuery = _db.select(_db.fastingSessions)..where((tbl) => tbl.id.equals(sessionId));
+      final sessionQuery = _db.select(_db.fastingSessions)
+        ..where((tbl) => tbl.id.equals(sessionId));
       final FastingSession? session = await sessionQuery.getSingleOrNull();
-      if (session == null) return null;
+      // Ya cerrada (doble toque en "Terminar"): no se reescribe la hora de fin.
+      if (session == null || session.actualEndedAt != null) return null;
 
       final double durationHours = now.difference(session.startedAt).inMinutes / 60.0;
       final bool completed = durationHours >= session.targetHours;
@@ -88,20 +89,14 @@ class FastingDao {
     required int sessionId,
     required DateTime newStartedAt,
   }) async {
-    final sessionQuery = _db.select(_db.fastingSessions)
-      ..where((tbl) => tbl.id.equals(sessionId));
+    final sessionQuery = _db.select(_db.fastingSessions)..where((tbl) => tbl.id.equals(sessionId));
     final FastingSession? session = await sessionQuery.getSingleOrNull();
     if (session == null || session.actualEndedAt != null) return false;
 
-    final DateTime newPlannedEnd =
-        newStartedAt.add(Duration(hours: session.targetHours));
-    final query = _db.update(_db.fastingSessions)
-      ..where((tbl) => tbl.id.equals(sessionId));
+    final DateTime newPlannedEnd = newStartedAt.add(Duration(hours: session.targetHours));
+    final query = _db.update(_db.fastingSessions)..where((tbl) => tbl.id.equals(sessionId));
     final int updated = await query.write(
-      FastingSessionsCompanion(
-        startedAt: Value(newStartedAt),
-        plannedEndAt: Value(newPlannedEnd),
-      ),
+      FastingSessionsCompanion(startedAt: Value(newStartedAt), plannedEndAt: Value(newPlannedEnd)),
     );
     return updated > 0;
   }
@@ -113,9 +108,7 @@ class FastingDao {
   }
 
   Future<int> deleteSession(int sessionId) {
-    return (_db.delete(_db.fastingSessions)
-          ..where((tbl) => tbl.id.equals(sessionId)))
-        .go();
+    return (_db.delete(_db.fastingSessions)..where((tbl) => tbl.id.equals(sessionId))).go();
   }
 
   /// Emite las sesiones históricas completadas para estadísticas y gráficas.

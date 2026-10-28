@@ -15,20 +15,14 @@ class ThemeEngineNotifier extends Notifier<String> {
   @override
   String build() {
     final activeTheme = ref.watch(themeControllerProvider);
-    return scThemeByKey(activeTheme).colors.isFlat
-        ? 'nxtpaper_eink'
-        : 'material_you';
+    return scThemeByKey(activeTheme).colors.isFlat ? 'nxtpaper_eink' : 'material_you';
   }
 
   void setEngine(String engine) {
     if (engine == 'nxtpaper_eink') {
-      unawaited(
-        ref.read(themeControllerProvider.notifier).selectTheme('nxtpaper_eink_light'),
-      );
+      unawaited(ref.read(themeControllerProvider.notifier).selectTheme('nxtpaper_eink_light'));
     } else {
-      unawaited(
-        ref.read(themeControllerProvider.notifier).selectTheme('samsung_dark'),
-      );
+      unawaited(ref.read(themeControllerProvider.notifier).selectTheme('samsung_dark'));
     }
   }
 
@@ -41,8 +35,7 @@ class ThemeEngineNotifier extends Notifier<String> {
   }
 }
 
-final themeEngineProvider =
-    NotifierProvider<ThemeEngineNotifier, String>(ThemeEngineNotifier.new);
+final themeEngineProvider = NotifierProvider<ThemeEngineNotifier, String>(ThemeEngineNotifier.new);
 
 /// Widget raíz de la aplicación NB Selfcare.
 ///
@@ -58,15 +51,23 @@ class NbSelfcareApp extends ConsumerWidget {
 
     return DynamicColorBuilder(
       builder: (ColorScheme? light, ColorScheme? dark) {
-        final bool dynamicTheme = activeThemeKey == kDynamicThemeKey && light != null && dark != null;
+        final bool dynamicTheme =
+            activeThemeKey == kDynamicThemeKey && light != null && dark != null;
         return MaterialApp.router(
           title: AppConstants.appName,
           debugShowCheckedModeBanner: false,
           theme: dynamicTheme
               ? ScTheme.build(activeThemeKey, override: dynamicThemeDef(light))
               : ScTheme.build(activeThemeKey),
-          darkTheme: dynamicTheme ? ScTheme.build(activeThemeKey, override: dynamicThemeDef(dark)) : null,
+          darkTheme: dynamicTheme
+              ? ScTheme.build(activeThemeKey, override: dynamicThemeDef(dark))
+              : null,
           themeMode: dynamicTheme ? ThemeMode.system : ThemeMode.light,
+          // En papel el cambio de tema se dibuja de una vez (un fundido de
+          // colores dejaría estelas en la pantalla de tinta).
+          themeAnimationDuration: scThemeByKey(activeThemeKey).colors.isFlat
+              ? Duration.zero
+              : kThemeAnimationDuration,
           locale: const Locale('es'),
           localizationsDelegates: AppLocalizations.localizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,

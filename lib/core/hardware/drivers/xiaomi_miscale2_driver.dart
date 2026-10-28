@@ -119,7 +119,10 @@ class XiaomiMiScale2Driver implements BodyScaleDriver {
           minute <= 59 &&
           second >= 0 &&
           second <= 59) {
-        timestamp = DateTime(year, month, day, hour, minute, second);
+        final DateTime parsed = DateTime(year, month, day, hour, minute, second);
+        // DateTime normaliza fechas imposibles (31 de febrero → 3 de marzo):
+        // si la báscula envía una, se usa la hora del teléfono.
+        timestamp = parsed.month == month && parsed.day == day ? parsed : receivedAt;
       } else {
         timestamp = receivedAt;
       }

@@ -10,17 +10,11 @@ import '../../../../shared/widgets/sheet.dart';
 
 /// Hoja de configuración opcional de dirección MAC Bluetooth para Mi Scale 2.
 class ScaleMacConfigSheet extends StatefulWidget {
-  const ScaleMacConfigSheet({
-    super.key,
-    required this.currentMac,
-  });
+  const ScaleMacConfigSheet({super.key, required this.currentMac});
 
   final String? currentMac;
 
-  static Future<String?> show({
-    required BuildContext context,
-    required String? currentMac,
-  }) {
+  static Future<String?> show({required BuildContext context, required String? currentMac}) {
     return mostrarHojaMenu<String>(
       context,
       builder: (_) => ScaleMacConfigSheet(currentMac: currentMac),
@@ -49,8 +43,7 @@ class _ScaleMacConfigSheetState extends State<ScaleMacConfigSheet> {
   @override
   Widget build(BuildContext context) {
     final ScColors c = context.sc;
-    final bool hasExisting =
-        widget.currentMac != null && widget.currentMac!.trim().isNotEmpty;
+    final bool hasExisting = widget.currentMac != null && widget.currentMac!.trim().isNotEmpty;
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 4, 20, 20),
@@ -66,9 +59,7 @@ class _ScaleMacConfigSheetState extends State<ScaleMacConfigSheet> {
                 decoration: BoxDecoration(
                   color: c.soft,
                   borderRadius: BorderRadius.circular(14),
-                  border: c.isFlat
-                      ? Border.all(color: c.line2, width: 1.5)
-                      : null,
+                  border: c.isFlat ? Border.all(color: c.line2, width: 1.5) : null,
                 ),
                 child: Icon(AppIcons.bluetooth, color: c.accent, size: 22),
               ),
@@ -82,17 +73,13 @@ class _ScaleMacConfigSheetState extends State<ScaleMacConfigSheet> {
                       style: TextStyle(
                         fontFamily: ScFonts.display,
                         fontSize: 18.5,
-                        fontWeight: FontWeight.w800,
+                        fontWeight: FontWeight.w700,
                         color: c.text,
                       ),
                     ),
                     Text(
                       context.l10n.bodyLecturaPasivaBle0x181b100,
-                      style: TextStyle(
-                        fontFamily: ScFonts.ui,
-                        fontSize: 12.5,
-                        color: c.text2,
-                      ),
+                      style: TextStyle(fontFamily: ScFonts.ui, fontSize: 12.5, color: c.text2),
                     ),
                   ],
                 ),
@@ -102,12 +89,7 @@ class _ScaleMacConfigSheetState extends State<ScaleMacConfigSheet> {
           const SizedBox(height: 14),
           Text(
             context.l10n.bodySiDejasElCampoVacio,
-            style: TextStyle(
-              fontFamily: ScFonts.ui,
-              fontSize: 12.5,
-              height: 1.4,
-              color: c.text2,
-            ),
+            style: TextStyle(fontFamily: ScFonts.ui, fontSize: 12.5, height: 1.4, color: c.text2),
           ),
           const SizedBox(height: 14),
           TextField(
@@ -125,9 +107,7 @@ class _ScaleMacConfigSheetState extends State<ScaleMacConfigSheet> {
                 Expanded(
                   child: OutlinedButton(
                     onPressed: () => Navigator.of(context).pop(''),
-                    style: OutlinedButton.styleFrom(
-                      minimumSize: const Size.fromHeight(48),
-                    ),
+                    style: OutlinedButton.styleFrom(minimumSize: const Size.fromHeight(48)),
                     child: Text(context.l10n.bodyModoAutomatico),
                   ),
                 ),
@@ -135,11 +115,8 @@ class _ScaleMacConfigSheetState extends State<ScaleMacConfigSheet> {
               ],
               Expanded(
                 child: FilledButton(
-                  onPressed: () =>
-                      Navigator.of(context).pop(_macCtrl.text.trim()),
-                  style: FilledButton.styleFrom(
-                    minimumSize: const Size.fromHeight(48),
-                  ),
+                  onPressed: () => Navigator.of(context).pop(_macCtrl.text.trim()),
+                  style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(48)),
                   child: Text(context.l10n.bodyGuardarAjuste),
                 ),
               ),

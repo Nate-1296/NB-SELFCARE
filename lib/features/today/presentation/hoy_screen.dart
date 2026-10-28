@@ -11,6 +11,8 @@ import '../../../shared/theme/sc_colors.dart';
 import '../../../shared/theme/sc_tokens.dart';
 import '../../../shared/utils/current_date_provider.dart';
 import '../../../shared/utils/date_time_extensions.dart';
+import '../../../shared/widgets/entrance.dart';
+import '../../pet_gamification/application/nibi_overview.dart';
 import '../application/hoy_layout_controller.dart';
 import '../application/today_overview.dart';
 import '../domain/hoy_widget_config.dart';
@@ -82,8 +84,15 @@ class _HoyScreenState extends ConsumerState<HoyScreen> {
     final AppLocalizations l10n = context.l10n;
     final ({int seed, int startupHour}) session = ref.watch(hoySessionSeedProvider);
     final List<HoyWidgetItemConfig> layout = ref.watch(hoyLayoutControllerProvider);
-    final List<HoyWidgetItemConfig> visible = layout.where((HoyWidgetItemConfig w) => w.visible).toList();
-    final List<HoyWidgetItemConfig> hidden = layout.where((HoyWidgetItemConfig w) => !w.visible).toList();
+    final List<HoyWidgetItemConfig> visible = layout
+        .where((HoyWidgetItemConfig w) => w.visible)
+        .toList();
+    final List<HoyWidgetItemConfig> hidden = layout
+        .where((HoyWidgetItemConfig w) => !w.visible)
+        .toList();
+
+    int order = 0;
+    Widget enter(Widget child) => Entrance(index: order++, child: child);
 
     return ListView(
       padding: const EdgeInsets.only(bottom: ScSpace.bottomInset),
@@ -99,10 +108,6 @@ class _HoyScreenState extends ConsumerState<HoyScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
-              if (data.now.weekday == DateTime.sunday) ...<Widget>[
-                SundayCeremonyBanner(onTap: () => unawaited(SundayCheckInSheet.show(context))),
-                const SizedBox(height: ScSpace.cardGap),
-              ],
               if (_isCustomizing)
                 CustomizationBanner(onReset: () => _editLayout(_layout.resetToDefaults))
               else
@@ -111,21 +116,31 @@ class _HoyScreenState extends ConsumerState<HoyScreen> {
                   hiddenCount: hidden.length,
                   onCustomizeTap: _toggleCustomizing,
                 ),
-              const SizedBox(height: ScSpace.cardGap),
-              ReadinessCard(
-                dateKey: data.dateKey,
-                onLogSleep: () => HoyStepsSleepSheet.show(
-                  context: context,
+              const SizedBox(height: ScSpace.m),
+              if (data.now.weekday == DateTime.sunday) ...<Widget>[
+                enter(
+                  SundayCeremonyBanner(onTap: () => unawaited(SundayCheckInSheet.show(context))),
+                ),
+                const SizedBox(height: ScSpace.cardGap),
+              ],
+              enter(
+                ReadinessCard(
                   dateKey: data.dateKey,
-                  profile: data.profile,
-                  currentSummary: data.summary,
+                  onLogSleep: () => HoyStepsSleepSheet.show(
+                    context: context,
+                    dateKey: data.dateKey,
+                    profile: data.profile,
+                    currentSummary: data.summary,
+                  ),
                 ),
               ),
               const SizedBox(height: ScSpace.cardGap),
-              TodayBentoGrid(
-                items: visible,
-                tileBuilder: (HoyWidgetItemConfig item, int index) =>
-                    _wrapTile(item, index, visible.length, _cardFor(item, data)),
+              enter(
+                TodayBentoGrid(
+                  items: visible,
+                  tileBuilder: (HoyWidgetItemConfig item, int index) =>
+                      _wrapTile(item, index, visible.length, _cardFor(item, data)),
+                ),
               ),
               if (_isCustomizing && hidden.isNotEmpty)
                 HiddenWidgetsTray(
@@ -134,10 +149,12 @@ class _HoyScreenState extends ConsumerState<HoyScreen> {
                 ),
               const SizedBox(height: ScSpace.s),
               Center(
-                child: OutlinedButton.icon(
+                child: TextButton.icon(
                   onPressed: _toggleCustomizing,
                   icon: Icon(
-                    _isCustomizing ? Icons.check_circle_outline : Icons.dashboard_customize_outlined,
+                    _isCustomizing
+                        ? Icons.check_circle_outline
+                        : Icons.dashboard_customize_outlined,
                     size: 18,
                   ),
                   label: Text(_isCustomizing ? l10n.todaySaveLayout : l10n.todayEditCards),
@@ -171,87 +188,88 @@ class _HoyScreenState extends ConsumerState<HoyScreen> {
   Widget _cardFor(HoyWidgetItemConfig item, TodayOverview data) {
     final TodayActions actions = TodayActions(ref, context);
     void openActivitySheet() => HoyStepsSleepSheet.show(
-          context: context,
-          dateKey: data.dateKey,
-          profile: data.profile,
-          currentSummary: data.summary,
-        );
+      context: context,
+      dateKey: data.dateKey,
+      profile: data.profile,
+      currentSummary: data.summary,
+    );
 
     return switch (item.id) {
       HoyWidgetId.nibiCompanion => HoyNibiBentoCard(
-          size: item.size,
+        size: item.size,
+        petName: data.pet?.petName ?? context.l10n.todayNibi,
+        look: nibiLookOf(data.pet),
+        coinsBalance: data.pet?.coinsBalance ?? 0,
+        streakDays: data.pet?.currentStreakDays ?? 0,
+        aiGreeting: TextAssistant.buildNibiGreeting(
           petName: data.pet?.petName ?? context.l10n.todayNibi,
-          coinsBalance: data.pet?.coinsBalance ?? 0,
-          streakDays: data.pet?.currentStreakDays ?? 0,
-          aiGreeting: TextAssistant.buildNibiGreeting(
-            petName: data.pet?.petName ?? context.l10n.todayNibi,
-            sleepHours: data.sleepHours > 0 ? data.sleepHours : null,
-            fastingHours: data.activeFast != null ? data.fastingHours : null,
-            waterMl: data.totalWaterMl,
-            waterGoalMl: data.profile.dailyWaterGoalMl,
-            weightTrendDelta7d: data.weightTrendDelta7d,
-            streak: data.pet?.currentStreakDays,
-            variationSeed: ref.watch(hoyVisitSeedProvider) + _nibiThoughtOffset,
-            hourOfDay: data.now.hour,
-          ),
-          fastingPhase: data.fastingPhase,
-          hasSleepBonus: data.hasSleepBonus,
-          onRefreshGreeting: () {
-            unawaited(HapticFeedback.selectionClick());
-            setState(() => _nibiThoughtOffset += 1);
-          },
+          sleepHours: data.sleepHours > 0 ? data.sleepHours : null,
+          fastingHours: data.activeFast != null ? data.fastingHours : null,
+          waterMl: data.totalWaterMl,
+          waterGoalMl: data.profile.dailyWaterGoalMl,
+          weightTrendDelta7d: data.weightTrendDelta7d,
+          streak: data.pet?.currentStreakDays,
+          variationSeed: ref.watch(hoyVisitSeedProvider) + _nibiThoughtOffset,
+          hourOfDay: data.now.hour,
         ),
+        fastingPhase: data.fastingPhase,
+        hasSleepBonus: data.hasSleepBonus,
+        onRefreshGreeting: () {
+          unawaited(HapticFeedback.selectionClick());
+          setState(() => _nibiThoughtOffset += 1);
+        },
+      ),
       HoyWidgetId.nutritionEnergy => HoyNutritionBentoCard(
-          size: item.size,
-          consumedKcal: data.nutrition.kcal,
-          consumedProtein: data.nutrition.proteinG,
-          consumedCarbs: data.nutrition.carbsG,
-          consumedFat: data.nutrition.fatG,
-          targets: data.targets,
-          onRepeatYesterday: () => actions.repeatYesterday(data.dateKey),
-        ),
+        size: item.size,
+        consumedKcal: data.nutrition.kcal,
+        consumedProtein: data.nutrition.proteinG,
+        consumedCarbs: data.nutrition.carbsG,
+        consumedFat: data.nutrition.fatG,
+        targets: data.targets,
+        onRepeatYesterday: () => actions.repeatYesterday(data.dateKey),
+      ),
       HoyWidgetId.hydration => HoyHydrationBentoCard(
-          size: item.size,
-          totalWaterMl: data.totalWaterMl,
-          goalMl: data.profile.dailyWaterGoalMl,
-          glassesCount: data.waterLogs.length,
-          canUndo: data.waterLogs.isNotEmpty,
-          onAdd250: () => actions.logWater(dateKey: data.dateKey, volumeMl: 250),
-          onAdd500: () => actions.logWater(dateKey: data.dateKey, volumeMl: 500),
-          onUndoLast: () {
-            if (data.waterLogs.isNotEmpty) unawaited(actions.undoGlass(data.waterLogs.last));
-          },
-        ),
+        size: item.size,
+        totalWaterMl: data.totalWaterMl,
+        goalMl: data.profile.dailyWaterGoalMl,
+        glassesCount: data.waterLogs.length,
+        canUndo: data.waterLogs.isNotEmpty,
+        onAdd250: () => actions.logWater(dateKey: data.dateKey, volumeMl: 250),
+        onAdd500: () => actions.logWater(dateKey: data.dateKey, volumeMl: 500),
+        onUndoLast: () {
+          if (data.waterLogs.isNotEmpty) unawaited(actions.undoGlass(data.waterLogs.last));
+        },
+      ),
       HoyWidgetId.bodyWeight => HoyBodyBentoCard(
-          size: item.size,
-          latestMeasurement: data.latestMeasurement,
-          recentMeasurements: data.recentMeasurements,
-          targetWeightKg: data.profile.targetWeightKg,
-        ),
+        size: item.size,
+        latestMeasurement: data.latestMeasurement,
+        recentMeasurements: data.recentMeasurements,
+        targetWeightKg: data.profile.targetWeightKg,
+      ),
       HoyWidgetId.stepsNeat => HoyStepsBentoCard(
-          size: item.size,
-          steps: data.steps,
-          goalSteps: data.profile.dailyStepsGoal,
-          onQuickAdd1000: () => actions.addSteps(dateKey: data.dateKey, currentSteps: data.steps),
-          onOpenSheet: openActivitySheet,
-        ),
+        size: item.size,
+        steps: data.steps,
+        goalSteps: data.profile.dailyStepsGoal,
+        onQuickAdd1000: () => actions.addSteps(dateKey: data.dateKey, currentSteps: data.steps),
+        onOpenSheet: openActivitySheet,
+      ),
       HoyWidgetId.sleepRecovery => HoySleepBentoCard(
-          size: item.size,
-          sleepHours: data.sleepHours,
-          goalHours: data.profile.dailySleepGoalHours,
-          hasSleepBonus: data.hasSleepBonus,
-          onOpenSheet: openActivitySheet,
-        ),
+        size: item.size,
+        sleepHours: data.sleepHours,
+        goalHours: data.profile.dailySleepGoalHours,
+        hasSleepBonus: data.hasSleepBonus,
+        onOpenSheet: openActivitySheet,
+      ),
       HoyWidgetId.workoutRpe => HoyWorkoutBentoCard(
-          size: item.size,
-          workoutsToday: data.workouts,
-          profile: data.profile,
-        ),
+        size: item.size,
+        workoutsToday: data.workouts,
+        profile: data.profile,
+      ),
       HoyWidgetId.fastingMetabolic => HoyFastingBentoCard(
-          size: item.size,
-          activeFast: data.activeFast,
-          now: data.now,
-        ),
+        size: item.size,
+        activeFast: data.activeFast,
+        now: data.now,
+      ),
       HoyWidgetId.dailyJournal => HoyJournal4x4Widget(dateKey: data.dateKey),
     };
   }

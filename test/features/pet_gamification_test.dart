@@ -9,9 +9,12 @@ import 'package:nb_selfcare/core/database/daos/pet_dao.dart';
 import 'package:nb_selfcare/core/database/daos/user_profile_dao.dart';
 import 'package:nb_selfcare/core/domain/enums.dart';
 import 'package:nb_selfcare/core/l10n/l10n.dart';
+import 'package:nb_selfcare/features/pet_gamification/domain/nibi_activity.dart';
+import 'package:nb_selfcare/features/pet_gamification/domain/pet_catalog.dart';
+import 'package:nb_selfcare/features/pet_gamification/presentation/nibi/nibi_view.dart';
 import 'package:nb_selfcare/features/pet_gamification/presentation/nibi_screen.dart';
 import 'package:nb_selfcare/features/pet_gamification/presentation/shop_modal.dart';
-import 'package:nb_selfcare/features/pet_gamification/presentation/widgets/animated_nibi_view.dart';
+import 'package:nb_selfcare/shared/theme/sc_theme.dart';
 import 'package:nb_selfcare/shared/utils/date_formats.dart';
 
 void main() {
@@ -51,52 +54,40 @@ void main() {
     await db.close();
   });
 
-  group('AnimatedNibiView (Dragón Ilustrado)', () {
-    testWidgets('Renderiza estados del dragón, accesorios y gestos de caricia',
+  group('NibiView (dragón vectorial animado)', () {
+    testWidgets('Todas las actividades con sombreros, en color y en papel, y la caricia',
         (tester) async {
-      await tester.pumpWidget(
-        const MaterialApp(
-          locale: Locale('es'),
-          localizationsDelegates: AppLocalizations.localizationsDelegates,
-          supportedLocales: AppLocalizations.supportedLocales,
-          home: Scaffold(
-            body: Column(
-              children: [
-                // Variante 1: Reposo / Idle
-                AnimatedNibiView(mood: NibiMood.idle, size: 100),
-                // Variante 2: Bebiendo agua + Sombrero de chef
-                AnimatedNibiView(
-                  mood: NibiMood.drinking,
-                  equippedHatId: 'hat_chef',
-                  size: 100,
-                ),
-                // Variante 3: Zen / Meditación + Corona
-                AnimatedNibiView(
-                  mood: NibiMood.zen,
-                  equippedHatId: 'hat_crown',
-                  size: 100,
-                ),
-                // Variante 4: Modo Papel E-Ink (NXTPAPER)
-                AnimatedNibiView(
-                  mood: NibiMood.happy,
-                  isEink: true,
-                  size: 100,
-                ),
-              ],
+      for (final String theme in <String>['samsung_dark', 'nxtpaper_eink_light']) {
+        await tester.pumpWidget(
+          MaterialApp(
+            theme: ScTheme.build(theme),
+            locale: const Locale('es'),
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            home: Scaffold(
+              body: Wrap(
+                children: <Widget>[
+                  for (final NibiActivity a in NibiActivity.values)
+                    NibiView(
+                      activity: a,
+                      size: 90,
+                      look: const NibiLook(hatId: 'hat_chef', accessoryId: 'acc_scarf', colorId: 'color_ocean'),
+                      aura: a == NibiActivity.zen,
+                      onReaction: (_) {},
+                    ),
+                ],
+              ),
             ),
           ),
-        ),
-      );
-
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 200));
-      expect(find.byType(AnimatedNibiView), findsNWidgets(4));
-
-      // Probar gesto de caricia / interacción
-      await tester.tap(find.byType(AnimatedNibiView).first);
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 100));
-      expect(find.byType(AnimatedNibiView), findsNWidgets(4));
+        );
+        await tester.pump(const Duration(milliseconds: 500));
+        expect(find.byType(NibiView), findsNWidgets(NibiActivity.values.length));
+        await tester.tap(find.byType(NibiView).first);
+        await tester.pump(const Duration(milliseconds: 600));
+        expect(tester.takeException(), isNull, reason: theme);
+      }
+      await tester.pumpWidget(const SizedBox());
+      await tester.pump(const Duration(seconds: 2));
     });
   });
 
@@ -123,13 +114,15 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 200));
 
-      // Debe estar visible la Tienda de Recompensas
-      expect(find.text('Tienda de Recompensas'), findsOneWidget);
+      expect(find.text('Tienda'), findsOneWidget);
+      expect(find.text('Escudo de un día'), findsOneWidget);
 
-      // Comprar Escudo Diario de Racha (cuesta 25 monedas)
-      final buyShieldBtn = find.widgetWithText(FilledButton, '25');
+      // Comprar el escudo de un día (25 monedas, en su propia fila).
+      final Finder shieldRow = find.ancestor(of: find.text('Escudo de un día'), matching: find.byType(Row)).first;
+      final Finder buyShieldBtn = find.descendant(of: shieldRow, matching: find.text('25'));
       expect(buyShieldBtn, findsOneWidget);
       await tester.tap(buyShieldBtn);
+      await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 100)));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 200));
 
@@ -353,44 +346,40 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 200));
 
-      // Cabecera e identidad (Solo nombre y avatar)
+      // Cabecera, ficha de monedas/escudos/racha y escenario con Nibi.
       expect(find.text('Nibi'), findsOneWidget);
+      expect(find.text('200'), findsOneWidget);
+      expect(find.text('5 d'), findsOneWidget);
+      expect(find.byType(NibiView), findsOneWidget);
 
-      // 3 Mini Tarjetas de métricas (Monedas, Protección, Racha con fueguito)
-      expect(find.byIcon(Icons.local_fire_department_rounded), findsOneWidget);
-      expect(find.text('5'), findsOneWidget); // racha de 5 días inicial
-      expect(find.text('200'), findsOneWidget); // 200 monedas iniciales
-
-      // Globo de diálogo en 1ª persona y Dragón
-      expect(find.textContaining('¡Me llena de alegría compartir este día contigo!'), findsOneWidget);
-      expect(find.byType(AnimatedNibiView), findsOneWidget);
-
-      // Vitals
-      expect(find.text('Bienestar del Dragón'), findsOneWidget);
-      expect(find.text('Hidratación'), findsOneWidget);
-      expect(find.text('Sueño'), findsOneWidget);
-      expect(find.text('Protección'), findsOneWidget);
-
-      // Cuidados del Dragón (sin etiquetas de saldo o monedas)
-      expect(find.text('Cuidados del Dragón'), findsOneWidget);
-      expect(find.text('Acariciar'), findsOneWidget);
-      expect(find.text('Dar Agua'), findsOneWidget);
-      expect(find.text('Nutrir'), findsOneWidget);
-      expect(find.text('Zen'), findsOneWidget);
-
-      // Tocar "Dar Agua" transforma el dragón y actualiza el globo en 1ª persona
-      await tester.tap(find.text('Dar Agua'));
-      await tester.pump();
+      // Cuidados junto al dragón (sin sección aparte): dar agua cambia lo que dice.
+      expect(find.text('Cuidados'), findsNothing);
+      await tester.tap(find.text('Dar agua'));
+      await tester.pump(const Duration(milliseconds: 400));
       expect(find.textContaining('¡Glup, glup!'), findsOneWidget);
 
-      // Armario, Hábitats y Botones Inferiores (desplazar la lista)
-      await tester.drag(find.byType(ListView).first, const Offset(0, -700));
-      await tester.pump();
-      expect(find.text('Armario y Hábitats'), findsOneWidget);
-      expect(find.text('Sombreros y Accesorios'), findsOneWidget);
-      expect(find.text('Fondos del Santuario'), findsOneWidget);
-      expect(find.text('Tienda del Santuario'), findsOneWidget);
-      expect(find.text('Renombrar Mascota'), findsOneWidget);
+      // Respirar abre la sesión guiada dentro del escenario.
+      await tester.tap(find.text('Respirar'));
+      await tester.pump(const Duration(milliseconds: 300));
+      await tester.pump(const Duration(milliseconds: 400));
+      await tester.pump(const Duration(milliseconds: 400));
+      expect(find.text('Empezar').hitTestable(), findsOneWidget);
+      await tester.tap(find.text('Empezar'));
+      await tester.pump(const Duration(milliseconds: 300));
+      expect(find.text('Inhala'), findsOneWidget);
+      await tester.tap(find.text('Terminar'));
+      await tester.pump(const Duration(milliseconds: 300));
+      expect(find.text('Dar agua'), findsOneWidget);
+
+      // Su día y el armario (solo lo que tiene).
+      await tester.drag(find.byType(ListView).first, const Offset(0, -900));
+      await tester.pump(const Duration(milliseconds: 300));
+      expect(find.text('Su día contigo'), findsOneWidget);
+      expect(find.text('Sombreros'), findsWidgets);
+      expect(find.text('Escenarios'), findsOneWidget);
+      expect(find.text('Corona'), findsNothing);
+      expect(find.text('Ver tienda'), findsWidgets);
+      expect(tester.takeException(), isNull);
 
       await tester.pumpWidget(const SizedBox());
       await tester.pump(const Duration(milliseconds: 100));

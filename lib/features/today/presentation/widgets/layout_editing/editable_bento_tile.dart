@@ -34,8 +34,9 @@ class EditableBentoTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final ScColors c = context.sc;
     final bool canResize = item.id.canResize;
-    final String nextSizeLabel =
-        item.size == HoyWidgetSize.w2x2 ? context.l10n.todayAmpliar42: context.l10n.todayReducir22;
+    final String nextSizeLabel = item.size == HoyWidgetSize.w2x2
+        ? context.l10n.todayAmpliar42
+        : context.l10n.todayReducir22;
 
     return Container(
       decoration: BoxDecoration(
@@ -66,17 +67,14 @@ class EditableBentoTile extends StatelessWidget {
                         style: TextStyle(
                           fontFamily: ScFonts.display,
                           fontSize: 12.5,
-                          fontWeight: FontWeight.w800,
+                          fontWeight: FontWeight.w700,
                           color: c.text,
                         ),
                       ),
                     ),
                     const SizedBox(width: 6),
                     Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 7,
-                        vertical: 2,
-                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
                       decoration: BoxDecoration(
                         color: c.bg2,
                         borderRadius: BorderRadius.circular(999),
@@ -87,7 +85,7 @@ class EditableBentoTile extends StatelessWidget {
                         style: TextStyle(
                           fontFamily: ScFonts.display,
                           fontSize: 10.5,
-                          fontWeight: FontWeight.w800,
+                          fontWeight: FontWeight.w700,
                           color: c.accent,
                         ),
                       ),
@@ -112,10 +110,7 @@ class EditableBentoTile extends StatelessWidget {
                       )
                     else
                       Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 5,
-                        ),
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
                         decoration: BoxDecoration(
                           color: c.bg2,
                           borderRadius: BorderRadius.circular(10),
@@ -188,10 +183,7 @@ class _MiniEditButton extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(10),
-              border: Border.all(
-                color: accent ? c.accent : c.line2,
-                width: 1.1,
-              ),
+              border: Border.all(color: accent ? c.accent : c.line2, width: 1.1),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
@@ -217,11 +209,7 @@ class _MiniEditButton extends StatelessWidget {
 }
 
 class _MiniEditIconButton extends StatelessWidget {
-  const _MiniEditIconButton({
-    required this.tooltip,
-    required this.icon,
-    required this.onTap,
-  });
+  const _MiniEditIconButton({required this.tooltip, required this.icon, required this.onTap});
 
   final String tooltip;
   final IconData icon;
@@ -243,16 +231,9 @@ class _MiniEditIconButton extends StatelessWidget {
             padding: const EdgeInsets.all(6),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(10),
-              border: Border.all(
-                color: enabled ? c.line2 : c.line,
-                width: 1.0,
-              ),
+              border: Border.all(color: enabled ? c.line2 : c.line, width: 1.0),
             ),
-            child: Icon(
-              icon,
-              size: 15,
-              color: enabled ? c.text : c.text3,
-            ),
+            child: Icon(icon, size: 15, color: enabled ? c.text : c.text3),
           ),
         ),
       ),

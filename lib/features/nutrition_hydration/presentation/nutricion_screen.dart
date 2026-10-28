@@ -15,6 +15,7 @@ import '../../../shared/theme/sc_tokens.dart';
 import '../../../shared/utils/current_date_provider.dart';
 import '../../../shared/utils/date_formats.dart';
 import '../../../shared/utils/date_time_extensions.dart';
+import '../../../shared/widgets/section_head.dart';
 import '../../../shared/widgets/sheet.dart';
 import '../../../shared/widgets/top_bar.dart';
 import '../../../shared/widgets/undo_snackbar.dart';
@@ -68,6 +69,7 @@ class _NutricionScreenState extends ConsumerState<NutricionScreen> {
     unawaited(HapticFeedback.selectionClick());
     await showModalBottomSheet<bool>(
       context: context,
+      useSafeArea: true,
       isScrollControlled: true,
       useRootNavigator: true,
       backgroundColor: Colors.transparent,
@@ -79,6 +81,7 @@ class _NutricionScreenState extends ConsumerState<NutricionScreen> {
     unawaited(HapticFeedback.selectionClick());
     await showModalBottomSheet<void>(
       context: context,
+      useSafeArea: true,
       isScrollControlled: true,
       useRootNavigator: true,
       backgroundColor: Colors.transparent,
@@ -117,6 +120,7 @@ class _NutricionScreenState extends ConsumerState<NutricionScreen> {
     unawaited(HapticFeedback.selectionClick());
     final FoodItem? created = await showModalBottomSheet<FoodItem>(
       context: context,
+      useSafeArea: true,
       isScrollControlled: true,
       useRootNavigator: true,
       backgroundColor: Colors.transparent,
@@ -125,10 +129,12 @@ class _NutricionScreenState extends ConsumerState<NutricionScreen> {
     if (!mounted || created == null) return;
     await showModalBottomSheet<bool>(
       context: context,
+      useSafeArea: true,
       isScrollControlled: true,
       useRootNavigator: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => FoodDetailSheet(food: created, initialMealType: mealType, targetDateKey: dateKey),
+      builder: (_) =>
+          FoodDetailSheet(food: created, initialMealType: mealType, targetDateKey: dateKey),
     );
   }
 
@@ -137,10 +143,8 @@ class _NutricionScreenState extends ConsumerState<NutricionScreen> {
     unawaited(
       mostrarHojaMenu<void>(
         context,
-        builder: (_) => EditFoodLogSheet(
-          entry: entry,
-          onDeleteRequested: () => _deleteFoodLogWithUndo(entry),
-        ),
+        builder: (_) =>
+            EditFoodLogSheet(entry: entry, onDeleteRequested: () => _deleteFoodLogWithUndo(entry)),
       ),
     );
   }
@@ -152,7 +156,9 @@ class _NutricionScreenState extends ConsumerState<NutricionScreen> {
     if (!mounted) return;
     showUndoSnackBar(
       context,
-      message: context.l10n.comerFoodDeleted(entry.foodItem?.name ?? context.l10n.comerFoodFallbackName),
+      message: context.l10n.comerFoodDeleted(
+        entry.foodItem?.name ?? context.l10n.comerFoodFallbackName,
+      ),
       onUndo: () => unawaited(service.restoreLog(entry.log)),
     );
   }
@@ -178,7 +184,11 @@ class _NutricionScreenState extends ConsumerState<NutricionScreen> {
     );
   }
 
-  Future<void> _saveCombo(String mealTitle, MealType mealType, List<FoodLogWithItem> mealItems) async {
+  Future<void> _saveCombo(
+    String mealTitle,
+    MealType mealType,
+    List<FoodLogWithItem> mealItems,
+  ) async {
     final String? comboName = await showDialog<String>(
       context: context,
       builder: (_) => CreateComboDialog(
@@ -187,7 +197,9 @@ class _NutricionScreenState extends ConsumerState<NutricionScreen> {
       ),
     );
     if (!mounted || comboName == null || comboName.isEmpty) return;
-    await ref.read(foodLoggingServiceProvider).saveCombo(
+    await ref
+        .read(foodLoggingServiceProvider)
+        .saveCombo(
           name: comboName,
           mealType: mealType,
           logs: <FoodLog>[for (final FoodLogWithItem e in mealItems) e.log],
@@ -224,7 +236,10 @@ class _NutricionScreenState extends ConsumerState<NutricionScreen> {
 
   Future<void> _openCustomWaterSheet(String dateKey) async {
     unawaited(HapticFeedback.selectionClick());
-    final int? customMl = await mostrarHojaMenu<int>(context, builder: (_) => const CustomWaterSheet());
+    final int? customMl = await mostrarHojaMenu<int>(
+      context,
+      builder: (_) => const CustomWaterSheet(),
+    );
     if (customMl != null && customMl > 0 && mounted) {
       await _logWater(dateKey: dateKey, volumeMl: customMl);
     }
@@ -253,10 +268,6 @@ class _NutricionScreenState extends ConsumerState<NutricionScreen> {
               title: l10n.comerTitle,
               subtitle: formattedDate[0].toUpperCase() + formattedDate.substring(1),
               large: true,
-              subtitleBelowTitle: true,
-              uppercaseSubtitle: false,
-              pageIcon: Icons.local_dining_rounded,
-              onProfile: () => context.go('/perfil'),
             ),
             ComerWeekStrip(
               activeDate: activeDate,
@@ -295,15 +306,9 @@ class _NutricionScreenState extends ConsumerState<NutricionScreen> {
               ),
               CalorieBankCard(dateKey: dateKey),
               if (day.totals.kcal > 0) NovaQualityCard(totals: day.totals),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(ScSpace.gutter + 4, ScSpace.xl, ScSpace.gutter + 4, ScSpace.s),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: <Widget>[
-                    Expanded(child: Text(l10n.comerMealsTitle, style: context.text.headlineSmall)),
-                    Text(l10n.comerEntriesCount(day.entries.length), style: context.text.bodySmall),
-                  ],
-                ),
+              SectionHead(
+                title: l10n.comerMealsTitle,
+                subtitle: l10n.comerEntriesCount(day.entries.length),
               ),
               for (final MealSlotMeta slot in MealSlotMeta.all)
                 MealBlockCard(
@@ -316,7 +321,8 @@ class _NutricionScreenState extends ConsumerState<NutricionScreen> {
                     mealType: slot.key,
                     mealTitle: slot.title(context.l10n),
                   ),
-                  onSaveCombo: (List<FoodLogWithItem> items) => _saveCombo(slot.title(context.l10n), slot.key, items),
+                  onSaveCombo: (List<FoodLogWithItem> items) =>
+                      _saveCombo(slot.title(context.l10n), slot.key, items),
                   onTapEntry: _openEditLogSheet,
                   onDeleteEntry: _deleteFoodLogWithUndo,
                 ),

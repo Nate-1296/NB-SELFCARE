@@ -6,8 +6,8 @@ import '../theme/sc_tokens.dart';
 
 /// Insignia compacta de estado ("Óptimo", "Activo", "+15 monedas").
 ///
-/// En Modo Papel usa superficie secundaria y tinta para que nunca quede
-/// texto del mismo color que su fondo.
+/// En Modo Papel usa contorno de tinta para que nunca quede texto del mismo
+/// color que su fondo.
 class TonalBadge extends StatelessWidget {
   const TonalBadge({super.key, required this.label, this.tone, this.icon});
 
@@ -23,10 +23,10 @@ class TonalBadge extends StatelessWidget {
     final Color tint = tone ?? c.accent;
     final Color foreground = c.isFlat ? c.text : tint;
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: ScSpace.s, vertical: ScSpace.xxs + 1),
+      padding: const EdgeInsets.symmetric(horizontal: ScSpace.s, vertical: 3),
       decoration: BoxDecoration(
-        color: c.isFlat ? c.bg3 : tint.withValues(alpha: 0.14),
-        borderRadius: BorderRadius.circular(ScRadius.pill),
+        color: c.isFlat ? c.bg2 : tint.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(c.isFlat ? 4 : ScRadius.pill),
         border: c.isFlat ? Border.all(color: c.line2, width: 1.2) : null,
       ),
       child: Row(
@@ -36,16 +36,19 @@ class TonalBadge extends StatelessWidget {
             Icon(icon, size: 13, color: foreground),
             const SizedBox(width: ScSpace.xs),
           ],
-          Text(
-            label,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              fontFamily: ScFonts.ui,
-              fontSize: 11.5,
-              fontWeight: FontWeight.w800,
-              letterSpacing: 0.2,
-              color: foreground,
+          Flexible(
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontFamily: ScFonts.ui,
+                fontSize: 11.5,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 0.2,
+                color: foreground,
+                height: 1.25,
+              ),
             ),
           ),
         ],

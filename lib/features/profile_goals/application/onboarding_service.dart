@@ -2,6 +2,7 @@ import 'package:drift/drift.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/clock/clock.dart';
+import '../../../core/constants/app_constants.dart';
 import '../../../core/database/app_database.dart';
 import '../../../core/database/daos/user_profile_dao.dart';
 import '../../../core/domain/enums.dart';
@@ -9,7 +10,7 @@ import '../../../shared/utils/daily_targets_calculator.dart';
 import '../../body_metrics/application/weigh_in_service.dart';
 import 'reminder_service.dart';
 
-/// Respuestas del onboarding (docs/01 §6).
+/// Respuestas del onboarding (docs/01 §5).
 class OnboardingAnswers {
   const OnboardingAnswers({
     required this.name,
@@ -70,11 +71,20 @@ class OnboardingService {
         dailyStepsGoal: a.dailyStepsGoal,
       );
 
+  /// Nombre recortado al límite de la tabla (pegar un texto largo en el campo
+  /// no debe impedir terminar la bienvenida).
+  static String _safeName(String raw) {
+    final String name = raw.trim();
+    return name.length <= AppConstants.maxProfileNameLength
+        ? name
+        : name.substring(0, AppConstants.maxProfileNameLength).trimRight();
+  }
+
   Future<void> complete(OnboardingAnswers a) async {
     final DateTime now = _clock.now();
     await _profileDao.createProfile(
       UserProfilesCompanion.insert(
-        name: a.name.trim(),
+        name: _safeName(a.name),
         birthDate: a.birthDate,
         biologicalSex: a.sex,
         heightCm: a.heightCm,
@@ -89,6 +99,9 @@ class OnboardingService {
           a.weeklyGoalRateKg == 0 ? DietPhase.maintenance : DietPhase.deficit,
         ),
         activeDietPhaseStartedAt: Value(now),
+        // Hora local del reloj de la app (el valor por defecto de SQLite es UTC
+        // y su fecha puede ser la de mañana al registrarse por la noche).
+        createdAt: Value(now),
         hasImpedanceContraindication: Value(a.hasImpedanceContraindication),
         hasEatingDisorderHistory: Value(a.hasEatingDisorderHistory),
         takesHypoglycemicMedication: Value(a.takesHypoglycemicMedication),

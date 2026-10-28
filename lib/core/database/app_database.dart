@@ -55,7 +55,7 @@ class AppDatabase extends _$AppDatabase {
   final bool _autoSeed;
 
   @override
-  int get schemaVersion => 4;
+  int get schemaVersion => 6;
 
   static QueryExecutor _openConnection() {
     return driftDatabase(
@@ -135,6 +135,15 @@ class AppDatabase extends _$AppDatabase {
             await m.addColumn(schema.userProfiles, schema.userProfiles.hasImpedanceContraindication);
             await m.addColumn(schema.userProfiles, schema.userProfiles.hasEatingDisorderHistory);
             await m.addColumn(schema.userProfiles, schema.userProfiles.takesHypoglycemicMedication);
+          },
+          from4To5: (Migrator m, Schema5 schema) async {
+            // Nibi 2.0: accesorio y color además del sombrero.
+            await m.addColumn(schema.petStatus, schema.petStatus.equippedAccessoryId);
+            await m.addColumn(schema.petStatus, schema.petStatus.equippedColorId);
+          },
+          from5To6: (Migrator m, Schema6 schema) async {
+            // Fotos del diario dentro de la base de datos (portables en la copia).
+            await m.addColumn(schema.journalEntries, schema.journalEntries.progressPhoto);
           },
         ),
       );

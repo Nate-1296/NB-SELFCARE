@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:drift/drift.dart' as drift;
@@ -16,12 +17,19 @@ import '../domain/enums.dart';
 /// persistiendo todo resultado de forma inmediata en SQLite local.
 class OpenFoodFactsService {
   OpenFoodFactsService(this._foodDao, {http.Client? httpClient})
-      : _client = httpClient ?? http.Client(),
-        _ownsClient = httpClient == null;
+    : _client = httpClient ?? http.Client(),
+      _ownsClient = httpClient == null;
 
   final FoodDao _foodDao;
   final http.Client _client;
   final bool _ownsClient;
+
+  /// Escaneos en curso por código: un doble escaneo comparte la misma petición.
+  final Map<String, Future<FoodItem?>> _inFlight = <String, Future<FoodItem?>>{};
+
+  /// EAN-8, UPC-A, EAN-13 y GTIN-14: solo dígitos. Cualquier otra cosa (un QR
+  /// con una URL, texto) no se envía a internet.
+  static final RegExp _validBarcode = RegExp(r'^\d{8,14}$');
 
   static const String _userAgent =
       'NBSelfcare - Android - Version 0.1.0 - 100% Offline-First Health Sanctuary';
@@ -29,10 +37,17 @@ class OpenFoodFactsService {
   /// Resuelve un código de barras. Busca primero en la caché local SQLite.
   /// Si no existe, consulta la API de Open Food Facts, normaliza a 100g,
   /// guarda inmediatamente en SQLite (activando triggers FTS5) y retorna el alimento.
-  Future<FoodItem?> resolveBarcode(String barcode) async {
+  Future<FoodItem?> resolveBarcode(String barcode) {
     final String cleanBarcode = barcode.trim();
-    if (cleanBarcode.isEmpty) return null;
+    if (!_validBarcode.hasMatch(cleanBarcode)) return Future<FoodItem?>.value();
+    // Bloque con llaves: si el callback devolviera el Future quitado del mapa,
+    // whenComplete esperaría a sí mismo y el escaneo no terminaría nunca.
+    return _inFlight[cleanBarcode] ??= _resolve(cleanBarcode).whenComplete(() {
+      unawaited(_inFlight.remove(cleanBarcode));
+    });
+  }
 
+  Future<FoodItem?> _resolve(String cleanBarcode) async {
     // 1. Consulta en caché SQLite local
     final FoodItem? cached = await _foodDao.getByBarcode(cleanBarcode);
     if (cached != null) {
@@ -41,8 +56,7 @@ class OpenFoodFactsService {
 
     // Si es UPC-A de 12 dígitos, verificar si existe con 0 inicial (EAN-13)
     if (cleanBarcode.length == 12) {
-      final FoodItem? cachedEan13 =
-          await _foodDao.getByBarcode('0$cleanBarcode');
+      final FoodItem? cachedEan13 = await _foodDao.getByBarcode('0$cleanBarcode');
       if (cachedEan13 != null) return cachedEan13;
     }
 
@@ -61,27 +75,19 @@ class OpenFoodFactsService {
 
   Future<FoodItem?> _fetchProductByBarcode(String barcode) async {
     try {
-      final Uri uri = Uri.parse(
-        'https://world.openfoodfacts.org/api/v2/product/$barcode.json',
-      );
+      final Uri uri = Uri.parse('https://world.openfoodfacts.org/api/v2/product/$barcode.json');
 
-      final http.Response response = await _client.get(
-        uri,
-        headers: <String, String>{'User-Agent': _userAgent},
-      ).timeout(const Duration(seconds: 4));
+      final http.Response response = await _client
+          .get(uri, headers: <String, String>{'User-Agent': _userAgent})
+          .timeout(const Duration(seconds: 4));
 
       if (response.statusCode != 200) return null;
 
-      final Map<String, dynamic> json =
-          jsonDecode(response.body) as Map<String, dynamic>;
-
-      final int status = (json['status'] as num?)?.toInt() ?? 0;
-      if (status != 1 || json['product'] == null) {
-        return null;
-      }
-
-      final Map<String, dynamic> product =
-          json['product'] as Map<String, dynamic>;
+      final Object? json = jsonDecode(response.body);
+      if (json is! Map<String, dynamic>) return null;
+      final Object? status = json['status'];
+      final Object? product = json['product'];
+      if (status is! num || status.toInt() != 1 || product is! Map<String, dynamic>) return null;
       return await _parseAndPersistProduct(product, explicitBarcode: barcode);
     } catch (_) {
       return null;
@@ -90,11 +96,7 @@ class OpenFoodFactsService {
 
   /// Busca productos en Open Food Facts por texto cuando la búsqueda local FTS5
   /// no arroja resultados suficientes. Cada resultado válido es cacheado en SQLite.
-  Future<List<FoodItem>> searchProducts(
-    String query, {
-    int page = 1,
-    int pageSize = 20,
-  }) async {
+  Future<List<FoodItem>> searchProducts(String query, {int page = 1, int pageSize = 20}) async {
     final String cleanQuery = query.trim();
     if (cleanQuery.isEmpty) return <FoodItem>[];
 
@@ -103,17 +105,16 @@ class OpenFoodFactsService {
         'https://world.openfoodfacts.org/cgi/search.pl?search_terms=${Uri.encodeComponent(cleanQuery)}&search_simple=1&action=process&json=1&page_size=$pageSize&page=$page',
       );
 
-      final http.Response response = await _client.get(
-        uri,
-        headers: <String, String>{'User-Agent': _userAgent},
-      ).timeout(const Duration(seconds: 5));
+      final http.Response response = await _client
+          .get(uri, headers: <String, String>{'User-Agent': _userAgent})
+          .timeout(const Duration(seconds: 5));
 
       if (response.statusCode != 200) return <FoodItem>[];
 
-      final Map<String, dynamic> json =
-          jsonDecode(response.body) as Map<String, dynamic>;
-      final List<dynamic>? rawProducts = json['products'] as List<dynamic>?;
-      if (rawProducts == null || rawProducts.isEmpty) return <FoodItem>[];
+      final Object? json = jsonDecode(response.body);
+      if (json is! Map<String, dynamic>) return <FoodItem>[];
+      final Object? rawProducts = json['products'];
+      if (rawProducts is! List<dynamic> || rawProducts.isEmpty) return <FoodItem>[];
 
       final List<FoodItem> results = <FoodItem>[];
 
@@ -136,53 +137,50 @@ class OpenFoodFactsService {
     Map<String, dynamic> product, {
     String? explicitBarcode,
   }) async {
+    final String? rawCode = explicitBarcode ?? _text(product['code']);
     try {
-      final String? rawCode = explicitBarcode ??
-          _nonEmptyOrNull(product['code'] as String?);
-
       // Si tiene código de barras y ya está en base de datos local, devolverlo
       if (rawCode != null) {
         final FoodItem? existing = await _foodDao.getByBarcode(rawCode);
         if (existing != null) return existing;
       }
 
-      final Map<String, dynamic> nutriments =
-          (product['nutriments'] as Map<String, dynamic>?) ??
-              <String, dynamic>{};
+      // Los datos vienen de una base colaborativa: cualquier campo puede faltar
+      // o venir con otro tipo (números como texto, marcas en lista…).
+      final Object? rawNutriments = product['nutriments'];
+      final Map<String, dynamic> nutriments = rawNutriments is Map<String, dynamic>
+          ? rawNutriments
+          : <String, dynamic>{};
 
-      // Extracción de metadatos básicos
-      final String name = _nonEmptyOrNull(
-            product['product_name_es'] as String?,
-          ) ??
-          _nonEmptyOrNull(product['product_name'] as String?) ??
-          _nonEmptyOrNull(product['generic_name'] as String?) ??
+      final String name =
+          _text(product['product_name_es']) ??
+          _text(product['product_name']) ??
+          _text(product['generic_name']) ??
           (rawCode != null ? 'Producto $rawCode' : 'Alimento');
 
-      final String? brand = _nonEmptyOrNull(product['brands'] as String?);
-      final String? nutriScore = _nonEmptyOrNull(
-        product['nutriscore_grade'] as String?,
-      )?.toUpperCase();
+      final String? brand = _text(product['brands']);
+      final String? grade = _text(product['nutriscore_grade'])?.toUpperCase();
+      final String? nutriScore = grade != null && RegExp(r'^[A-E]$').hasMatch(grade) ? grade : null;
       final int? novaGroup = _extractNovaGroup(product);
 
-      // Normalización a 100g
-      final double kcal = _extractNum(nutriments, 'energy-kcal_100g') ??
-          ((_extractNum(nutriments, 'energy_100g') ?? 0.0) / 4.184);
+      // Normalización a 100 g, acotada a lo físicamente posible.
+      final double kcal =
+          (_extractNum(nutriments, 'energy-kcal_100g') ??
+                  ((_extractNum(nutriments, 'energy_100g') ?? 0.0) / 4.184))
+              .clamp(0.0, 900.0);
 
-      final double protein = _extractNum(nutriments, 'proteins_100g') ?? 0.0;
-      final double carbs =
-          _extractNum(nutriments, 'carbohydrates_100g') ?? 0.0;
-      final double fat = _extractNum(nutriments, 'fat_100g') ?? 0.0;
-      final double? fiber = _extractNum(nutriments, 'fiber_100g');
-      final double? sugars = _extractNum(nutriments, 'sugars_100g');
+      final double protein = _grams(nutriments, 'proteins_100g') ?? 0.0;
+      final double carbs = _grams(nutriments, 'carbohydrates_100g') ?? 0.0;
+      final double fat = _grams(nutriments, 'fat_100g') ?? 0.0;
+      final double? fiber = _grams(nutriments, 'fiber_100g');
+      final double? sugars = _grams(nutriments, 'sugars_100g');
 
-      // Minerales y Triángulo de Electrolitos (normalizados a miligramos por 100g)
-      double? sodiumMg = _extractNum(nutriments, 'sodium_100g');
+      // Open Food Facts normaliza sodio y sal a gramos por 100 g.
+      double? sodiumMg = _grams(nutriments, 'sodium_100g');
       if (sodiumMg != null) {
-        if (sodiumMg < 25.0) {
-          sodiumMg *= 1000.0; // OFF reporta sodio en gramos -> convertir a mg
-        }
+        sodiumMg = double.parse((sodiumMg * 1000.0).toStringAsFixed(1));
       } else {
-        final double? saltG = _extractNum(nutriments, 'salt_100g');
+        final double? saltG = _grams(nutriments, 'salt_100g');
         if (saltG != null) {
           sodiumMg = saltG * 400.0; // 1g sal ≈ 400mg sodio
         }
@@ -239,18 +237,18 @@ class OpenFoodFactsService {
       final int id = await _foodDao.insertFood(companion);
       return await _foodDao.getById(id);
     } catch (_) {
-      return null;
+      // Otro escaneo pudo guardarlo entre la consulta y la inserción (código único).
+      return rawCode == null ? null : _foodDao.getByBarcode(rawCode);
     }
   }
 
+  /// Grupo NOVA (1–4); cualquier otro valor se trata como "sin clasificar".
   int? _extractNovaGroup(Map<String, dynamic> product) {
-    final dynamic g = product['nova_group'] ?? product['nova_groups'];
-    if (g is num) return g.toInt().clamp(1, 4);
-    if (g is String) {
-      final int? parsed = int.tryParse(g);
-      if (parsed != null) return parsed.clamp(1, 4);
-    }
-    return null;
+    final Object? g = product['nova_group'] ?? product['nova_groups'];
+    final int? group = g is num && g.isFinite
+        ? g.toInt()
+        : (g is String ? int.tryParse(g.trim()) : null);
+    return group != null && group >= 1 && group <= 4 ? group : null;
   }
 
   /// Cierra el cliente HTTP subyacente cuando el proveedor se destruye.
@@ -260,28 +258,36 @@ class OpenFoodFactsService {
     }
   }
 
-  String? _nonEmptyOrNull(String? raw) {
-    if (raw == null) return null;
-    final String trimmed = raw.trim();
-    return trimmed.isEmpty ? null : trimmed;
+  /// Texto no vacío a partir de un campo de tipo libre (texto, número o lista).
+  String? _text(Object? raw) {
+    final String? text = switch (raw) {
+      final String s => s,
+      final num n when n.isFinite => n.toString(),
+      final List<dynamic> l => l.whereType<String>().join(', '),
+      _ => null,
+    };
+    final String? trimmed = text?.trim();
+    return trimmed == null || trimmed.isEmpty ? null : trimmed;
   }
 
-  double? _normalizeGramsToMg(
-    double? value, {
-    required double gramsThreshold,
-  }) {
-    if (value == null) return null;
+  /// Gramos por 100 g acotados a 0–100.
+  double? _grams(Map<String, dynamic> map, String key) => _extractNum(map, key)?.clamp(0.0, 100.0);
+
+  double? _normalizeGramsToMg(double? value, {required double gramsThreshold}) {
+    if (value == null || value < 0) return null;
     if (value > 0 && value < gramsThreshold) {
       return double.parse((value * 1000.0).toStringAsFixed(1));
     }
     return double.parse(value.toStringAsFixed(1));
   }
 
+  /// Número finito; "NaN", "Infinity" o texto no numérico cuentan como ausente.
   double? _extractNum(Map<String, dynamic> map, String key) {
-    final dynamic val = map[key];
-    if (val is num) return val.toDouble();
-    if (val is String) return double.tryParse(val);
-    return null;
+    final Object? val = map[key];
+    final double? parsed = val is num
+        ? val.toDouble()
+        : (val is String ? double.tryParse(val.trim()) : null);
+    return parsed != null && parsed.isFinite ? parsed : null;
   }
 }
 

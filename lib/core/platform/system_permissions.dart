@@ -1,6 +1,8 @@
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'native_call.dart';
+
 /// Permisos del sistema que la app solicita, siempre con un propósito local.
 enum AppPermission {
   camera('android.permission.CAMERA'),
@@ -30,15 +32,8 @@ class MethodChannelSystemPermissions implements SystemPermissions {
 
   static const MethodChannel _channel = MethodChannel('com.nb.selfcare/system');
 
-  Future<bool> _invoke(String method, [Map<String, Object?>? args]) async {
-    try {
-      return await _channel.invokeMethod<bool>(method, args) ?? false;
-    } on PlatformException {
-      return false;
-    } on MissingPluginException {
-      return false;
-    }
-  }
+  Future<bool> _invoke(String method, [Map<String, Object?>? args]) async =>
+      await callNative<bool>(_channel, method, args) ?? false;
 
   @override
   Future<bool> isGranted(AppPermission permission) =>
@@ -52,16 +47,9 @@ class MethodChannelSystemPermissions implements SystemPermissions {
   Future<bool> openAppSettings() => _invoke('openAppSettings');
 
   @override
-  Future<String?> consumeLaunchAction() async {
-    try {
-      return await _channel.invokeMethod<String>('consumeLaunchAction');
-    } on PlatformException {
-      return null;
-    } on MissingPluginException {
-      return null;
-    }
-  }
+  Future<String?> consumeLaunchAction() => callNative<String>(_channel, 'consumeLaunchAction');
 }
 
-final systemPermissionsProvider =
-    Provider<SystemPermissions>((Ref ref) => const MethodChannelSystemPermissions());
+final systemPermissionsProvider = Provider<SystemPermissions>(
+  (Ref ref) => const MethodChannelSystemPermissions(),
+);

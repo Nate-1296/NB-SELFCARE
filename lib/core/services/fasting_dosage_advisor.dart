@@ -1,3 +1,4 @@
+import '../../shared/utils/number_formats.dart';
 import '../database/app_database.dart';
 
 /// Veredicto de seguridad metabólica para un protocolo de ayuno propuesto.
@@ -53,7 +54,7 @@ class FastBreakStage {
 
 /// Asesor clínico y preventivo de dosificación segura del ayuno intermitente.
 class FastingDosageAdvisor {
-  /// Duración máxima por defecto con historial de trastornos de la conducta alimentaria (docs/01 §6).
+  /// Duración máxima por defecto con historial de trastornos de la conducta alimentaria (docs/01 §5).
   static const int maxHoursWithEdHistory = 16;
 
   /// Avisos derivados de las respuestas de seguridad del onboarding. Tienen
@@ -117,7 +118,7 @@ class FastingDosageAdvisor {
           return FastingSafetyVerdict.warning(
             title: 'Recuperación Metabólica Recomendada',
             body:
-                'Completaste un ayuno prolongado (${lastHours.toStringAsFixed(1)} h) hace menos de 36 horas. '
+                'Completaste un ayuno prolongado (${NumberFormats.fixed(lastHours, 1)} h) hace menos de 36 horas. '
                 'Encadenar ayunos agresivos (OMAD 23:1) en días consecutivos eleva el cortisol matutino, '
                 'puede degradar masa muscular magra y ralentizar la tasa metabólica basal (TDEE). '
                 'Para hoy te sugerimos una ventana más amplia como 16:8 o 14:10.',

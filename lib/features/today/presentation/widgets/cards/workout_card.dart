@@ -4,11 +4,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../../core/database/app_database.dart';
 import '../../../../../core/l10n/l10n.dart';
 import '../../../../../shared/theme/sc_colors.dart';
-import '../../../../../shared/theme/sc_theme.dart';
+import '../../../../../shared/theme/sc_tokens.dart';
 import '../../../../../shared/widgets/app_icons.dart';
-import '../../../../../shared/widgets/health_card.dart';
+import '../../../../../shared/widgets/metric_value.dart';
+import '../../../../../shared/widgets/quick_action_button.dart';
 import '../../../../body_metrics/presentation/widgets/quick_rpe_workout_sheet.dart';
 import '../../../domain/hoy_widget_config.dart';
+import 'bento_metric_card.dart';
 
 // ============================================================================
 // 7. WIDGET ENTRENAMIENTO RPE EN 5 SEGUNDOS — 2×2 / 4×2
@@ -28,6 +30,7 @@ class HoyWorkoutBentoCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final ScColors c = context.sc;
+    final AppLocalizations l10n = context.l10n;
     final int totalNetKcal = workoutsToday.fold<int>(
       0,
       (int sum, WorkoutBlock w) => sum + w.netCaloriesBurned,
@@ -36,82 +39,31 @@ class HoyWorkoutBentoCard extends ConsumerWidget {
       0,
       (int sum, WorkoutBlock w) => sum + w.durationMinutes,
     );
+    final bool hasWorkout = workoutsToday.isNotEmpty;
 
-    return HealthCard(
-      margin: EdgeInsets.zero,
-      padding: const EdgeInsets.all(15),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: <Widget>[
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              Row(
-                children: <Widget>[
-                  Icon(AppIcons.pesa, size: 19, color: c.calories),
-                  const SizedBox(width: 6),
-                  Expanded(
-                    child: Text(
-                      context.l10n.todayEntrenamiento,
-                      softWrap: true,
-                      style: TextStyle(
-                        fontFamily: ScFonts.display,
-                        fontSize: 14.5,
-                        fontWeight: FontWeight.w800,
-                        color: c.text,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 10),
-              Text(
-                workoutsToday.isNotEmpty
-                    ? context.l10n.todayKcal2((totalNetKcal).toString()): context.l10n.todaySinSesionHoy,
-                softWrap: true,
-                style: TextStyle(
-                  fontFamily: ScFonts.display,
-                  fontSize: workoutsToday.isNotEmpty ? 22 : 18,
-                  fontWeight: FontWeight.w800,
-                  color: c.text,
-                ),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                workoutsToday.isNotEmpty
-                    ? context.l10n.todayBloqueSMinEfectivos(workoutsToday.length.toString(), (totalMinutes).toString()): context.l10n.todayRegistraFuerzaCardioODeporte,
-                softWrap: true,
-                style: TextStyle(
-                  fontFamily: ScFonts.ui,
-                  fontSize: 11.5,
-                  color: c.text2,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          SizedBox(
-            width: double.infinity,
-            child: FilledButton.tonalIcon(
-              onPressed: () => QuickRpeWorkoutSheet.show(
-                context: context,
-                ref: ref,
-                profile: profile,
-              ),
-              style: FilledButton.styleFrom(
-                visualDensity: VisualDensity.compact,
-                padding: const EdgeInsets.symmetric(vertical: 9),
-              ),
-              icon: const Icon(AppIcons.bolt, size: 16),
-              label: Text(
-                context.l10n.todayEntreno5s,
-                style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700),
-              ),
-            ),
-          ),
-        ],
-      ),
+    return BentoMetricCard(
+      icon: AppIcons.pesa,
+      label: l10n.todayEntrenamiento,
+      tone: c.calories,
+      metric: hasWorkout
+          ? AnimatedMetricValue(
+              value: totalNetKcal.toDouble(),
+              format: (double v) => v.round().toString(),
+              unit: l10n.unitKcal,
+              size: size.isHalfWidth ? 28 : 32,
+            )
+          : Text(l10n.todaySinSesionHoy, style: context.type.metricS.copyWith(color: c.text2)),
+      caption: hasWorkout
+          ? l10n.todayBloqueSMinEfectivos(workoutsToday.length.toString(), totalMinutes.toString())
+          : l10n.todayRegistraFuerzaCardioODeporte,
+      actions: <Widget>[
+        QuickActionButton(
+          label: l10n.todayEntreno5s,
+          icon: AppIcons.bolt,
+          tone: c.calories,
+          onPressed: () => QuickRpeWorkoutSheet.show(context: context, ref: ref, profile: profile),
+        ),
+      ],
     );
   }
 }

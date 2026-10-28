@@ -7,11 +7,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/l10n/l10n.dart';
 import '../../../../core/services/readiness_engine.dart';
 import '../../../../shared/theme/sc_colors.dart';
-import '../../../../shared/theme/sc_theme.dart';
 import '../../../../shared/theme/sc_tokens.dart';
 import '../../../../shared/utils/date_formats.dart';
+import '../../../../shared/utils/number_formats.dart';
+import '../../../../shared/widgets/card_header.dart';
 import '../../../../shared/widgets/health_card.dart';
-import '../../../../shared/widgets/tonal_badge.dart';
+import '../../../../shared/widgets/progress_bar.dart';
+import '../../../../shared/widgets/progress_ring.dart';
+import '../../../../shared/widgets/quick_action_button.dart';
 import '../../../journal/application/caffeine_queries.dart';
 import '../../../journal/presentation/widgets/caffeine_tracker_sheet.dart';
 import '../../application/readiness_queries.dart';
@@ -20,11 +23,7 @@ import '../../application/readiness_queries.dart';
 ///
 /// Solo muestra una puntuación cuando hay sueño registrado para esa noche.
 class ReadinessCard extends ConsumerWidget {
-  const ReadinessCard({
-    super.key,
-    required this.dateKey,
-    required this.onLogSleep,
-  });
+  const ReadinessCard({super.key, required this.dateKey, required this.onLogSleep});
 
   final String dateKey;
   final VoidCallback onLogSleep;
@@ -37,8 +36,11 @@ class ReadinessCard extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          if (readiness == null) _NoSleepYet(onLogSleep: onLogSleep) else _ReadinessSummary(readiness),
-          const SizedBox(height: ScSpace.m),
+          if (readiness == null)
+            _NoSleepYet(onLogSleep: onLogSleep)
+          else
+            _ReadinessSummary(readiness),
+          const SizedBox(height: ScSpace.l),
           _CaffeineStrip(dateKey: dateKey),
         ],
       ),
@@ -48,16 +50,16 @@ class ReadinessCard extends ConsumerWidget {
 
 extension ReadinessCategoryL10n on ReadinessCategory {
   String label(AppLocalizations l10n) => switch (this) {
-        ReadinessCategory.optimal => l10n.readinessOptimal,
-        ReadinessCategory.favorable => l10n.readinessFavorable,
-        ReadinessCategory.recoveryNeeded => l10n.readinessRecovery,
-      };
+    ReadinessCategory.optimal => l10n.readinessOptimal,
+    ReadinessCategory.favorable => l10n.readinessFavorable,
+    ReadinessCategory.recoveryNeeded => l10n.readinessRecovery,
+  };
 
   String advice(AppLocalizations l10n) => switch (this) {
-        ReadinessCategory.optimal => l10n.readinessAdviceOptimal,
-        ReadinessCategory.favorable => l10n.readinessAdviceFavorable,
-        ReadinessCategory.recoveryNeeded => l10n.readinessAdviceRecovery,
-      };
+    ReadinessCategory.optimal => l10n.readinessAdviceOptimal,
+    ReadinessCategory.favorable => l10n.readinessAdviceFavorable,
+    ReadinessCategory.recoveryNeeded => l10n.readinessAdviceRecovery,
+  };
 }
 
 class _ReadinessSummary extends StatelessWidget {
@@ -69,6 +71,11 @@ class _ReadinessSummary extends StatelessWidget {
   Widget build(BuildContext context) {
     final ScColors c = context.sc;
     final AppLocalizations l10n = context.l10n;
+    final Color tone = switch (readiness.category) {
+      ReadinessCategory.optimal => c.success,
+      ReadinessCategory.favorable => c.accent,
+      ReadinessCategory.recoveryNeeded => c.warning,
+    };
     return Semantics(
       container: true,
       label: l10n.readinessSemantics(readiness.totalScore, readiness.category.label(l10n)),
@@ -77,39 +84,71 @@ class _ReadinessSummary extends StatelessWidget {
         children: <Widget>[
           Row(
             children: <Widget>[
-              ExcludeSemantics(child: _ScoreBox(score: readiness.totalScore)),
-              const SizedBox(width: ScSpace.m),
+              ExcludeSemantics(
+                child: ScProgressRing(
+                  value: readiness.totalScore / 100,
+                  size: 84,
+                  stroke: 8,
+                  color: tone,
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text('${readiness.totalScore}', style: context.type.metricM),
+                  ),
+                ),
+              ),
+              const SizedBox(width: ScSpace.l),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
-                    Wrap(
-                      spacing: ScSpace.s,
-                      runSpacing: ScSpace.xxs,
-                      crossAxisAlignment: WrapCrossAlignment.center,
-                      children: <Widget>[
-                        Text(l10n.todayDisposicionEnergia, style: context.text.titleMedium),
-                        TonalBadge(label: readiness.category.label(l10n)),
-                      ],
-                    ),
-                    const SizedBox(height: ScSpace.xxs),
+                    Text(l10n.todayDisposicionEnergia.toUpperCase(), style: context.type.overline),
+                    const SizedBox(height: ScSpace.xs),
                     Text(
-                      l10n.todaySuenoPFcReposoP(
-                        readiness.sleepSubScore.round().toString(),
-                        readiness.rhrSubScore.round().toString(),
-                        readiness.strainSubScore.round().toString(),
-                      ),
-                      style: context.text.bodySmall,
+                      readiness.category.label(l10n),
+                      style: context.text.headlineSmall?.copyWith(color: c.isFlat ? c.text : tone),
+                    ),
+                    const SizedBox(height: ScSpace.xs),
+                    Text(
+                      readiness.category.advice(l10n),
+                      style: context.type.caption.copyWith(color: c.text),
                     ),
                   ],
                 ),
               ),
             ],
           ),
-          const SizedBox(height: ScSpace.s + 2),
-          Text(
-            readiness.category.advice(l10n),
-            style: TextStyle(fontFamily: ScFonts.ui, fontSize: 12.5, color: c.text, height: 1.35),
+          const SizedBox(height: ScSpace.l),
+          ExcludeSemantics(
+            child: Row(
+              children: <Widget>[
+                Expanded(
+                  child: _SubScore(
+                    label: l10n.readinessSleepLabel,
+                    value: readiness.sleepSubScore,
+                    max: 40,
+                    tone: c.fasting,
+                  ),
+                ),
+                const SizedBox(width: ScSpace.m),
+                Expanded(
+                  child: _SubScore(
+                    label: l10n.readinessPulseLabel,
+                    value: readiness.rhrSubScore,
+                    max: 35,
+                    tone: c.calories,
+                  ),
+                ),
+                const SizedBox(width: ScSpace.m),
+                Expanded(
+                  child: _SubScore(
+                    label: l10n.readinessLoadLabel,
+                    value: readiness.strainSubScore,
+                    max: 25,
+                    tone: c.steps,
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -117,32 +156,55 @@ class _ReadinessSummary extends StatelessWidget {
   }
 }
 
-class _ScoreBox extends StatelessWidget {
-  const _ScoreBox({required this.score});
+/// Componente de la puntuación (sueño, pulso, carga) con su barra.
+class _SubScore extends StatelessWidget {
+  const _SubScore({
+    required this.label,
+    required this.value,
+    required this.max,
+    required this.tone,
+  });
 
-  final int score;
+  final String label;
+  final double value;
+  final double max;
+  final Color tone;
 
   @override
   Widget build(BuildContext context) {
     final ScColors c = context.sc;
-    return Container(
-      width: 44,
-      height: 44,
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        color: c.isFlat ? c.bg3 : c.accent.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(ScRadius.control),
-        border: c.isFlat ? Border.all(color: c.line2, width: 1.5) : null,
-      ),
-      child: Text(
-        '$score',
-        style: TextStyle(
-          fontFamily: ScFonts.display,
-          fontSize: 19,
-          fontWeight: FontWeight.w900,
-          color: c.isFlat ? c.text : c.accent,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        Row(
+          children: <Widget>[
+            Expanded(
+              child: Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: context.type.caption,
+              ),
+            ),
+            Text.rich(
+              TextSpan(
+                children: <InlineSpan>[
+                  TextSpan(
+                    text: '${value.round()}',
+                    style: context.type.metricS.copyWith(fontSize: 13.5),
+                  ),
+                  TextSpan(
+                    text: '/${max.round()}',
+                    style: context.type.caption.copyWith(fontSize: 11, color: c.text3),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
-      ),
+        const SizedBox(height: 5),
+        ScProgressBar(value: value / max, color: tone, height: 4),
+      ],
     );
   }
 }
@@ -156,21 +218,22 @@ class _NoSleepYet extends StatelessWidget {
   Widget build(BuildContext context) {
     final ScColors c = context.sc;
     final AppLocalizations l10n = context.l10n;
-    return Row(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
-        Icon(Icons.bedtime_outlined, size: 22, color: c.isFlat ? c.text : c.fasting),
-        const SizedBox(width: ScSpace.m),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              Text(l10n.todayDisposicionEnergia, style: context.text.titleMedium),
-              Text(l10n.readinessNoSleep, style: context.text.bodySmall),
-            ],
-          ),
+        CardHeader(
+          title: l10n.todayDisposicionEnergia,
+          subtitle: l10n.readinessNoSleep,
+          icon: Icons.bedtime_outlined,
+          tone: c.fasting,
         ),
-        const SizedBox(width: ScSpace.s),
-        TextButton(onPressed: onLogSleep, child: Text(l10n.readinessLogSleep)),
+        const SizedBox(height: ScSpace.m),
+        QuickActionButton(
+          label: l10n.readinessLogSleep,
+          icon: Icons.bedtime_outlined,
+          tone: c.fasting,
+          onPressed: onLogSleep,
+        ),
       ],
     );
   }
@@ -192,46 +255,37 @@ class _CaffeineStrip extends ConsumerWidget {
     final String text = day.logs.isEmpty
         ? l10n.caffeineNoneToday(cutoff)
         : l10n.todayCafeinaActivaMgAlDormir(
-            day.status.currentResidualMg.toStringAsFixed(0),
-            day.status.bedtimeResidualMg.toStringAsFixed(0),
+            NumberFormats.fixed(day.status.currentResidualMg, 0),
+            NumberFormats.fixed(day.status.bedtimeResidualMg, 0),
           );
 
-    return Material(
-      color: c.bg3,
-      borderRadius: BorderRadius.circular(ScRadius.control),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(ScRadius.control),
-        onTap: () {
-          unawaited(HapticFeedback.selectionClick());
-          unawaited(CaffeineTrackerSheet.show(context, dateKey: dateKey));
-        },
-        child: Container(
-          constraints: const BoxConstraints(minHeight: 48),
-          padding: const EdgeInsets.symmetric(horizontal: ScSpace.m, vertical: ScSpace.s + 2),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(ScRadius.control),
-            border: Border.all(color: c.isFlat ? c.line2 : c.line, width: c.isFlat ? 1.5 : 1.0),
-          ),
-          child: Row(
-            children: <Widget>[
-              Icon(Icons.coffee_rounded, size: 18, color: c.isFlat ? c.text : c.accent),
-              const SizedBox(width: ScSpace.s),
-              Expanded(
-                child: Text(
-                  text,
-                  style: TextStyle(
-                    fontFamily: ScFonts.ui,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: c.text,
+    return Column(
+      children: <Widget>[
+        Divider(height: 1, color: c.isFlat ? c.line2 : c.line),
+        InkWell(
+          borderRadius: BorderRadius.circular(ScRadius.controlOf(c)),
+          onTap: () {
+            unawaited(HapticFeedback.selectionClick());
+            unawaited(CaffeineTrackerSheet.show(context, dateKey: dateKey));
+          },
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: 48),
+            child: Padding(
+              padding: const EdgeInsets.only(top: ScSpace.m - 2),
+              child: Row(
+                children: <Widget>[
+                  Icon(Icons.coffee_rounded, size: 18, color: c.isFlat ? c.text : c.carbs),
+                  const SizedBox(width: ScSpace.s + 2),
+                  Expanded(
+                    child: Text(text, style: context.type.caption.copyWith(color: c.text)),
                   ),
-                ),
+                  Icon(Icons.chevron_right_rounded, size: 20, color: c.text3),
+                ],
               ),
-              Icon(Icons.chevron_right_rounded, size: 18, color: c.text2),
-            ],
+            ),
           ),
         ),
-      ),
+      ],
     );
   }
 }

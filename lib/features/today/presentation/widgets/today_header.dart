@@ -47,13 +47,9 @@ class TodayHeader extends StatelessWidget {
     return TopBar(
       title: _greeting(l10n),
       subtitle: formatted[0].toUpperCase() + formatted.substring(1),
-      subtitleBelowTitle: true,
-      uppercaseSubtitle: false,
-      pageIcon: Icons.flare_rounded,
       large: true,
-      onProfile: () => context.go('/perfil'),
-      trailing: IconButton(
-        icon: const Icon(Icons.calendar_month_rounded),
+      trailing: TopBarAction(
+        icon: Icons.calendar_month_rounded,
         tooltip: l10n.todayWeeklyPlanTooltip,
         onPressed: () {
           unawaited(HapticFeedback.lightImpact());

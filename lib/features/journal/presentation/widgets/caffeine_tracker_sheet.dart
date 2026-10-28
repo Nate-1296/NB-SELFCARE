@@ -10,31 +10,26 @@ import '../../../../core/services/caffeine_pharmacokinetics_service.dart';
 import '../../../../shared/theme/sc_colors.dart';
 import '../../../../shared/theme/sc_theme.dart';
 import '../../../../shared/utils/date_formats.dart';
+import '../../../../shared/utils/number_formats.dart';
 import '../../../../shared/widgets/app_icons.dart';
 import '../../../../shared/widgets/science_on_demand_sheet.dart';
 import '../../../../shared/widgets/sheet.dart';
+import '../../../../shared/widgets/tonal_badge.dart';
 import '../../../../shared/widgets/undo_snackbar.dart';
 import '../../application/caffeine_queries.dart';
 
 /// Modal interactivo de registro y curva de decaimiento de cafeína.
 class CaffeineTrackerSheet extends ConsumerStatefulWidget {
-  const CaffeineTrackerSheet({
-    super.key,
-    required this.dateKey,
-  });
+  const CaffeineTrackerSheet({super.key, required this.dateKey});
 
   final String dateKey;
 
   static Future<void> show(BuildContext context, {required String dateKey}) {
-    return mostrarHojaMenu<void>(
-      context,
-      builder: (_) => CaffeineTrackerSheet(dateKey: dateKey),
-    );
+    return mostrarHojaMenu<void>(context, builder: (_) => CaffeineTrackerSheet(dateKey: dateKey));
   }
 
   @override
-  ConsumerState<CaffeineTrackerSheet> createState() =>
-      _CaffeineTrackerSheetState();
+  ConsumerState<CaffeineTrackerSheet> createState() => _CaffeineTrackerSheetState();
 }
 
 class _CaffeineTrackerSheetState extends ConsumerState<CaffeineTrackerSheet> {
@@ -49,10 +44,7 @@ class _CaffeineTrackerSheetState extends ConsumerState<CaffeineTrackerSheet> {
     super.dispose();
   }
 
-  Future<void> _logQuickDose({
-    required String name,
-    required double mg,
-  }) async {
+  Future<void> _logQuickDose({required String name, required double mg}) async {
     unawaited(HapticFeedback.lightImpact());
     await ref.read(caffeineServiceProvider).log(dateKey: widget.dateKey, sourceName: name, mg: mg);
 
@@ -61,7 +53,9 @@ class _CaffeineTrackerSheetState extends ConsumerState<CaffeineTrackerSheet> {
       ..hideCurrentSnackBar()
       ..showSnackBar(
         SnackBar(
-          content: Text(context.l10n.journalMgDeCafeinaRegistrados((mg).toString(), (name).toString())),
+          content: Text(
+            context.l10n.journalMgDeCafeinaRegistrados((mg).toString(), (name).toString()),
+          ),
           duration: const Duration(seconds: 2),
         ),
       );
@@ -122,17 +116,13 @@ class _CaffeineTrackerSheetState extends ConsumerState<CaffeineTrackerSheet> {
                             style: TextStyle(
                               fontFamily: ScFonts.display,
                               fontSize: 17,
-                              fontWeight: FontWeight.w800,
+                              fontWeight: FontWeight.w700,
                               color: c.text,
                             ),
                           ),
                           Text(
                             context.l10n.journalFarmacocineticaYProteccionDelSueno,
-                            style: TextStyle(
-                              fontFamily: ScFonts.ui,
-                              fontSize: 12,
-                              color: c.text2,
-                            ),
+                            style: TextStyle(fontFamily: ScFonts.ui, fontSize: 12, color: c.text2),
                           ),
                         ],
                       ),
@@ -151,10 +141,7 @@ class _CaffeineTrackerSheetState extends ConsumerState<CaffeineTrackerSheet> {
                   decoration: BoxDecoration(
                     color: c.bg3,
                     borderRadius: BorderRadius.circular(14),
-                    border: Border.all(
-                      color: c.isFlat ? c.line2 : c.line,
-                      width: c.isFlat ? 1.4 : 1.0,
-                    ),
+                    border: c.isFlat ? Border.all(color: c.line2, width: 1.5) : null,
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -162,7 +149,7 @@ class _CaffeineTrackerSheetState extends ConsumerState<CaffeineTrackerSheet> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: <Widget>[
-                          Text(
+                          Flexible(child: Text(
                             context.l10n.journalNivelActivoEnSangre,
                             style: TextStyle(
                               fontFamily: ScFonts.ui,
@@ -170,13 +157,15 @@ class _CaffeineTrackerSheetState extends ConsumerState<CaffeineTrackerSheet> {
                               fontWeight: FontWeight.w700,
                               color: c.text,
                             ),
-                          ),
+                          )),
                           Text(
-                            context.l10n.journalMg(status.currentResidualMg.toStringAsFixed(1).toString()),
+                            context.l10n.journalMg(
+                              NumberFormats.fixed(status.currentResidualMg, 1),
+                            ),
                             style: TextStyle(
                               fontFamily: ScFonts.display,
                               fontSize: 16,
-                              fontWeight: FontWeight.w800,
+                              fontWeight: FontWeight.w700,
                               color: c.accent,
                             ),
                           ),
@@ -186,38 +175,22 @@ class _CaffeineTrackerSheetState extends ConsumerState<CaffeineTrackerSheet> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: <Widget>[
-                          Text(
-                            context.l10n.journalProyeccionAlDormir2300,
-                            style: TextStyle(
-                              fontFamily: ScFonts.ui,
-                              fontSize: 13,
-                              color: c.text2,
+                          Expanded(
+                            child: Text(
+                              context.l10n.journalProyeccionAlDormir2300,
+                              style: TextStyle(fontFamily: ScFonts.ui, fontSize: 13, color: c.text2),
                             ),
                           ),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 3,
-                            ),
-                            decoration: BoxDecoration(
-                              color: status.willDisruptSleep
-                                  ? (c.isFlat ? c.line2 : c.warning.withValues(alpha: 0.15))
-                                  : (c.isFlat ? c.line2 : c.soft),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Text(
-                              context.l10n.journalBedtimeResidual(
-                                status.bedtimeResidualMg.toStringAsFixed(0),
-                                status.willDisruptSleep ? context.l10n.journalAlertaSueno : context.l10n.journalSleepSafe,
+                          const SizedBox(width: 8),
+                          Flexible(
+                            child: TonalBadge(
+                              label: context.l10n.journalBedtimeResidual(
+                                NumberFormats.fixed(status.bedtimeResidualMg, 0),
+                                status.willDisruptSleep
+                                    ? context.l10n.journalAlertaSueno
+                                    : context.l10n.journalSleepSafe,
                               ),
-                              style: TextStyle(
-                                fontFamily: ScFonts.ui,
-                                fontSize: 11.5,
-                                fontWeight: FontWeight.w700,
-                                color: status.willDisruptSleep
-                                    ? (c.isFlat ? c.text : c.warning)
-                                    : (c.isFlat ? c.text : c.accent),
-                              ),
+                              tone: status.willDisruptSleep ? c.warning : c.accent,
                             ),
                           ),
                         ],
@@ -226,12 +199,10 @@ class _CaffeineTrackerSheetState extends ConsumerState<CaffeineTrackerSheet> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: <Widget>[
-                          Text(
-                            context.l10n.journalHoraLimiteRecomendadaCurfew,
-                            style: TextStyle(
-                              fontFamily: ScFonts.ui,
-                              fontSize: 13,
-                              color: c.text2,
+                          Expanded(
+                            child: Text(
+                              context.l10n.journalHoraLimiteRecomendadaCurfew,
+                              style: TextStyle(fontFamily: ScFonts.ui, fontSize: 13, color: c.text2),
                             ),
                           ),
                           Text(
@@ -277,7 +248,8 @@ class _CaffeineTrackerSheetState extends ConsumerState<CaffeineTrackerSheet> {
                     ),
                     _QuickCaffeineChip(
                       label: context.l10n.journalDobleAmericano130mg,
-                      onTap: () => _logQuickDose(name: context.l10n.journalCafeAmericanoDoble, mg: 130),
+                      onTap: () =>
+                          _logQuickDose(name: context.l10n.journalCafeAmericanoDoble, mg: 130),
                     ),
                     _QuickCaffeineChip(
                       label: context.l10n.journalTeVerdeNegro45mg,
@@ -285,10 +257,15 @@ class _CaffeineTrackerSheetState extends ConsumerState<CaffeineTrackerSheet> {
                     ),
                     _QuickCaffeineChip(
                       label: context.l10n.journalBebidaEnergetica80mg,
-                      onTap: () => _logQuickDose(name: context.l10n.journalBebidaEnergetica, mg: 80),
+                      onTap: () =>
+                          _logQuickDose(name: context.l10n.journalBebidaEnergetica, mg: 80),
                     ),
                     ActionChip(
-                      label: Text(_isCustomMode ? context.l10n.commonClose: context.l10n.journalPersonalizado),
+                      label: Text(
+                        _isCustomMode
+                            ? context.l10n.commonClose
+                            : context.l10n.journalPersonalizado,
+                      ),
                       onPressed: () {
                         setState(() => _isCustomMode = !_isCustomMode);
                       },
@@ -326,7 +303,7 @@ class _CaffeineTrackerSheetState extends ConsumerState<CaffeineTrackerSheet> {
                         icon: const Icon(Icons.check),
                         onPressed: () {
                           final String name = _customNameCtrl.text.trim();
-                          final double? mg = double.tryParse(_customMgCtrl.text.trim());
+                          final double? mg = double.tryParse(_customMgCtrl.text.trim().replaceAll(',', '.'));
                           if (name.isNotEmpty && mg != null && mg > 0) {
                             unawaited(_logQuickDose(name: name, mg: mg));
                             _customNameCtrl.clear();
@@ -359,28 +336,18 @@ class _CaffeineTrackerSheetState extends ConsumerState<CaffeineTrackerSheet> {
                     alignment: Alignment.center,
                     child: Text(
                       context.l10n.journalNoHayTomasRegistradasHoy,
-                      style: TextStyle(
-                        fontFamily: ScFonts.ui,
-                        fontSize: 12.5,
-                        color: c.text2,
-                      ),
+                      style: TextStyle(fontFamily: ScFonts.ui, fontSize: 12.5, color: c.text2),
                     ),
                   )
                 else
                   for (final CaffeineLog log in logs)
                     Container(
                       margin: const EdgeInsets.only(bottom: 8),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 10,
-                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                       decoration: BoxDecoration(
                         color: c.bg3,
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: c.isFlat ? c.line2 : c.line,
-                          width: c.isFlat ? 1.3 : 1.0,
-                        ),
+                        border: c.isFlat ? Border.all(color: c.line2, width: 1.5) : null,
                       ),
                       child: Row(
                         children: <Widget>[
@@ -408,11 +375,11 @@ class _CaffeineTrackerSheetState extends ConsumerState<CaffeineTrackerSheet> {
                             ),
                           ),
                           Text(
-                            context.l10n.journalMg4(log.caffeineMg.toStringAsFixed(0).toString()),
+                            context.l10n.journalMg4(NumberFormats.fixed(log.caffeineMg, 0)),
                             style: TextStyle(
                               fontFamily: ScFonts.display,
                               fontSize: 13.5,
-                              fontWeight: FontWeight.w800,
+                              fontWeight: FontWeight.w700,
                               color: c.accent,
                             ),
                           ),
@@ -432,10 +399,11 @@ class _CaffeineTrackerSheetState extends ConsumerState<CaffeineTrackerSheet> {
                         ScienceOnDemandSheet.show(
                           context,
                           ScienceSpec.caffeineDecay(
-                            halfLifeHours:
-                                CaffeinePharmacokineticsService.halfLifeHours,
-                            bedtimeCurfewTime:
-                                DateFormats.time(status.recommendedCutoffTime, context.l10n.localeName),
+                            halfLifeHours: CaffeinePharmacokineticsService.halfLifeHours,
+                            bedtimeCurfewTime: DateFormats.time(
+                              status.recommendedCutoffTime,
+                              context.l10n.localeName,
+                            ),
                             residualAtBedtimeMg: status.bedtimeResidualMg,
                           ),
                         ),

@@ -10,6 +10,7 @@ import '../../../../core/l10n/l10n.dart';
 import '../../../../core/services/smart_meal_suggester.dart';
 import '../../../../shared/theme/sc_colors.dart';
 import '../../../../shared/theme/sc_theme.dart';
+import '../../../../shared/utils/number_formats.dart';
 import '../../../../shared/widgets/app_icons.dart';
 import '../../../../shared/widgets/sheet.dart';
 import '../../../profile_goals/application/profile_queries.dart';
@@ -20,19 +21,14 @@ class DietArchetypePickerSheet extends ConsumerStatefulWidget {
   const DietArchetypePickerSheet({super.key});
 
   static Future<void> show(BuildContext context) {
-    return mostrarHojaMenu<void>(
-      context,
-      builder: (_) => const DietArchetypePickerSheet(),
-    );
+    return mostrarHojaMenu<void>(context, builder: (_) => const DietArchetypePickerSheet());
   }
 
   @override
-  ConsumerState<DietArchetypePickerSheet> createState() =>
-      _DietArchetypePickerSheetState();
+  ConsumerState<DietArchetypePickerSheet> createState() => _DietArchetypePickerSheetState();
 }
 
-class _DietArchetypePickerSheetState
-    extends ConsumerState<DietArchetypePickerSheet> {
+class _DietArchetypePickerSheetState extends ConsumerState<DietArchetypePickerSheet> {
   late DietArchetype _selectedArchetype;
 
   @override
@@ -50,7 +46,7 @@ class _DietArchetypePickerSheetState
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            context.l10n.foodEstiloActivado(DietArchetypeInfo.getById(id).name.toString()),
+            context.l10n.foodEstiloActivado(DietArchetypeInfo.getById(id).name),
           ),
         ),
       );
@@ -98,18 +94,12 @@ class _DietArchetypePickerSheetState
           const SizedBox(height: 4),
           Text(
             context.l10n.foodSeleccionaTuEnfoqueNutricionalEl,
-            style: TextStyle(
-              fontFamily: ScFonts.ui,
-              fontSize: 12,
-              color: c.text2,
-              height: 1.3,
-            ),
+            style: TextStyle(fontFamily: ScFonts.ui, fontSize: 12, color: c.text2, height: 1.3),
           ),
           const SizedBox(height: 14),
           Expanded(
             child: ListView(
-              children: DietArchetypeInfo.archetypes.values
-                  .map((DietArchetypeInfo arch) {
+              children: DietArchetypeInfo.archetypes.values.map((DietArchetypeInfo arch) {
                 final bool isSelected = arch.id == _selectedArchetype;
                 return Container(
                   margin: const EdgeInsets.only(bottom: 10),
@@ -120,9 +110,7 @@ class _DietArchetypePickerSheetState
                       padding: const EdgeInsets.all(14),
                       decoration: BoxDecoration(
                         color: isSelected
-                            ? (c.isFlat
-                                ? c.bg3
-                                : c.accent.withValues(alpha: 0.12))
+                            ? (c.isFlat ? c.bg3 : c.accent.withValues(alpha: 0.12))
                             : c.bg2,
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(
@@ -138,48 +126,45 @@ class _DietArchetypePickerSheetState
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: <Widget>[
-                              Text(
+                              Flexible(child: Text(
                                 arch.name,
                                 style: TextStyle(
                                   fontFamily: ScFonts.display,
                                   fontSize: 15,
-                                  fontWeight: FontWeight.w800,
+                                  fontWeight: FontWeight.w700,
                                   color: isSelected ? c.accent : c.text,
                                 ),
-                              ),
+                              )),
                               if (isSelected)
-                                Icon(
-                                  Icons.check_circle_rounded,
-                                  color: c.accent,
-                                  size: 18,
-                                ),
+                                Icon(Icons.check_circle_rounded, color: c.accent, size: 18),
                             ],
                           ),
                           const SizedBox(height: 4),
                           Text(
                             arch.tagline,
-                            style: TextStyle(
-                              fontFamily: ScFonts.ui,
-                              fontSize: 12,
-                              color: c.text2,
-                            ),
+                            style: TextStyle(fontFamily: ScFonts.ui, fontSize: 12, color: c.text2),
                           ),
                           const SizedBox(height: 8),
                           Row(
                             children: <Widget>[
                               _MacroPill(
-                                label:
-                                    context.l10n.foodP(arch.proteinPct.toStringAsFixed(0).toString()),
+                                label: context.l10n.foodP(
+                                  NumberFormats.fixed(arch.proteinPct, 0),
+                                ),
                                 color: c.protein,
                               ),
                               const SizedBox(width: 6),
                               _MacroPill(
-                                label: context.l10n.foodC(arch.carbsPct.toStringAsFixed(0).toString()),
+                                label: context.l10n.foodC(
+                                  NumberFormats.fixed(arch.carbsPct, 0),
+                                ),
                                 color: c.carbs,
                               ),
                               const SizedBox(width: 6),
                               _MacroPill(
-                                label: context.l10n.foodG13(arch.fatPct.toStringAsFixed(0).toString()),
+                                label: context.l10n.foodG13(
+                                  NumberFormats.fixed(arch.fatPct, 0),
+                                ),
                                 color: c.fat,
                               ),
                             ],
@@ -217,11 +202,10 @@ class _MacroPill extends StatelessWidget {
         style: TextStyle(
           fontFamily: ScFonts.ui,
           fontSize: 10.5,
-          fontWeight: FontWeight.w800,
+          fontWeight: FontWeight.w700,
           color: color,
         ),
       ),
     );
   }
 }
-

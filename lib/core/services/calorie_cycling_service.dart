@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../shared/utils/date_time_extensions.dart';
 
 /// Modalidades de distribución del presupuesto calórico semanal.
 enum CalorieCyclingMode {
@@ -165,14 +166,14 @@ class CalorieCyclingService {
 
     // Encontrar el lunes de la semana actual
     final int currentWeekday = today.weekday; // 1 = Lunes ... 7 = Domingo
-    final DateTime monday = today.subtract(Duration(days: currentWeekday - 1));
+    final DateTime monday = today.addDays(1 - currentWeekday);
 
     int targetSum = 0;
     int consumedSum = 0;
     int daysLogged = 0;
 
     for (int i = 1; i <= currentWeekday; i++) {
-      final DateTime day = monday.add(Duration(days: i - 1));
+      final DateTime day = monday.addDays(i - 1);
       final String dateKey =
           '${day.year.toString().padLeft(4, '0')}-${day.month.toString().padLeft(2, '0')}-${day.day.toString().padLeft(2, '0')}';
 

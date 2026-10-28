@@ -8,6 +8,7 @@ import '../../../../core/l10n/l10n.dart';
 import '../../../../shared/theme/sc_colors.dart';
 import '../../../../shared/theme/sc_theme.dart';
 import '../../../../shared/utils/biometric_formulas.dart';
+import '../../../../shared/utils/number_formats.dart';
 import '../../../../shared/widgets/app_icons.dart';
 import '../../../../shared/widgets/sheet.dart';
 import 'preview_mini_stat.dart';
@@ -52,9 +53,8 @@ class _ManualWeighInSheetState extends State<ManualWeighInSheet> {
   @override
   void initState() {
     super.initState();
-    _weightCtrl = TextEditingController(
-      text: widget.initialWeightKg.toStringAsFixed(1),
-    )..addListener(_onChanged);
+    _weightCtrl = TextEditingController(text: NumberFormats.input(widget.initialWeightKg, maxDigits: 1))
+      ..addListener(_onChanged);
     _impedanceCtrl = TextEditingController()..addListener(_onChanged);
   }
 
@@ -74,9 +74,7 @@ class _ManualWeighInSheetState extends State<ManualWeighInSheet> {
   }
 
   double? get _parsedWeight {
-    final double? val = double.tryParse(
-      _weightCtrl.text.trim().replaceAll(',', '.'),
-    );
+    final double? val = double.tryParse(_weightCtrl.text.trim().replaceAll(',', '.'));
     if (val == null || val <= 1.0 || val > 350.0) return null;
     return val;
   }
@@ -93,7 +91,7 @@ class _ManualWeighInSheetState extends State<ManualWeighInSheet> {
     unawaited(HapticFeedback.selectionClick());
     final double base = _parsedWeight ?? widget.initialWeightKg;
     final double next = (base + delta).clamp(20.0, 300.0);
-    _weightCtrl.text = next.toStringAsFixed(1);
+    _weightCtrl.text = NumberFormats.input(next, maxDigits: 1);
     _weightCtrl.selection = TextSelection.fromPosition(
       TextPosition(offset: _weightCtrl.text.length),
     );
@@ -111,10 +109,7 @@ class _ManualWeighInSheetState extends State<ManualWeighInSheet> {
     final ScColors c = context.sc;
     final double? weight = _parsedWeight;
     final double? liveBmi = weight != null
-        ? BiometricFormulas.calculateBmi(
-            weightKg: weight,
-            heightCm: widget.profile.heightCm,
-          )
+        ? BiometricFormulas.calculateBmi(weightKg: weight, heightCm: widget.profile.heightCm)
         : null;
     final double? liveEma = weight != null
         ? BiometricFormulas.calculateWeightEma(
@@ -122,10 +117,9 @@ class _ManualWeighInSheetState extends State<ManualWeighInSheet> {
             previousEmaKg: widget.latestMeasurement?.trendWeightKg,
           )
         : null;
-    final double? deltaPrev =
-        (weight != null && widget.latestMeasurement != null)
-            ? weight - widget.latestMeasurement!.weightKg
-            : null;
+    final double? deltaPrev = (weight != null && widget.latestMeasurement != null)
+        ? weight - widget.latestMeasurement!.weightKg
+        : null;
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 4, 20, 20),
@@ -141,9 +135,7 @@ class _ManualWeighInSheetState extends State<ManualWeighInSheet> {
                 decoration: BoxDecoration(
                   color: c.soft,
                   borderRadius: BorderRadius.circular(14),
-                  border: c.isFlat
-                      ? Border.all(color: c.line2, width: 1.5)
-                      : null,
+                  border: c.isFlat ? Border.all(color: c.line2, width: 1.5) : null,
                 ),
                 child: Icon(AppIcons.bascula, color: c.accent, size: 22),
               ),
@@ -157,17 +149,13 @@ class _ManualWeighInSheetState extends State<ManualWeighInSheet> {
                       style: TextStyle(
                         fontFamily: ScFonts.display,
                         fontSize: 19,
-                        fontWeight: FontWeight.w800,
+                        fontWeight: FontWeight.w700,
                         color: c.text,
                       ),
                     ),
                     Text(
                       context.l10n.bodyActualizaTus13MetricasY,
-                      style: TextStyle(
-                        fontFamily: ScFonts.ui,
-                        fontSize: 12.5,
-                        color: c.text2,
-                      ),
+                      style: TextStyle(fontFamily: ScFonts.ui, fontSize: 12.5, color: c.text2),
                     ),
                   ],
                 ),
@@ -196,7 +184,7 @@ class _ManualWeighInSheetState extends State<ManualWeighInSheet> {
             style: TextStyle(
               fontFamily: ScFonts.display,
               fontSize: 20,
-              fontWeight: FontWeight.w800,
+              fontWeight: FontWeight.w700,
               color: c.text,
             ),
             decoration: InputDecoration(
@@ -223,30 +211,28 @@ class _ManualWeighInSheetState extends State<ManualWeighInSheet> {
               decoration: BoxDecoration(
                 color: c.bg3,
                 borderRadius: BorderRadius.circular(14),
-                border: Border.all(
-                  color: c.isFlat ? c.line2 : c.line,
-                  width: c.isFlat ? 1.5 : 1.0,
-                ),
+                border: c.isFlat ? Border.all(color: c.line2, width: 1.5) : null,
               ),
               child: Row(
                 children: [
                   Expanded(
                     child: PreviewMiniStat(
                       label: context.l10n.bodyTendenciaEma,
-                      value: context.l10n.bodyKg(liveEma!.toStringAsFixed(1).toString()),
+                      value: context.l10n.bodyKg(NumberFormats.fixed(liveEma!, 1)),
                     ),
                   ),
                   Expanded(
                     child: PreviewMiniStat(
                       label: context.l10n.bodyImcCalculado,
-                      value: liveBmi!.toStringAsFixed(1),
+                      value: NumberFormats.fixed(liveBmi!, 1),
                     ),
                   ),
                   Expanded(
                     child: PreviewMiniStat(
                       label: context.l10n.bodyVsAnterior,
                       value: deltaPrev == null
-                          ? context.l10n.bodyPrimerDato: '${deltaPrev >= 0 ? '+' : ''}${deltaPrev.toStringAsFixed(1)} kg',
+                          ? context.l10n.bodyPrimerDato
+                          : '${deltaPrev >= 0 ? '+' : ''}${NumberFormats.fixed(deltaPrev, 1)} kg',
                     ),
                   ),
                 ],
@@ -259,16 +245,12 @@ class _ManualWeighInSheetState extends State<ManualWeighInSheet> {
             onPressed: weight != null ? _submit : null,
             icon: const Icon(AppIcons.check, size: 18),
             label: Text(context.l10n.commonSave),
-            style: FilledButton.styleFrom(
-              minimumSize: const Size.fromHeight(48),
-            ),
+            style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(48)),
           ),
           const SizedBox(height: 8),
           OutlinedButton(
             onPressed: () => Navigator.of(context).pop(),
-            style: OutlinedButton.styleFrom(
-              minimumSize: const Size.fromHeight(46),
-            ),
+            style: OutlinedButton.styleFrom(minimumSize: const Size.fromHeight(46)),
             child: Text(context.l10n.commonCancel),
           ),
         ],
@@ -278,10 +260,7 @@ class _ManualWeighInSheetState extends State<ManualWeighInSheet> {
 }
 
 class _StepChip extends StatelessWidget {
-  const _StepChip({
-    required this.label,
-    required this.onTap,
-  });
+  const _StepChip({required this.label, required this.onTap});
 
   final String label;
   final VoidCallback onTap;
@@ -297,10 +276,7 @@ class _StepChip extends StatelessWidget {
         decoration: BoxDecoration(
           color: c.bg3,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: c.isFlat ? c.line2 : c.line,
-            width: c.isFlat ? 1.5 : 1.0,
-          ),
+          border: c.isFlat ? Border.all(color: c.line2, width: 1.5) : null,
         ),
         child: Text(
           label,
@@ -315,4 +291,3 @@ class _StepChip extends StatelessWidget {
     );
   }
 }
-

@@ -72,14 +72,85 @@ class FakeNotificationGateway implements NotificationGateway {
   Future<void> cancelFastingTimer() async => fastingTimer = null;
 
   @override
-  Future<void> setReminders(List<ScheduledReminder> reminders) async =>
-      this.reminders = reminders;
+  Future<void> setReminders(List<ScheduledReminder> reminders) async => this.reminders = reminders;
 
   @override
   Future<void> setMovementNudges({
     required bool enabled,
     int startMinutes = 9 * 60,
     int endMinutes = 21 * 60,
-  }) async =>
-      movementNudges = enabled;
+  }) async => movementNudges = enabled;
+}
+
+/// Health Connect que falla en todo: servicio del sistema caído o actualizado a
+/// mitad de la sesión. Los casos de uso deben guardar igualmente en local.
+class ThrowingHealthConnectGateway implements HealthConnectGateway {
+  int calls = 0;
+
+  Never _fail() {
+    calls++;
+    throw StateError('Health Connect no responde');
+  }
+
+  @override
+  Future<HealthConnectAvailability> availability() async => _fail();
+
+  @override
+  Future<bool> hasPermissions() async => _fail();
+
+  @override
+  Future<bool> requestPermissions() async => _fail();
+
+  @override
+  Future<bool> openSettings() async => _fail();
+
+  @override
+  Future<bool> supportsBackgroundReads() async => _fail();
+
+  @override
+  Future<bool> hasBackgroundReadPermission() async => _fail();
+
+  @override
+  Future<DailyActivitySnapshot?> readDailyActivity(String dateKey) async => _fail();
+
+  @override
+  Future<bool> writeWeight({
+    required double weightKg,
+    required DateTime at,
+    required bool fromScale,
+    double? bodyFatPercentage,
+  }) async => _fail();
+
+  @override
+  Future<bool> writeHydration({required int volumeMl, required DateTime at}) async => _fail();
+}
+
+/// Notificaciones que fallan (permiso revocado, canal del sistema caído).
+class ThrowingNotificationGateway implements NotificationGateway {
+  int calls = 0;
+
+  Never _fail() {
+    calls++;
+    throw StateError('NotificationManager no responde');
+  }
+
+  @override
+  Future<void> showFastingTimer({
+    required DateTime startedAt,
+    required int targetHours,
+    required String protocol,
+  }) async => _fail();
+
+  @override
+  Future<void> cancelFastingTimer() async => _fail();
+
+  @override
+  Future<void> setReminders(List<ScheduledReminder> reminders) async => _fail();
+
+  @override
+  Future<void> setMovementNudges({
+    required bool enabled,
+    int startMinutes = 9 * 60,
+    int endMinutes = 21 * 60,
+  }) async => _fail();
 }

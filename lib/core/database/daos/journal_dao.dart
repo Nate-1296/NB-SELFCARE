@@ -38,6 +38,7 @@ class JournalDao {
             createdAt: Value(entry.createdAt),
             content: Value(entry.content),
             progressPhotoPath: Value(entry.progressPhotoPath),
+            progressPhoto: Value(entry.progressPhoto),
             moodScore: Value(entry.moodScore),
             energyLevel: Value(entry.energyLevel),
             stressLevel: Value(entry.stressLevel),

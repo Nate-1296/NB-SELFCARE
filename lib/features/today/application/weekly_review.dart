@@ -34,14 +34,14 @@ class WeeklyReviewReader {
 
   Future<WeeklyReview> forWeekEnding(String toDateKey) async {
     final DateTime end = DateTime.parse(toDateKey);
-    final String fromDateKey = end.subtract(const Duration(days: 6)).dateKey;
+    final String fromDateKey = end.addDays(-6).dateKey;
 
     double totalKcal = 0;
     int daysWithFood = 0;
     for (int i = 0; i < 7; i++) {
       final List<FoodLog> foods = await _ref
           .read(foodDaoProvider)
-          .getLogsForDate(end.subtract(Duration(days: i)).dateKey);
+          .getLogsForDate(end.addDays(-i).dateKey);
       if (foods.isEmpty) continue;
       totalKcal += foods.fold<double>(0, (double sum, FoodLog f) => sum + f.totalKcal);
       daysWithFood++;

@@ -8,7 +8,14 @@ import '../../../../core/database/app_database.dart';
 import '../../../../core/l10n/l10n.dart';
 import '../../../../shared/theme/sc_colors.dart';
 import '../../../../shared/theme/sc_theme.dart';
+import '../../../../shared/theme/sc_tokens.dart';
+import '../../../../shared/utils/number_formats.dart';
+import '../../../../shared/widgets/card_header.dart';
 import '../../../../shared/widgets/health_card.dart';
+import '../../../../shared/widgets/metric_value.dart';
+import '../../../../shared/widgets/progress_bar.dart';
+import '../../../../shared/widgets/quick_action_button.dart';
+import '../../../../shared/widgets/tonal_badge.dart';
 import '../../application/body_queries.dart';
 import '../../application/milestone_service.dart';
 
@@ -40,64 +47,28 @@ class _MiniMilestonesCardState extends ConsumerState<MiniMilestonesCard> {
 
     return Builder(
       builder: (BuildContext context) {
-
         // Si no existen hitos generados aún, mostramos botón generador
         if (milestones.isEmpty) {
           return HealthCard(
-            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              children: <Widget>[
-                Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: c.isFlat ? c.bg3 : c.accent.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Icon(Icons.flag_rounded, color: c.accent, size: 22),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: <Widget>[
-                      Text(
-                        context.l10n.bodyMiniHitosPsicologicos,
-                        style: TextStyle(
-                          fontFamily: ScFonts.display,
-                          fontSize: 14.5,
-                          fontWeight: FontWeight.bold,
-                          color: c.text,
-                        ),
-                      ),
-                      Text(
-                        context.l10n.bodyDescomponTuMetaEnTramos,
-                        style: TextStyle(
-                          fontFamily: ScFonts.ui,
-                          fontSize: 11.5,
-                          color: c.text2,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 8),
-                FilledButton(
-                  onPressed: () async {
-                    unawaited(HapticFeedback.lightImpact());
-                    await ref.read(milestoneServiceProvider).regenerate(
-                      currentWeightKg: widget.currentWeightKg,
-                      targetWeightKg: widget.targetWeightKg,
-                    );
-                  },
-                  style: FilledButton.styleFrom(
-                    backgroundColor: c.isFlat ? c.bg3 : c.accent,
-                    foregroundColor: c.isFlat ? c.text : c.ink,
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  ),
-                  child: Text(context.l10n.bodyGenerar, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                ),
-              ],
+            child: CardHeader(
+              icon: Icons.flag_rounded,
+              tone: c.accent,
+              title: context.l10n.bodyMiniHitosPsicologicos,
+              subtitle: context.l10n.bodyDescomponTuMetaEnTramos,
+              trailing: QuickActionButton(
+                label: context.l10n.bodyGenerar,
+                tone: c.accent,
+                expand: false,
+                onPressed: () async {
+                  unawaited(HapticFeedback.lightImpact());
+                  await ref
+                      .read(milestoneServiceProvider)
+                      .regenerate(
+                        currentWeightKg: widget.currentWeightKg,
+                        targetWeightKg: widget.targetWeightKg,
+                      );
+                },
+              ),
             ),
           );
         }
@@ -143,142 +114,115 @@ class _MiniMilestonesCardState extends ConsumerState<MiniMilestonesCard> {
           }
         }
 
+        final String locale = context.l10n.localeName;
         return HealthCard(
-          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-          padding: const EdgeInsets.all(16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
-              // Cabecera con selector expandible y orden de hito
               Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: <Widget>[
-                  Row(
-                    children: <Widget>[
-                      Icon(Icons.flag_circle_rounded, color: c.accent, size: 22),
-                      const SizedBox(width: 8),
-                      Text(
-                        context.l10n.bodyMiniHitoDe((completedCount).toString(), (totalCount).toString()),
-                        style: TextStyle(
-                          fontFamily: ScFonts.display,
-                          fontSize: 14.5,
-                          fontWeight: FontWeight.w800,
-                          color: c.text,
-                        ),
-                      ),
-                    ],
+                  Icon(Icons.flag_rounded, color: c.isFlat ? c.text : c.accent, size: 20),
+                  const SizedBox(width: ScSpace.s + 2),
+                  Expanded(
+                    child: Text(
+                      context.l10n.bodyMiniHitoDe(completedCount.toString(), totalCount.toString()),
+                      style: context.text.titleLarge,
+                    ),
                   ),
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: <Widget>[
-                      IconButton(
-                        icon: const Icon(Icons.refresh_rounded, size: 18),
-                        tooltip: context.l10n.bodyRecalibrarTramosDe15,
-                        onPressed: () async {
-                          unawaited(HapticFeedback.lightImpact());
-                          await ref.read(milestoneServiceProvider).regenerate(
+                  IconButton(
+                    icon: const Icon(Icons.refresh_rounded, size: 20),
+                    tooltip: context.l10n.bodyRecalibrarTramosDe15,
+                    onPressed: () async {
+                      unawaited(HapticFeedback.lightImpact());
+                      await ref
+                          .read(milestoneServiceProvider)
+                          .regenerate(
                             currentWeightKg: widget.currentWeightKg,
                             targetWeightKg: widget.targetWeightKg,
                           );
-                        },
-                      ),
-                      IconButton(
-                        icon: Icon(
-                          _isExpanded ? Icons.expand_less_rounded : Icons.expand_more_rounded,
-                          size: 20,
-                        ),
-                        onPressed: () => setState(() => _isExpanded = !_isExpanded),
-                      ),
-                    ],
+                    },
+                  ),
+                  IconButton(
+                    tooltip: MaterialLocalizations.of(context).expandedIconTapHint,
+                    icon: AnimatedRotation(
+                      turns: _isExpanded ? 0.5 : 0,
+                      duration: ScMotion.of(context, ScMotion.standard),
+                      child: const Icon(Icons.expand_more_rounded, size: 22),
+                    ),
+                    onPressed: () => setState(() => _isExpanded = !_isExpanded),
                   ),
                 ],
               ),
-              const SizedBox(height: 6),
+              const SizedBox(height: ScSpace.s),
 
-              if (activeMilestone != null) ...[
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: <Widget>[
-                    Text(
-                      context.l10n.bodyObjetivoInmediatoKg(activeMilestone.targetWeightKg.toStringAsFixed(1).toString()),
-                      style: TextStyle(
-                        fontFamily: ScFonts.display,
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
+              // Pista de tramos: uno por hito; el actual se rellena según el avance.
+              Row(
+                children: <Widget>[
+                  for (int i = 0; i < milestones.length; i++) ...<Widget>[
+                    if (i > 0) const SizedBox(width: 4),
+                    Expanded(
+                      child: ScProgressBar(
+                        value: milestones[i].isCompleted
+                            ? 1
+                            : (milestones[i].id == activeMilestone?.id ? milestoneProgress : 0),
                         color: c.accent,
-                      ),
-                    ),
-                    Text(
-                      context.l10n.bodyFaltanKg(remainingKgToActive.toStringAsFixed(1).toString()),
-                      style: TextStyle(
-                        fontFamily: ScFonts.ui,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: c.text2,
+                        height: 8,
                       ),
                     ),
                   ],
-                ),
-                const SizedBox(height: 8),
+                ],
+              ),
+              const SizedBox(height: ScSpace.m + 2),
 
-                // Barra de progreso hacia el hito activo
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(8),
-                  child: LinearProgressIndicator(
-                    value: milestoneProgress,
-                    minHeight: 10,
-                    backgroundColor: c.bg3,
-                    valueColor: AlwaysStoppedAnimation<Color>(c.accent),
-                  ),
-                ),
-                const SizedBox(height: 6),
-
+              if (activeMilestone != null) ...[
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: CrossAxisAlignment.end,
                   children: <Widget>[
-                    Text(
-                      context.l10n.bodyCompletado((milestoneProgress * 100).toStringAsFixed(0).toString()),
-                      style: TextStyle(
-                        fontFamily: ScFonts.ui,
-                        fontSize: 11,
-                        color: c.text3,
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: <Widget>[
+                          Text(
+                            context.l10n.bodyNextStop.toUpperCase(),
+                            style: context.type.overline,
+                          ),
+                          const SizedBox(height: ScSpace.xs),
+                          MetricValue(
+                            value: NumberFormats.oneDecimal(activeMilestone.targetWeightKg, locale),
+                            unit: context.l10n.unitKg,
+                            size: 26,
+                            color: c.isFlat ? null : c.accent,
+                          ),
+                        ],
                       ),
                     ),
-                    Text(
-                      projectedTimeLabel,
-                      style: TextStyle(
-                        fontFamily: ScFonts.ui,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                        color: c.text2,
-                      ),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: <Widget>[
+                        Text(
+                          context.l10n.bodyFaltanKg(
+                            NumberFormats.oneDecimal(remainingKgToActive, locale),
+                          ),
+                          style: context.type.label,
+                        ),
+                        const SizedBox(height: 2),
+                        Text(projectedTimeLabel, style: context.type.caption),
+                      ],
                     ),
                   ],
                 ),
               ] else ...[
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: c.bg3,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Row(
-                    children: <Widget>[
-                      const Text('🏆', style: TextStyle(fontSize: 22)),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Text(
-                          context.l10n.bodyFelicitacionesHasCompletadoTodosLos,
-                          style: TextStyle(
-                            fontFamily: ScFonts.display,
-                            fontSize: 13,
-                            fontWeight: FontWeight.w700,
-                            color: c.text,
-                          ),
-                        ),
+                Row(
+                  children: <Widget>[
+                    const Text('🏆', style: TextStyle(fontSize: 22)),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        context.l10n.bodyFelicitacionesHasCompletadoTodosLos,
+                        style: context.type.label,
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ],
 
@@ -296,23 +240,24 @@ class _MiniMilestonesCardState extends ConsumerState<MiniMilestonesCard> {
                         Icon(
                           m.isCompleted
                               ? Icons.check_circle_rounded
-                              : (isCurrent ? Icons.play_circle_filled_rounded : Icons.radio_button_unchecked_rounded),
+                              : (isCurrent
+                                    ? Icons.play_circle_filled_rounded
+                                    : Icons.radio_button_unchecked_rounded),
                           size: 18,
-                          color: m.isCompleted
-                              ? c.accent
-                              : (isCurrent ? c.accent : c.text3),
+                          color: m.isCompleted ? c.accent : (isCurrent ? c.accent : c.text3),
                         ),
                         const SizedBox(width: 10),
                         Expanded(
                           child: Text(
-                            context.l10n.bodyHitoKg(m.milestoneOrder.toString(), m.targetWeightKg.toStringAsFixed(1).toString()),
+                            context.l10n.bodyHitoKg(
+                              m.milestoneOrder.toString(),
+                              NumberFormats.fixed(m.targetWeightKg, 1),
+                            ),
                             style: TextStyle(
                               fontFamily: ScFonts.ui,
                               fontSize: 12.5,
                               fontWeight: isCurrent ? FontWeight.bold : FontWeight.w500,
-                              color: m.isCompleted
-                                  ? c.text3
-                                  : (isCurrent ? c.text : c.text2),
+                              color: m.isCompleted ? c.text3 : (isCurrent ? c.text : c.text2),
                               decoration: m.isCompleted ? TextDecoration.lineThrough : null,
                             ),
                           ),
@@ -328,22 +273,7 @@ class _MiniMilestonesCardState extends ConsumerState<MiniMilestonesCard> {
                             ),
                           )
                         else if (isCurrent)
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: c.isFlat ? c.bg3 : c.accent.withValues(alpha: 0.15),
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                            child: Text(
-                              context.l10n.bodyEnCurso,
-                              style: TextStyle(
-                                fontFamily: ScFonts.ui,
-                                fontSize: 10.5,
-                                fontWeight: FontWeight.bold,
-                                color: c.accent,
-                              ),
-                            ),
-                          ),
+                          Flexible(child: TonalBadge(label: context.l10n.bodyEnCurso)),
                       ],
                     ),
                   );

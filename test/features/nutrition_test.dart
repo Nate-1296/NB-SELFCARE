@@ -59,11 +59,10 @@ void main() {
     );
 
     // Mascota Nibi inicial
-    await db.into(db.petStatus).insert(
-          const PetStatusCompanion(
-            petName: drift.Value('Nibi'),
-            coinsBalance: drift.Value(50),
-          ),
+    await db
+        .into(db.petStatus)
+        .insert(
+          const PetStatusCompanion(petName: drift.Value('Nibi'), coinsBalance: drift.Value(50)),
         );
   });
 
@@ -150,10 +149,7 @@ void main() {
       final comboId = await foodDao.createCombo(
         name: 'Desayuno Keto',
         defaultMealType: MealType.breakfast,
-        itemsWithGrams: [
-          MapEntry(huevoId, 100.0),
-          MapEntry(aguacateId, 50.0),
-        ],
+        itemsWithGrams: [MapEntry(huevoId, 100.0), MapEntry(aguacateId, 50.0)],
       );
 
       // 3. Registrar con escalador de 1.5x
@@ -232,32 +228,35 @@ void main() {
   });
 
   group('Registro Atómico de Hidratación y Recompensas', () {
-    test('Registrar vasos acumula mililitros y otorga recompensa al alcanzar la meta diaria', () async {
-      final ProviderContainer container = createTestContainer(db);
-      addTearDown(container.dispose);
-      final HydrationService service = container.read(hydrationServiceProvider);
+    test(
+      'Registrar vasos acumula mililitros y otorga recompensa al alcanzar la meta diaria',
+      () async {
+        final ProviderContainer container = createTestContainer(db);
+        addTearDown(container.dispose);
+        final HydrationService service = container.read(hydrationServiceProvider);
 
-      // 3 vasos de 500 ml = 1500 ml: todavía no alcanza la meta de 2000 ml del perfil.
-      for (int i = 0; i < 3; i++) {
-        await service.logGlass(dateKey: '2026-10-23', volumeMl: 500);
-      }
-      var pet = await petDao.getPetStatus();
-      expect(pet!.coinsBalance, equals(50));
+        // 3 vasos de 500 ml = 1500 ml: todavía no alcanza la meta de 2000 ml del perfil.
+        for (int i = 0; i < 3; i++) {
+          await service.logGlass(dateKey: '2026-10-23', volumeMl: 500);
+        }
+        var pet = await petDao.getPetStatus();
+        expect(pet!.coinsBalance, equals(50));
 
-      // Cuarto vaso -> 2000 ml alcanzados -> otorga +15 monedas (50 + 15 = 65)
-      final WaterLogResult goal = await service.logGlass(dateKey: '2026-10-23', volumeMl: 500);
-      expect(goal.totalMl, equals(2000));
-      expect(goal.coins, equals(15));
-      pet = await petDao.getPetStatus();
-      expect(pet!.coinsBalance, equals(65));
+        // Cuarto vaso -> 2000 ml alcanzados -> otorga +15 monedas (50 + 15 = 65)
+        final WaterLogResult goal = await service.logGlass(dateKey: '2026-10-23', volumeMl: 500);
+        expect(goal.totalMl, equals(2000));
+        expect(goal.coins, equals(15));
+        pet = await petDao.getPetStatus();
+        expect(pet!.coinsBalance, equals(65));
 
-      // Un quinto vaso no debe otorgar doble recompensa (idempotencia diaria)
-      final WaterLogResult extra = await service.logGlass(dateKey: '2026-10-23', volumeMl: 250);
-      expect(extra.coins, equals(0));
-      pet = await petDao.getPetStatus();
-      expect(pet!.coinsBalance, equals(65));
-      expect(await hydrationDao.getTotalWaterMl('2026-10-23'), equals(2250));
-    });
+        // Un quinto vaso no debe otorgar doble recompensa (idempotencia diaria)
+        final WaterLogResult extra = await service.logGlass(dateKey: '2026-10-23', volumeMl: 250);
+        expect(extra.coins, equals(0));
+        pet = await petDao.getPetStatus();
+        expect(pet!.coinsBalance, equals(65));
+        expect(await hydrationDao.getTotalWaterMl('2026-10-23'), equals(2250));
+      },
+    );
   });
 
   group('NutricionScreen ("Comer") y Subpáginas rediseñadas', () {
@@ -272,10 +271,7 @@ void main() {
         final FastingDao fastingDao = FastingDao(db);
         final DateTime fixedDate = DateTime(2026, 10, 24, 13, 0);
 
-        for (final String themeId in <String>[
-          'samsung_dark',
-          'nxtpaper_eink',
-        ]) {
+        for (final String themeId in <String>['samsung_dark', 'nxtpaper_eink']) {
           await tester.pumpWidget(
             ProviderScope(
               overrides: [
@@ -284,9 +280,7 @@ void main() {
                 hydrationDaoProvider.overrideWithValue(hydrationDao),
                 petDaoProvider.overrideWithValue(petDao),
                 fastingDaoProvider.overrideWithValue(fastingDao),
-                currentDateProvider.overrideWith(
-                  () => _FixedDateNotifier(fixedDate),
-                ),
+                currentDateProvider.overrideWith(() => _FixedDateNotifier(fixedDate)),
               ],
               child: MaterialApp(
                 locale: const Locale('es'),
@@ -307,7 +301,7 @@ void main() {
           expect(find.text('Mis combos'), findsOneWidget);
           expect(find.text('Ayuno'), findsOneWidget);
           expect(find.text('Crear alimento'), findsOneWidget);
-          expect(find.text('Balance energético'), findsOneWidget);
+          expect(find.text('BALANCE ENERGÉTICO'), findsOneWidget);
 
           // Desplazar hasta el bloque de Hidratación para validar toda la lista sin overflows
           final Finder waterTitle = find.text('Agua de hoy');
@@ -365,9 +359,7 @@ void main() {
               hydrationDaoProvider.overrideWithValue(hydrationDao),
               petDaoProvider.overrideWithValue(petDao),
               fastingDaoProvider.overrideWithValue(fastingDao),
-              currentDateProvider.overrideWith(
-                () => _FixedDateNotifier(fixedDate),
-              ),
+              currentDateProvider.overrideWith(() => _FixedDateNotifier(fixedDate)),
             ],
             child: MaterialApp(
               locale: const Locale('es'),
@@ -403,9 +395,9 @@ void main() {
         await tester.tap(registerBtn);
         await tester.pumpAndSettle();
 
-        final List<FoodLog> logs = await (db.select(db.foodLogs)
-              ..where((tbl) => tbl.dateKey.equals('2026-10-24')))
-            .get();
+        final List<FoodLog> logs = await (db.select(
+          db.foodLogs,
+        )..where((tbl) => tbl.dateKey.equals('2026-10-24'))).get();
         expect(logs, hasLength(1));
         expect(logs.first.gramsConsumed, equals(150.0));
 
@@ -432,9 +424,7 @@ void main() {
               hydrationDaoProvider.overrideWithValue(hydrationDao),
               petDaoProvider.overrideWithValue(petDao),
               fastingDaoProvider.overrideWithValue(fastingDao),
-              currentDateProvider.overrideWith(
-                () => _FixedDateNotifier(fixedDate),
-              ),
+              currentDateProvider.overrideWith(() => _FixedDateNotifier(fixedDate)),
             ],
             child: MaterialApp(
               locale: const Locale('es'),
@@ -466,11 +456,10 @@ void main() {
         await tester.tap(find.text('Registrar +330 ml'));
         await tester.pumpAndSettle();
 
-        final List<HydrationLog> waterLogs = await (db.select(db.hydrationLogs)
-              ..where((tbl) => tbl.dateKey.equals('2026-10-24')))
-            .get();
-        final int totalWater =
-            waterLogs.fold(0, (int s, HydrationLog l) => s + l.volumeMl);
+        final List<HydrationLog> waterLogs = await (db.select(
+          db.hydrationLogs,
+        )..where((tbl) => tbl.dateKey.equals('2026-10-24'))).get();
+        final int totalWater = waterLogs.fold(0, (int s, HydrationLog l) => s + l.volumeMl);
         expect(totalWater, equals(330));
 
         await tester.pumpWidget(const SizedBox());
@@ -501,9 +490,7 @@ void main() {
         await foodDao.createCombo(
           name: 'Desayuno Avena Base',
           defaultMealType: MealType.breakfast,
-          itemsWithGrams: <MapEntry<int, double>>[
-            MapEntry<int, double>(avenaId, 80.0),
-          ],
+          itemsWithGrams: <MapEntry<int, double>>[MapEntry<int, double>(avenaId, 80.0)],
         );
 
         await tester.pumpWidget(
@@ -514,9 +501,7 @@ void main() {
               hydrationDaoProvider.overrideWithValue(hydrationDao),
               petDaoProvider.overrideWithValue(petDao),
               fastingDaoProvider.overrideWithValue(fastingDao),
-              currentDateProvider.overrideWith(
-                () => _FixedDateNotifier(fixedDate),
-              ),
+              currentDateProvider.overrideWith(() => _FixedDateNotifier(fixedDate)),
             ],
             child: MaterialApp(
               locale: const Locale('es'),

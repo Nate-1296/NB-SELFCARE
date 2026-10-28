@@ -10,6 +10,7 @@ import '../../../../core/domain/enums.dart';
 import '../../../../core/l10n/l10n.dart';
 import '../../../../shared/theme/sc_colors.dart';
 import '../../../../shared/theme/sc_theme.dart';
+import '../../../../shared/utils/number_formats.dart';
 import '../../../../shared/widgets/app_icons.dart';
 import '../../../../shared/widgets/sheet.dart';
 import '../../application/food_catalog_service.dart';
@@ -19,10 +20,7 @@ import 'meal_slot_selector.dart';
 
 /// Borrador en memoria de un ingrediente seleccionado para una receta.
 class _RecipeIngredientItem {
-  _RecipeIngredientItem({
-    required this.food,
-    required this.rawGrams,
-  });
+  _RecipeIngredientItem({required this.food, required this.rawGrams});
 
   final FoodItem food;
   double rawGrams;
@@ -54,10 +52,8 @@ class RecipeBuilderSheet extends ConsumerStatefulWidget {
   }) {
     return mostrarHojaMenu<Recipe?>(
       context,
-      builder: (_) => RecipeBuilderSheet(
-        targetDateKey: targetDateKey,
-        initialMealType: initialMealType,
-      ),
+      builder: (_) =>
+          RecipeBuilderSheet(targetDateKey: targetDateKey, initialMealType: initialMealType),
     );
   }
 
@@ -115,6 +111,7 @@ class _RecipeBuilderSheetState extends ConsumerState<RecipeBuilderSheet> {
   Future<void> _pickIngredient() async {
     final FoodItem? selected = await showModalBottomSheet<FoodItem>(
       context: context,
+      useSafeArea: true,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (_) => const IngredientPickerSheet(),
@@ -124,9 +121,7 @@ class _RecipeBuilderSheetState extends ConsumerState<RecipeBuilderSheet> {
       final double? grams = await _promptIngredientGrams(selected);
       if (grams != null && grams > 0 && mounted) {
         setState(() {
-          _ingredients.add(
-            _RecipeIngredientItem(food: selected, rawGrams: grams),
-          );
+          _ingredients.add(_RecipeIngredientItem(food: selected, rawGrams: grams));
         });
       }
     }
@@ -134,9 +129,7 @@ class _RecipeBuilderSheetState extends ConsumerState<RecipeBuilderSheet> {
 
   Future<double?> _promptIngredientGrams(FoodItem food) async {
     final TextEditingController gramsCtrl = TextEditingController(
-      text: food.defaultServingGrams > 0
-          ? food.defaultServingGrams.toStringAsFixed(0)
-          : '100',
+      text: food.defaultServingGrams > 0 ? NumberFormats.input(food.defaultServingGrams, maxDigits: 0) : '100',
     );
     return showDialog<double>(
       context: context,
@@ -147,13 +140,9 @@ class _RecipeBuilderSheetState extends ConsumerState<RecipeBuilderSheet> {
           title: Text(context.l10n.foodCantidadDe(food.name.toString())),
           content: TextField(
             controller: gramsCtrl,
-            keyboardType:
-                const TextInputType.numberWithOptions(decimal: true),
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
             autofocus: true,
-            decoration: InputDecoration(
-              labelText: context.l10n.foodGramosCrudos,
-              suffixText: 'g',
-            ),
+            decoration: InputDecoration(labelText: context.l10n.foodGramosCrudos, suffixText: 'g'),
           ),
           actions: <Widget>[
             TextButton(
@@ -162,9 +151,7 @@ class _RecipeBuilderSheetState extends ConsumerState<RecipeBuilderSheet> {
             ),
             FilledButton(
               onPressed: () {
-                final double? g = double.tryParse(
-                  gramsCtrl.text.trim().replaceAll(',', '.'),
-                );
+                final double? g = double.tryParse(gramsCtrl.text.trim().replaceAll(',', '.'));
                 Navigator.of(ctx).pop(g);
               },
               child: Text(context.l10n.comerAnadir),
@@ -178,11 +165,8 @@ class _RecipeBuilderSheetState extends ConsumerState<RecipeBuilderSheet> {
   Future<void> _saveRecipe() async {
     if (!_formKey.currentState!.validate()) return;
     if (_ingredients.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(context.l10n.foodAnadeAlMenosUnIngrediente),
-        ),
-      );
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(context.l10n.foodAnadeAlMenosUnIngrediente)));
       return;
     }
 
@@ -191,30 +175,29 @@ class _RecipeBuilderSheetState extends ConsumerState<RecipeBuilderSheet> {
 
     try {
       final double? cookedGrams = _useCookedWeightMode
-          ? double.tryParse(
-              _cookedWeightCtrl.text.trim().replaceAll(',', '.'),
-            )
+          ? double.tryParse(_cookedWeightCtrl.text.trim().replaceAll(',', '.'))
           : null;
 
       final List<RecipeIngredientDraft> drafts = _ingredients.map((_RecipeIngredientItem i) {
-        return RecipeIngredientDraft(
-          foodItemId: i.food.id,
-          rawGrams: i.rawGrams,
-        );
+        return RecipeIngredientDraft(foodItemId: i.food.id, rawGrams: i.rawGrams);
       }).toList();
 
-      final Recipe? createdRecipe = await ref.read(foodCatalogServiceProvider).createRecipe(
-        name: _nameCtrl.text.trim(),
-        description: _descCtrl.text.trim().isNotEmpty ? _descCtrl.text.trim() : null,
-        defaultMealType: _mealType,
-        servings: _servings,
-        cookedTotalWeightGrams: cookedGrams,
-        ingredients: drafts,
-      );
+      final Recipe? createdRecipe = await ref
+          .read(foodCatalogServiceProvider)
+          .createRecipe(
+            name: _nameCtrl.text.trim(),
+            description: _descCtrl.text.trim().isNotEmpty ? _descCtrl.text.trim() : null,
+            defaultMealType: _mealType,
+            servings: _servings,
+            cookedTotalWeightGrams: cookedGrams,
+            ingredients: drafts,
+          );
 
       // Si el usuario marcó registrar 1 porción hoy
       if (_logImmediately && createdRecipe != null) {
-        await ref.read(foodLoggingServiceProvider).logRecipeServing(
+        await ref
+            .read(foodLoggingServiceProvider)
+            .logRecipeServing(
               recipe: createdRecipe,
               mealType: _mealType,
               dateKey: widget.targetDateKey,
@@ -249,12 +232,7 @@ class _RecipeBuilderSheetState extends ConsumerState<RecipeBuilderSheet> {
     final ScColors c = context.sc;
 
     return Padding(
-      padding: EdgeInsets.fromLTRB(
-        20,
-        12,
-        20,
-        MediaQuery.of(context).viewInsets.bottom + 24,
-      ),
+      padding: EdgeInsets.fromLTRB(20, 12, 20, MediaQuery.of(context).viewInsets.bottom + 24),
       child: Form(
         key: _formKey,
         child: SingleChildScrollView(
@@ -266,7 +244,7 @@ class _RecipeBuilderSheetState extends ConsumerState<RecipeBuilderSheet> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: <Widget>[
-                  Text(
+                  Flexible(child: Text(
                     context.l10n.foodNuevaRecetaBatchCooking,
                     style: TextStyle(
                       fontFamily: ScFonts.display,
@@ -274,7 +252,7 @@ class _RecipeBuilderSheetState extends ConsumerState<RecipeBuilderSheet> {
                       fontWeight: FontWeight.bold,
                       color: c.text,
                     ),
-                  ),
+                  )),
                   IconButton(
                     icon: Icon(AppIcons.close, color: c.text2),
                     onPressed: () => Navigator.of(context).pop(),
@@ -313,9 +291,7 @@ class _RecipeBuilderSheetState extends ConsumerState<RecipeBuilderSheet> {
                 decoration: BoxDecoration(
                   color: c.bg3,
                   borderRadius: BorderRadius.circular(14),
-                  border: Border.all(
-                    color: c.isFlat ? c.line2 : c.line,
-                  ),
+                  border: c.isFlat ? Border.all(color: c.line2, width: 1.5) : null,
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -323,7 +299,7 @@ class _RecipeBuilderSheetState extends ConsumerState<RecipeBuilderSheet> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: <Widget>[
-                        Text(
+                        Flexible(child: Text(
                           context.l10n.foodRendimientoYRaciones,
                           style: TextStyle(
                             fontFamily: ScFonts.display,
@@ -331,11 +307,13 @@ class _RecipeBuilderSheetState extends ConsumerState<RecipeBuilderSheet> {
                             fontWeight: FontWeight.bold,
                             color: c.text,
                           ),
-                        ),
+                        )),
                         Row(
                           children: <Widget>[
                             Text(
-                              _useCookedWeightMode ? context.l10n.foodPorPeso: context.l10n.foodPorPlatos,
+                              _useCookedWeightMode
+                                  ? context.l10n.foodPorPeso
+                                  : context.l10n.foodPorPlatos,
                               style: TextStyle(
                                 fontFamily: ScFonts.ui,
                                 fontSize: 11,
@@ -394,10 +372,7 @@ class _RecipeBuilderSheetState extends ConsumerState<RecipeBuilderSheet> {
                           Expanded(
                             child: TextFormField(
                               controller: _cookedWeightCtrl,
-                              keyboardType:
-                                  const TextInputType.numberWithOptions(
-                                decimal: true,
-                              ),
+                              keyboardType: const TextInputType.numberWithOptions(decimal: true),
                               decoration: InputDecoration(
                                 labelText: context.l10n.foodPesoTotalCocinado,
                                 suffixText: 'g',
@@ -417,7 +392,7 @@ class _RecipeBuilderSheetState extends ConsumerState<RecipeBuilderSheet> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: <Widget>[
-                  Text(
+                  Flexible(child: Text(
                     context.l10n.foodIngredientesCrudos(_ingredients.length.toString()),
                     style: TextStyle(
                       fontFamily: ScFonts.display,
@@ -425,7 +400,7 @@ class _RecipeBuilderSheetState extends ConsumerState<RecipeBuilderSheet> {
                       fontWeight: FontWeight.bold,
                       color: c.text,
                     ),
-                  ),
+                  )),
                   OutlinedButton.icon(
                     onPressed: _pickIngredient,
                     style: OutlinedButton.styleFrom(
@@ -446,18 +421,12 @@ class _RecipeBuilderSheetState extends ConsumerState<RecipeBuilderSheet> {
                   decoration: BoxDecoration(
                     color: c.bg3,
                     borderRadius: BorderRadius.circular(14),
-                    border: Border.all(
-                      color: c.isFlat ? c.line2 : c.line,
-                    ),
+                    border: c.isFlat ? Border.all(color: c.line2, width: 1.5) : null,
                   ),
                   child: Center(
                     child: Text(
                       context.l10n.foodTocaIngredienteParaAnadirAlimentos,
-                      style: TextStyle(
-                        fontFamily: ScFonts.ui,
-                        fontSize: 12,
-                        color: c.text2,
-                      ),
+                      style: TextStyle(fontFamily: ScFonts.ui, fontSize: 12, color: c.text2),
                     ),
                   ),
                 )
@@ -467,16 +436,11 @@ class _RecipeBuilderSheetState extends ConsumerState<RecipeBuilderSheet> {
                   final _RecipeIngredientItem item = entry.value;
                   return Container(
                     margin: const EdgeInsets.only(bottom: 6),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 8,
-                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     decoration: BoxDecoration(
                       color: c.bg3,
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: c.isFlat ? c.line2 : c.line,
-                      ),
+                      border: c.isFlat ? Border.all(color: c.line2, width: 1.5) : null,
                     ),
                     child: Row(
                       children: <Widget>[
@@ -496,7 +460,13 @@ class _RecipeBuilderSheetState extends ConsumerState<RecipeBuilderSheet> {
                                 ),
                               ),
                               Text(
-                                context.l10n.foodGKcalPGC2(item.rawGrams.toStringAsFixed(0).toString(), item.kcal.toStringAsFixed(0).toString(), item.proteinG.toStringAsFixed(1).toString(), item.carbsG.toStringAsFixed(1).toString(), item.fatG.toStringAsFixed(1).toString()),
+                                context.l10n.foodGKcalPGC2(
+                                  NumberFormats.fixed(item.rawGrams, 0),
+                                  NumberFormats.fixed(item.kcal, 0),
+                                  NumberFormats.fixed(item.proteinG, 1),
+                                  NumberFormats.fixed(item.carbsG, 1),
+                                  NumberFormats.fixed(item.fatG, 1),
+                                ),
                                 style: TextStyle(
                                   fontFamily: ScFonts.ui,
                                   fontSize: 11,
@@ -529,11 +499,7 @@ class _RecipeBuilderSheetState extends ConsumerState<RecipeBuilderSheet> {
                 decoration: BoxDecoration(
                   color: c.isFlat ? c.bg3 : c.soft,
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: c.isFlat
-                        ? c.line2
-                        : c.accent.withValues(alpha: 0.35),
-                  ),
+                  border: Border.all(color: c.isFlat ? c.line2 : c.accent.withValues(alpha: 0.35)),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -553,34 +519,33 @@ class _RecipeBuilderSheetState extends ConsumerState<RecipeBuilderSheet> {
                       children: <Widget>[
                         _MacroSummaryChip(
                           label: context.l10n.foodCalorias,
-                          value: context.l10n.foodKcal2(_servingKcal.round().toString()),
+                          value: context.l10n.foodKcal2(NumberFormats.group(_servingKcal)),
                           color: c.calories,
                         ),
                         _MacroSummaryChip(
                           label: context.l10n.foodProteinas,
-                          value: context.l10n.foodG7(_servingProtein.toStringAsFixed(1).toString()),
+                          value: context.l10n.foodG7(NumberFormats.fixed(_servingProtein, 1)),
                           color: c.protein,
                         ),
                         _MacroSummaryChip(
                           label: context.l10n.todayCarbos,
-                          value: context.l10n.foodG8(_servingCarbs.toStringAsFixed(1).toString()),
+                          value: context.l10n.foodG8(NumberFormats.fixed(_servingCarbs, 1)),
                           color: c.carbs,
                         ),
                         _MacroSummaryChip(
                           label: context.l10n.todayGrasas,
-                          value: context.l10n.foodG9(_servingFat.toStringAsFixed(1).toString()),
+                          value: context.l10n.foodG9(NumberFormats.fixed(_servingFat, 1)),
                           color: c.fat,
                         ),
                       ],
                     ),
                     const SizedBox(height: 6),
                     Text(
-                      context.l10n.foodTotalDeLaOllaKcal(_totalKcal.round().toString(), _totalRawWeight.round().toString()),
-                      style: TextStyle(
-                        fontFamily: ScFonts.ui,
-                        fontSize: 10.5,
-                        color: c.text3,
+                      context.l10n.foodTotalDeLaOllaKcal(
+                        NumberFormats.group(_totalKcal),
+                        NumberFormats.group(_totalRawWeight),
                       ),
+                      style: TextStyle(fontFamily: ScFonts.ui, fontSize: 10.5, color: c.text3),
                     ),
                   ],
                 ),
@@ -592,8 +557,7 @@ class _RecipeBuilderSheetState extends ConsumerState<RecipeBuilderSheet> {
               CheckboxListTile(
                 contentPadding: EdgeInsets.zero,
                 value: _logImmediately,
-                onChanged: (bool? v) =>
-                    setState(() => _logImmediately = v ?? true),
+                onChanged: (bool? v) => setState(() => _logImmediately = v ?? true),
                 title: Text(
                   context.l10n.foodRegistrar1RacionEnEl,
                   style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
@@ -607,12 +571,12 @@ class _RecipeBuilderSheetState extends ConsumerState<RecipeBuilderSheet> {
               SizedBox(
                 width: double.infinity,
                 child: FilledButton(
-                  style: FilledButton.styleFrom(
-                    minimumSize: const Size.fromHeight(48),
-                  ),
+                  style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(48)),
                   onPressed: _isSaving ? null : _saveRecipe,
                   child: Text(
-                    _isSaving ? context.l10n.foodGuardando: context.l10n.foodGuardarRecetaEnCatalogo,
+                    _isSaving
+                        ? context.l10n.foodGuardando
+                        : context.l10n.foodGuardarRecetaEnCatalogo,
                     style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
                 ),
@@ -626,11 +590,7 @@ class _RecipeBuilderSheetState extends ConsumerState<RecipeBuilderSheet> {
 }
 
 class _MacroSummaryChip extends StatelessWidget {
-  const _MacroSummaryChip({
-    required this.label,
-    required this.value,
-    required this.color,
-  });
+  const _MacroSummaryChip({required this.label, required this.value, required this.color});
 
   final String label;
   final String value;
@@ -652,14 +612,9 @@ class _MacroSummaryChip extends StatelessWidget {
         ),
         Text(
           label,
-          style: TextStyle(
-            fontFamily: ScFonts.ui,
-            fontSize: 10,
-            color: c.text2,
-          ),
+          style: TextStyle(fontFamily: ScFonts.ui, fontSize: 10, color: c.text2),
         ),
       ],
     );
   }
 }
-

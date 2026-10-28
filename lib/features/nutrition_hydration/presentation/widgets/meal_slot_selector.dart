@@ -23,19 +23,19 @@ class MealSlotMeta {
   ];
 
   String title(AppLocalizations l10n) => switch (key) {
-        MealType.breakfast => l10n.foodDesayuno,
-        MealType.lunch => l10n.foodAlmuerzo,
-        MealType.dinner => l10n.foodCena,
-        MealType.snack => l10n.foodSnacks,
-      };
+    MealType.breakfast => l10n.foodDesayuno,
+    MealType.lunch => l10n.foodAlmuerzo,
+    MealType.dinner => l10n.foodCena,
+    MealType.snack => l10n.foodSnacks,
+  };
 
   /// Franja horaria orientativa (coincide con `MealType.forHour`).
   String timeHint(AppLocalizations l10n) => switch (key) {
-        MealType.breakfast => '05:00 – 10:59',
-        MealType.lunch => '11:00 – 15:59',
-        MealType.dinner => '19:00 – 23:59',
-        MealType.snack => l10n.foodEntreComidas,
-      };
+    MealType.breakfast => '05:00 – 10:59',
+    MealType.lunch => '11:00 – 15:59',
+    MealType.dinner => '19:00 – 23:59',
+    MealType.snack => l10n.foodEntreComidas,
+  };
 
   static MealSlotMeta of(MealType mealType) {
     for (final MealSlotMeta item in all) {
@@ -145,8 +145,7 @@ class _MealSlotTile extends StatelessWidget {
     final Color bg = selected
         ? (c.isFlat ? c.bg3 : tint.withValues(alpha: 0.14))
         : (c.isFlat ? Colors.transparent : c.bg3.withValues(alpha: 0.65));
-    final Color borderColor =
-        selected ? (c.isFlat ? c.text : tint) : (c.isFlat ? c.line2 : c.line);
+    final Color borderColor = selected ? (c.isFlat ? c.text : tint) : (c.isFlat ? c.line2 : c.line);
 
     return Material(
       color: bg,
@@ -158,16 +157,10 @@ class _MealSlotTile extends StatelessWidget {
           onTap();
         },
         child: Container(
-          padding: EdgeInsets.symmetric(
-            horizontal: 12,
-            vertical: compact ? 9 : 11,
-          ),
+          padding: EdgeInsets.symmetric(horizontal: 12, vertical: compact ? 9 : 11),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(14),
-            border: Border.all(
-              color: borderColor,
-              width: selected ? 1.8 : (c.isFlat ? 1.4 : 1.0),
-            ),
+            border: Border.all(color: borderColor, width: selected ? 1.8 : (c.isFlat ? 1.4 : 1.0)),
           ),
           child: Row(
             children: <Widget>[
@@ -184,17 +177,13 @@ class _MealSlotTile extends StatelessWidget {
                   style: TextStyle(
                     fontFamily: ScFonts.ui,
                     fontSize: compact ? 13 : 13.5,
-                    fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
+                    fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
                     color: selected ? c.text : c.text2,
                   ),
                 ),
               ),
               if (selected)
-                Icon(
-                  Icons.check_circle_rounded,
-                  size: 16,
-                  color: c.isFlat ? c.text : tint,
-                ),
+                Icon(Icons.check_circle_rounded, size: 16, color: c.isFlat ? c.text : tint),
             ],
           ),
         ),
@@ -205,10 +194,7 @@ class _MealSlotTile extends StatelessWidget {
 
 /// Insignia visual Nutri-Score (A–E) compatible con Material You y E-Ink plano.
 class NutriScoreBadge extends StatelessWidget {
-  const NutriScoreBadge({
-    super.key,
-    required this.grade,
-  });
+  const NutriScoreBadge({super.key, required this.grade});
 
   final String grade;
 
@@ -216,8 +202,7 @@ class NutriScoreBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     final ScColors c = context.sc;
     final String normalized = grade.trim().toUpperCase();
-    if (normalized.isEmpty ||
-        !const <String>{'A', 'B', 'C', 'D', 'E'}.contains(normalized)) {
+    if (normalized.isEmpty || !const <String>{'A', 'B', 'C', 'D', 'E'}.contains(normalized)) {
       return const SizedBox.shrink();
     }
 
@@ -251,7 +236,7 @@ class NutriScoreBadge extends StatelessWidget {
           style: TextStyle(
             fontFamily: ScFonts.ui,
             fontSize: 10.5,
-            fontWeight: FontWeight.w800,
+            fontWeight: FontWeight.w700,
             color: c.text,
           ),
         ),
@@ -270,7 +255,7 @@ class NutriScoreBadge extends StatelessWidget {
         style: TextStyle(
           fontFamily: ScFonts.ui,
           fontSize: 10.5,
-          fontWeight: FontWeight.w800,
+          fontWeight: FontWeight.w700,
           color: badgeColor,
         ),
       ),
@@ -280,19 +265,16 @@ class NutriScoreBadge extends StatelessWidget {
 
 /// Etiqueta legible de origen de datos nutricionales.
 class FoodSourceBadge extends StatelessWidget {
-  const FoodSourceBadge({
-    super.key,
-    required this.source,
-  });
+  const FoodSourceBadge({super.key, required this.source});
 
   final FoodSource source;
 
   String _label(AppLocalizations l10n) => switch (source) {
-        FoodSource.usdaSeed => l10n.foodUsdaBase,
-        FoodSource.openFoodFacts => l10n.foodOpenFoodFacts,
-        FoodSource.userCustom => l10n.foodMiReceta,
-        FoodSource.textEstimate => l10n.foodEstimacion,
-      };
+    FoodSource.usdaSeed => l10n.foodUsdaBase,
+    FoodSource.openFoodFacts => l10n.foodOpenFoodFacts,
+    FoodSource.userCustom => l10n.foodMiReceta,
+    FoodSource.textEstimate => l10n.foodEstimacion,
+  };
 
   @override
   Widget build(BuildContext context) {
@@ -302,10 +284,7 @@ class FoodSourceBadge extends StatelessWidget {
       decoration: BoxDecoration(
         color: c.bg3,
         borderRadius: BorderRadius.circular(7),
-        border: Border.all(
-          color: c.isFlat ? c.line2 : c.line,
-          width: c.isFlat ? 1.3 : 1.0,
-        ),
+        border: c.isFlat ? Border.all(color: c.line2, width: 1.5) : null,
       ),
       child: Text(
         _label(context.l10n),

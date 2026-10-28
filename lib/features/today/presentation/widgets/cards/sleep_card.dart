@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 
 import '../../../../../core/l10n/l10n.dart';
 import '../../../../../shared/theme/sc_colors.dart';
-import '../../../../../shared/theme/sc_theme.dart';
+import '../../../../../shared/utils/number_formats.dart';
 import '../../../../../shared/widgets/app_icons.dart';
-import '../../../../../shared/widgets/health_card.dart';
+import '../../../../../shared/widgets/metric_value.dart';
+import '../../../../../shared/widgets/quick_action_button.dart';
 import '../../../domain/hoy_widget_config.dart';
+import 'bento_metric_card.dart';
 
 // ============================================================================
 // 6. WIDGET SUEÑO Y DESCANSO REPARADOR — 2×2 / 4×2
@@ -29,89 +31,40 @@ class HoySleepBentoCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ScColors c = context.sc;
-    final double ratio =
-        goalHours > 0 ? (sleepHours / goalHours).clamp(0.0, 1.0) : 0.0;
+    final AppLocalizations l10n = context.l10n;
+    final String locale = l10n.localeName;
+    final double ratio = goalHours > 0 ? (sleepHours / goalHours).clamp(0.0, 1.0) : 0.0;
 
-    return HealthCard(
-      margin: EdgeInsets.zero,
-      padding: const EdgeInsets.all(15),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: <Widget>[
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              Row(
-                children: <Widget>[
-                  Icon(AppIcons.sueno, size: 19, color: c.fasting),
-                  const SizedBox(width: 6),
-                  Expanded(
-                    child: Text(
-                      context.l10n.todaySueno,
-                      softWrap: true,
-                      style: TextStyle(
-                        fontFamily: ScFonts.display,
-                        fontSize: 14.5,
-                        fontWeight: FontWeight.w800,
-                        color: c.text,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 10),
-              Text(
-                sleepHours > 0 ? context.l10n.todayH2(sleepHours.toStringAsFixed(1).toString()): context.l10n.todayH3,
-                softWrap: true,
-                style: TextStyle(
-                  fontFamily: ScFonts.display,
-                  fontSize: 22,
-                  fontWeight: FontWeight.w800,
-                  color: c.text,
-                ),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                hasSleepBonus
-                    ? context.l10n.todaySuenoReparadorBonoX15: context.l10n.todayMetaHDeDescanso(goalHours.toStringAsFixed(1).toString()),
-                softWrap: true,
-                style: TextStyle(
-                  fontFamily: ScFonts.ui,
-                  fontSize: 11.5,
-                  fontWeight:
-                      hasSleepBonus ? FontWeight.w700 : FontWeight.w500,
-                  color: hasSleepBonus ? c.accent : c.text2,
-                ),
-              ),
-              const SizedBox(height: 10),
-              LinearProgressIndicator(
-                value: ratio,
-                minHeight: 7,
-                backgroundColor: c.bg3,
-                valueColor: AlwaysStoppedAnimation<Color>(c.fasting),
-                borderRadius: BorderRadius.circular(4),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          SizedBox(
-            width: double.infinity,
-            child: FilledButton.tonalIcon(
-              onPressed: onOpenSheet,
-              style: FilledButton.styleFrom(
-                visualDensity: VisualDensity.compact,
-                padding: const EdgeInsets.symmetric(vertical: 9),
-              ),
-              icon: const Icon(AppIcons.sueno, size: 15),
-              label: Text(
-                context.l10n.todayRegistrarSueno,
-                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
-              ),
+    return BentoMetricCard(
+      icon: AppIcons.sueno,
+      label: l10n.todaySueno,
+      tone: c.fasting,
+      metric: sleepHours > 0
+          ? AnimatedMetricValue(
+              value: sleepHours,
+              format: (double v) => NumberFormats.oneDecimal(v, locale),
+              unit: l10n.unitHours,
+              size: size.isHalfWidth ? 28 : 32,
+            )
+          : MetricValue(
+              value: '--',
+              unit: l10n.unitHours,
+              size: size.isHalfWidth ? 28 : 32,
+              color: c.text3,
             ),
-          ),
-        ],
-      ),
+      caption: hasSleepBonus
+          ? l10n.todaySuenoReparadorBonoX15
+          : l10n.todaySleepGoalCaption(NumberFormats.oneDecimal(goalHours, locale)),
+      captionEmphasis: hasSleepBonus,
+      progress: ratio,
+      actions: <Widget>[
+        QuickActionButton(
+          label: sleepHours > 0 ? l10n.commonEdit : l10n.todayRegistrarSueno,
+          icon: AppIcons.sueno,
+          tone: c.fasting,
+          onPressed: onOpenSheet,
+        ),
+      ],
     );
   }
 }

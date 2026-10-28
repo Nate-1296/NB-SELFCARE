@@ -13,18 +13,14 @@ import '../../../../core/l10n/l10n.dart';
 import '../../../../core/services/nutrition_label_ocr_service.dart';
 import '../../../../shared/theme/sc_colors.dart';
 import '../../../../shared/theme/sc_theme.dart';
+import '../../../../shared/utils/number_formats.dart';
 import '../../../../shared/widgets/app_icons.dart';
 import '../../application/food_catalog_service.dart';
 import 'custom_food_extras.dart';
 
 /// Subpágina guiada para crear alimentos propios o productos locales sin código en caché.
 class CustomFoodSheet extends ConsumerStatefulWidget {
-  const CustomFoodSheet({
-    super.key,
-    this.initialBarcode,
-    this.initialName,
-    this.initialOcrData,
-  });
+  const CustomFoodSheet({super.key, this.initialBarcode, this.initialName, this.initialOcrData});
 
   final String? initialBarcode;
   final String? initialName;
@@ -41,8 +37,7 @@ class _CustomFoodSheetState extends ConsumerState<CustomFoodSheet> {
   final TextEditingController _brandController = TextEditingController();
   late final TextEditingController _barcodeController;
   late final TextEditingController _servingGramsController;
-  final TextEditingController _servingLabelController =
-      TextEditingController(text: '100g');
+  final TextEditingController _servingLabelController = TextEditingController(text: '100g');
 
   late final TextEditingController _kcalController;
   late final TextEditingController _proteinController;
@@ -52,10 +47,8 @@ class _CustomFoodSheetState extends ConsumerState<CustomFoodSheet> {
   late final TextEditingController _sugarController;
 
   late final TextEditingController _sodiumController;
-  final TextEditingController _potassiumController =
-      TextEditingController(text: '0');
-  final TextEditingController _magnesiumController =
-      TextEditingController(text: '0');
+  final TextEditingController _potassiumController = TextEditingController(text: '0');
+  final TextEditingController _magnesiumController = TextEditingController(text: '0');
 
   String? _selectedNutriScore;
   bool _showAdvanced = false;
@@ -67,34 +60,31 @@ class _CustomFoodSheetState extends ConsumerState<CustomFoodSheet> {
     super.initState();
     final OcrNutritionData? ocr = widget.initialOcrData;
     _nameController = TextEditingController(text: widget.initialName ?? '');
-    _barcodeController =
-        TextEditingController(text: widget.initialBarcode ?? '');
+    _barcodeController = TextEditingController(text: widget.initialBarcode ?? '');
     _servingGramsController = TextEditingController(
-      text: ocr?.servingGrams != null
-          ? ocr!.servingGrams!.toStringAsFixed(0)
-          : '100',
+      text: ocr?.servingGrams != null ? NumberFormats.input(ocr!.servingGrams!, maxDigits: 0) : '100',
     );
 
     _kcalController = TextEditingController(
-      text: ocr?.kcal != null ? ocr!.kcal!.toStringAsFixed(0) : '',
+      text: ocr?.kcal != null ? NumberFormats.input(ocr!.kcal!, maxDigits: 0) : '',
     );
     _proteinController = TextEditingController(
-      text: ocr?.proteinG != null ? ocr!.proteinG!.toStringAsFixed(1) : '0',
+      text: ocr?.proteinG != null ? NumberFormats.input(ocr!.proteinG!, maxDigits: 1) : '0',
     );
     _carbsController = TextEditingController(
-      text: ocr?.carbsG != null ? ocr!.carbsG!.toStringAsFixed(1) : '0',
+      text: ocr?.carbsG != null ? NumberFormats.input(ocr!.carbsG!, maxDigits: 1) : '0',
     );
     _fatController = TextEditingController(
-      text: ocr?.fatG != null ? ocr!.fatG!.toStringAsFixed(1) : '0',
+      text: ocr?.fatG != null ? NumberFormats.input(ocr!.fatG!, maxDigits: 1) : '0',
     );
     _fiberController = TextEditingController(
-      text: ocr?.fiberG != null ? ocr!.fiberG!.toStringAsFixed(1) : '0',
+      text: ocr?.fiberG != null ? NumberFormats.input(ocr!.fiberG!, maxDigits: 1) : '0',
     );
     _sugarController = TextEditingController(
-      text: ocr?.sugarG != null ? ocr!.sugarG!.toStringAsFixed(1) : '0',
+      text: ocr?.sugarG != null ? NumberFormats.input(ocr!.sugarG!, maxDigits: 1) : '0',
     );
     _sodiumController = TextEditingController(
-      text: ocr?.sodiumMg != null ? ocr!.sodiumMg!.toStringAsFixed(0) : '0',
+      text: ocr?.sodiumMg != null ? NumberFormats.input(ocr!.sodiumMg!, maxDigits: 0) : '0',
     );
     if (ocr?.sodiumMg != null && ocr!.sodiumMg! > 0) {
       _showAdvanced = true;
@@ -117,69 +107,57 @@ class _CustomFoodSheetState extends ConsumerState<CustomFoodSheet> {
 
     try {
       final ImagePicker picker = ImagePicker();
-      final XFile? photo = await picker.pickImage(
-        source: ImageSource.camera,
-        imageQuality: 92,
-      );
+      final XFile? photo = await picker.pickImage(source: ImageSource.camera, imageQuality: 92);
       if (photo == null) return;
 
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(context.l10n.foodAnalizandoTablaNutricionalConOcr),
-        ),
-      );
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(context.l10n.foodAnalizandoTablaNutricionalConOcr)));
 
-      final OcrNutritionData data =
-          await ref.read(nutritionLabelOcrServiceProvider).processImage(photo);
+      final OcrNutritionData data = await ref
+          .read(nutritionLabelOcrServiceProvider)
+          .processImage(photo);
 
       if (!mounted) return;
       if (data.hasAnyData) {
         if (data.kcal != null) {
-          _kcalController.text = data.kcal!.toStringAsFixed(0);
+          _kcalController.text = NumberFormats.input(data.kcal!, maxDigits: 0);
         }
         if (data.proteinG != null) {
-          _proteinController.text = data.proteinG!.toStringAsFixed(1);
+          _proteinController.text = NumberFormats.input(data.proteinG!, maxDigits: 1);
         }
         if (data.carbsG != null) {
-          _carbsController.text = data.carbsG!.toStringAsFixed(1);
+          _carbsController.text = NumberFormats.input(data.carbsG!, maxDigits: 1);
         }
         if (data.fatG != null) {
-          _fatController.text = data.fatG!.toStringAsFixed(1);
+          _fatController.text = NumberFormats.input(data.fatG!, maxDigits: 1);
         }
         if (data.fiberG != null) {
-          _fiberController.text = data.fiberG!.toStringAsFixed(1);
+          _fiberController.text = NumberFormats.input(data.fiberG!, maxDigits: 1);
         }
         if (data.sugarG != null) {
-          _sugarController.text = data.sugarG!.toStringAsFixed(1);
+          _sugarController.text = NumberFormats.input(data.sugarG!, maxDigits: 1);
         }
         if (data.sodiumMg != null) {
-          _sodiumController.text = data.sodiumMg!.toStringAsFixed(0);
+          _sodiumController.text = NumberFormats.input(data.sodiumMg!, maxDigits: 0);
           _showAdvanced = true;
         }
         if (data.servingGrams != null) {
-          _servingGramsController.text = data.servingGrams!.toStringAsFixed(0);
+          _servingGramsController.text = NumberFormats.input(data.servingGrams!, maxDigits: 0);
         }
         setState(() {});
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(context.l10n.foodMacronutrientesDetectadosYRellenados),
-          ),
+          SnackBar(content: Text(context.l10n.foodMacronutrientesDetectadosYRellenados)),
         );
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              context.l10n.foodNoSeDetectaronValoresClaros,
-            ),
-          ),
-        );
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(context.l10n.foodNoSeDetectaronValoresClaros)));
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(context.l10n.foodErrorAlEscanear((e).toString()))),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(context.l10n.foodErrorAlEscanear((e).toString()))));
       }
     } finally {
       if (mounted) {
@@ -220,8 +198,7 @@ class _CustomFoodSheetState extends ConsumerState<CustomFoodSheet> {
   double get _liveProtein => _parseDouble(_proteinController.text);
   double get _liveCarbs => _parseDouble(_carbsController.text);
   double get _liveFat => _parseDouble(_fatController.text);
-  double get _formula449Kcal =>
-      (_liveProtein * 4.0) + (_liveCarbs * 4.0) + (_liveFat * 9.0);
+  double get _formula449Kcal => (_liveProtein * 4.0) + (_liveCarbs * 4.0) + (_liveFat * 9.0);
 
   double get _effectiveKcal {
     final String raw = _kcalController.text.trim();
@@ -256,25 +233,18 @@ class _CustomFoodSheetState extends ConsumerState<CustomFoodSheet> {
       final double protein = _liveProtein.clamp(0.0, 100.0);
       final double carbs = _liveCarbs.clamp(0.0, 100.0);
       final double fat = _liveFat.clamp(0.0, 100.0);
-      final double fiber =
-          _parseDouble(_fiberController.text).clamp(0.0, 100.0);
-      final double sugar =
-          _parseDouble(_sugarController.text).clamp(0.0, 100.0);
+      final double fiber = _parseDouble(_fiberController.text).clamp(0.0, 100.0);
+      final double sugar = _parseDouble(_sugarController.text).clamp(0.0, 100.0);
       final double kcal = _effectiveKcal.clamp(0.0, 950.0);
 
-      final double sodium =
-          _parseDouble(_sodiumController.text).clamp(0.0, 50000.0);
-      final double potassium =
-          _parseDouble(_potassiumController.text).clamp(0.0, 50000.0);
-      final double magnesium =
-          _parseDouble(_magnesiumController.text).clamp(0.0, 50000.0);
+      final double sodium = _parseDouble(_sodiumController.text).clamp(0.0, 50000.0);
+      final double potassium = _parseDouble(_potassiumController.text).clamp(0.0, 50000.0);
+      final double magnesium = _parseDouble(_magnesiumController.text).clamp(0.0, 50000.0);
 
       final FoodItemsCompanion companion = FoodItemsCompanion(
         name: drift.Value(name),
-        brand:
-            brand.isEmpty ? const drift.Value.absent() : drift.Value(brand),
-        barcode:
-            barcode.isEmpty ? const drift.Value.absent() : drift.Value(barcode),
+        brand: brand.isEmpty ? const drift.Value.absent() : drift.Value(brand),
+        barcode: barcode.isEmpty ? const drift.Value.absent() : drift.Value(barcode),
         source: const drift.Value(FoodSource.userCustom),
         nutriScore: _selectedNutriScore == null
             ? const drift.Value.absent()
@@ -300,11 +270,9 @@ class _CustomFoodSheetState extends ConsumerState<CustomFoodSheet> {
       Navigator.of(context).pop(created);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(context.l10n.foodNoSePudoGuardarEl((e).toString())),
-        ),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(context.l10n.foodNoSePudoGuardarEl((e).toString()))));
     } finally {
       if (mounted) {
         setState(() => _isSaving = false);
@@ -321,9 +289,7 @@ class _CustomFoodSheetState extends ConsumerState<CustomFoodSheet> {
       decoration: BoxDecoration(
         color: c.bg2,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-        border: c.isFlat
-            ? Border(top: BorderSide(color: c.line2, width: 1.5))
-            : null,
+        border: c.isFlat ? Border(top: BorderSide(color: c.line2, width: 1.5)) : null,
       ),
       padding: EdgeInsets.only(bottom: bottomInset),
       child: SafeArea(
@@ -361,7 +327,7 @@ class _CustomFoodSheetState extends ConsumerState<CustomFoodSheet> {
                             style: TextStyle(
                               fontFamily: ScFonts.display,
                               fontSize: 21,
-                              fontWeight: FontWeight.w800,
+                              fontWeight: FontWeight.w700,
                               color: c.text,
                             ),
                           ),
@@ -396,9 +362,7 @@ class _CustomFoodSheetState extends ConsumerState<CustomFoodSheet> {
                     style: OutlinedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 12),
                       side: BorderSide(color: c.isFlat ? c.line2 : c.accent),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14),
-                      ),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                     ),
                     icon: _isScanningOcr
                         ? const SizedBox(
@@ -406,14 +370,11 @@ class _CustomFoodSheetState extends ConsumerState<CustomFoodSheet> {
                             height: 16,
                             child: CircularProgressIndicator(strokeWidth: 2),
                           )
-                        : Icon(
-                            Icons.document_scanner_rounded,
-                            size: 18,
-                            color: c.accent,
-                          ),
+                        : Icon(Icons.document_scanner_rounded, size: 18, color: c.accent),
                     label: Text(
                       _isScanningOcr
-                          ? context.l10n.foodAnalizandoTablaConOcr: context.l10n.foodEscanearTablaNutricionalConCamara,
+                          ? context.l10n.foodAnalizandoTablaConOcr
+                          : context.l10n.foodEscanearTablaNutricionalConCamara,
                       style: TextStyle(
                         fontFamily: ScFonts.ui,
                         fontSize: 12.5,
@@ -432,35 +393,32 @@ class _CustomFoodSheetState extends ConsumerState<CustomFoodSheet> {
                   decoration: BoxDecoration(
                     color: c.bg3,
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: c.isFlat ? c.line2 : c.line,
-                      width: c.isFlat ? 1.4 : 1.0,
-                    ),
+                    border: c.isFlat ? Border.all(color: c.line2, width: 1.5) : null,
                   ),
                   child: Row(
                     children: <Widget>[
-                      Icon(
-                        AppIcons.fuego,
-                        color: c.isFlat ? c.text : c.calories,
-                        size: 22,
-                      ),
+                      Icon(AppIcons.fuego, color: c.isFlat ? c.text : c.calories, size: 22),
                       const SizedBox(width: 10),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: <Widget>[
                             Text(
-                              context.l10n.foodKcal100G(_effectiveKcal.round().toString()),
+                              context.l10n.foodKcal100G(NumberFormats.group(_effectiveKcal)),
                               softWrap: true,
                               style: TextStyle(
                                 fontFamily: ScFonts.display,
                                 fontSize: 16,
-                                fontWeight: FontWeight.w800,
+                                fontWeight: FontWeight.w700,
                                 color: c.text,
                               ),
                             ),
                             Text(
-                              context.l10n.foodPGCGG(_liveProtein.toStringAsFixed(0).toString(), _liveCarbs.toStringAsFixed(0).toString(), _liveFat.toStringAsFixed(0).toString()),
+                              context.l10n.foodPGCGG(
+                                NumberFormats.fixed(_liveProtein, 0),
+                                NumberFormats.fixed(_liveCarbs, 0),
+                                NumberFormats.fixed(_liveFat, 0),
+                              ),
                               softWrap: true,
                               style: TextStyle(
                                 fontFamily: ScFonts.ui,
@@ -474,11 +432,9 @@ class _CustomFoodSheetState extends ConsumerState<CustomFoodSheet> {
                       if (_formula449Kcal > 0)
                         TextButton(
                           onPressed: _applyFormula449,
-                          style: TextButton.styleFrom(
-                            visualDensity: VisualDensity.compact,
-                          ),
+                          style: TextButton.styleFrom(visualDensity: VisualDensity.compact),
                           child: Text(
-                            context.l10n.foodAutoKcal(_formula449Kcal.round().toString()),
+                            context.l10n.foodAutoKcal(NumberFormats.group(_formula449Kcal)),
                             style: TextStyle(
                               fontFamily: ScFonts.ui,
                               fontSize: 12,
@@ -502,9 +458,7 @@ class _CustomFoodSheetState extends ConsumerState<CustomFoodSheet> {
                     hintText: context.l10n.foodEjArepaDeMaizAsada,
                     filled: true,
                     fillColor: c.bg3,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(14),
-                    ),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
                   ),
                   validator: (String? val) {
                     if (val == null || val.trim().isEmpty) {
@@ -525,9 +479,7 @@ class _CustomFoodSheetState extends ConsumerState<CustomFoodSheet> {
                           hintText: context.l10n.foodEjCasero,
                           filled: true,
                           fillColor: c.bg3,
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(14),
-                          ),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
                         ),
                       ),
                     ),
@@ -551,9 +503,7 @@ class _CustomFoodSheetState extends ConsumerState<CustomFoodSheet> {
                           hintText: context.l10n.foodEj1Unidad1Taza,
                           filled: true,
                           fillColor: c.bg3,
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(14),
-                          ),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
                         ),
                       ),
                     ),
@@ -568,9 +518,7 @@ class _CustomFoodSheetState extends ConsumerState<CustomFoodSheet> {
                             labelText: context.l10n.foodCodigoEan,
                             filled: true,
                             fillColor: c.bg3,
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(14),
-                            ),
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
                           ),
                         ),
                       ),
@@ -586,7 +534,7 @@ class _CustomFoodSheetState extends ConsumerState<CustomFoodSheet> {
                   style: TextStyle(
                     fontFamily: ScFonts.display,
                     fontSize: 15,
-                    fontWeight: FontWeight.w800,
+                    fontWeight: FontWeight.w700,
                     color: c.text,
                   ),
                 ),
@@ -594,11 +542,7 @@ class _CustomFoodSheetState extends ConsumerState<CustomFoodSheet> {
                 Text(
                   context.l10n.foodSiDejasCaloriasVacioSe,
                   softWrap: true,
-                  style: TextStyle(
-                    fontFamily: ScFonts.ui,
-                    fontSize: 12,
-                    color: c.text3,
-                  ),
+                  style: TextStyle(fontFamily: ScFonts.ui, fontSize: 12, color: c.text3),
                 ),
                 const SizedBox(height: 10),
                 Row(
@@ -607,9 +551,7 @@ class _CustomFoodSheetState extends ConsumerState<CustomFoodSheet> {
                       child: CustomFoodNumberField(
                         controller: _kcalController,
                         label: context.l10n.foodCaloriasKcal,
-                        hint: _formula449Kcal > 0
-                            ? '${_formula449Kcal.round()}'
-                            : '0',
+                        hint: _formula449Kcal > 0 ? '${_formula449Kcal.round()}' : '0',
                       ),
                     ),
                     const SizedBox(width: 10),
@@ -683,27 +625,23 @@ class _CustomFoodSheetState extends ConsumerState<CustomFoodSheet> {
                     style: FilledButton.styleFrom(
                       backgroundColor: c.accent,
                       foregroundColor: c.ink,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                     ),
                     icon: _isSaving
                         ? SizedBox(
                             width: 20,
                             height: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: c.ink,
-                            ),
+                            child: CircularProgressIndicator(strokeWidth: 2, color: c.ink),
                           )
                         : const Icon(AppIcons.check),
                     label: Text(
                       _isSaving
-                          ? context.l10n.foodGuardandoAlimento: context.l10n.foodGuardarEnMiCatalogo,
+                          ? context.l10n.foodGuardandoAlimento
+                          : context.l10n.foodGuardarEnMiCatalogo,
                       style: const TextStyle(
                         fontFamily: ScFonts.display,
                         fontSize: 15.5,
-                        fontWeight: FontWeight.w800,
+                        fontWeight: FontWeight.w700,
                       ),
                     ),
                   ),

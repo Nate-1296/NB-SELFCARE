@@ -9,6 +9,7 @@ import '../../../../core/domain/enums.dart';
 import '../../../../core/l10n/l10n.dart';
 import '../../../../shared/theme/sc_colors.dart';
 import '../../../../shared/theme/sc_theme.dart';
+import '../../../../shared/utils/number_formats.dart';
 import '../../../../shared/widgets/app_icons.dart';
 import '../../application/food_catalog_service.dart';
 import '../../application/food_logging_service.dart';
@@ -44,12 +45,10 @@ class _FoodDetailSheetState extends ConsumerState<FoodDetailSheet> {
   @override
   void initState() {
     super.initState();
-    _grams = widget.food.defaultServingGrams > 0
-        ? widget.food.defaultServingGrams
-        : 100.0;
+    _grams = widget.food.defaultServingGrams > 0 ? widget.food.defaultServingGrams : 100.0;
     _mealType = widget.initialMealType;
     _isFavorite = widget.food.isFavorite;
-    _gramsController = TextEditingController(text: _grams.toStringAsFixed(0));
+    _gramsController = TextEditingController(text: NumberFormats.input(_grams, maxDigits: 0));
   }
 
   @override
@@ -73,14 +72,13 @@ class _FoodDetailSheetState extends ConsumerState<FoodDetailSheet> {
   double get _magnesium => widget.food.magnesiumMgPer100g * _ratio;
 
   bool get _isLabelSource =>
-      widget.food.source == FoodSource.openFoodFacts ||
-      widget.food.source == FoodSource.userCustom;
+      widget.food.source == FoodSource.openFoodFacts || widget.food.source == FoodSource.userCustom;
 
   void _updateGrams(double newVal) {
     final double clamped = newVal.clamp(1.0, 5000.0);
     setState(() {
       _grams = clamped;
-      _gramsController.text = clamped.toStringAsFixed(0);
+      _gramsController.text = NumberFormats.input(clamped, maxDigits: 0);
     });
   }
 
@@ -98,12 +96,14 @@ class _FoodDetailSheetState extends ConsumerState<FoodDetailSheet> {
     try {
       unawaited(HapticFeedback.mediumImpact());
 
-      await ref.read(foodLoggingServiceProvider).logPortion(
-        food: widget.food,
-        grams: _grams,
-        mealType: _mealType,
-        dateKey: widget.targetDateKey,
-      );
+      await ref
+          .read(foodLoggingServiceProvider)
+          .logPortion(
+            food: widget.food,
+            grams: _grams,
+            mealType: _mealType,
+            dateKey: widget.targetDateKey,
+          );
 
       if (!mounted) return;
       widget.onLogged?.call();
@@ -116,24 +116,22 @@ class _FoodDetailSheetState extends ConsumerState<FoodDetailSheet> {
   }
 
   List<({String label, double grams})> _buildPortionPresets() {
-    final List<({String label, double grams})> presets =
-        <({String label, double grams})>[];
+    final List<({String label, double grams})> presets = <({String label, double grams})>[];
     final double baseGrams = widget.food.defaultServingGrams;
     final String baseLabel = widget.food.servingLabel.trim();
 
     if (baseGrams > 0 &&
-        (baseGrams != 100.0 ||
-            (baseLabel.isNotEmpty && baseLabel.toLowerCase() != '100g'))) {
+        (baseGrams != 100.0 || (baseLabel.isNotEmpty && baseLabel.toLowerCase() != '100g'))) {
       presets.add((
         label: baseLabel.isNotEmpty
-            ? context.l10n.foodG2((baseLabel).toString(), baseGrams.round().toString()): context.l10n.foodG3(baseGrams.round().toString()),
+            ? context.l10n.foodG2((baseLabel).toString(), baseGrams.round().toString())
+            : context.l10n.foodG3(NumberFormats.group(baseGrams)),
         grams: baseGrams,
       ));
     }
 
     for (final double g in const <double>[50, 100, 150, 200, 250, 300]) {
-      final bool duplicate =
-          presets.any((p) => (p.grams - g).abs() < 0.5);
+      final bool duplicate = presets.any((p) => (p.grams - g).abs() < 0.5);
       if (!duplicate) {
         presets.add((label: context.l10n.foodG(g.toInt().toString()), grams: g));
       }
@@ -155,18 +153,14 @@ class _FoodDetailSheetState extends ConsumerState<FoodDetailSheet> {
     final int cPct = macroTotalKcal > 0 ? ((cKcal / macroTotalKcal) * 100).round() : 0;
     final int fPct = macroTotalKcal > 0 ? (100 - pPct - cPct).clamp(0, 100) : 0;
 
-    final bool unreportedPotassium =
-        _isLabelSource && widget.food.potassiumMgPer100g <= 0.0;
-    final bool unreportedMagnesium =
-        _isLabelSource && widget.food.magnesiumMgPer100g <= 0.0;
+    final bool unreportedPotassium = _isLabelSource && widget.food.potassiumMgPer100g <= 0.0;
+    final bool unreportedMagnesium = _isLabelSource && widget.food.magnesiumMgPer100g <= 0.0;
 
     return Container(
       decoration: BoxDecoration(
         color: c.bg2,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-        border: c.isFlat
-            ? Border(top: BorderSide(color: c.line2, width: 1.5))
-            : null,
+        border: c.isFlat ? Border(top: BorderSide(color: c.line2, width: 1.5)) : null,
       ),
       padding: EdgeInsets.only(bottom: bottomInset),
       child: SafeArea(
@@ -182,10 +176,7 @@ class _FoodDetailSheetState extends ConsumerState<FoodDetailSheet> {
                   width: 40,
                   height: 4,
                   margin: const EdgeInsets.only(bottom: 14),
-                  decoration: BoxDecoration(
-                    color: c.line2,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
+                  decoration: BoxDecoration(color: c.line2, borderRadius: BorderRadius.circular(2)),
                 ),
               ),
 
@@ -203,7 +194,7 @@ class _FoodDetailSheetState extends ConsumerState<FoodDetailSheet> {
                           style: TextStyle(
                             fontFamily: ScFonts.display,
                             fontSize: 21,
-                            fontWeight: FontWeight.w800,
+                            fontWeight: FontWeight.w700,
                             color: c.text,
                             height: 1.2,
                           ),
@@ -239,7 +230,8 @@ class _FoodDetailSheetState extends ConsumerState<FoodDetailSheet> {
                   const SizedBox(width: 8),
                   IconButton(
                     tooltip: _isFavorite
-                        ? context.l10n.foodQuitarDeFavoritos: context.l10n.foodGuardarEnFavoritos,
+                        ? context.l10n.foodQuitarDeFavoritos
+                        : context.l10n.foodGuardarEnFavoritos,
                     onPressed: _toggleFavorite,
                     icon: Icon(
                       _isFavorite ? AppIcons.starFilled : AppIcons.star,
@@ -262,10 +254,7 @@ class _FoodDetailSheetState extends ConsumerState<FoodDetailSheet> {
                 decoration: BoxDecoration(
                   color: c.bg3,
                   borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                    color: c.isFlat ? c.line2 : c.line,
-                    width: c.isFlat ? 1.5 : 1.0,
-                  ),
+                  border: c.isFlat ? Border.all(color: c.line2, width: 1.5) : null,
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -293,7 +282,7 @@ class _FoodDetailSheetState extends ConsumerState<FoodDetailSheet> {
                                   style: TextStyle(
                                     fontFamily: ScFonts.display,
                                     fontSize: 32,
-                                    fontWeight: FontWeight.w800,
+                                    fontWeight: FontWeight.w700,
                                     color: c.isFlat ? c.text : c.calories,
                                   ),
                                   children: <InlineSpan>[
@@ -313,19 +302,14 @@ class _FoodDetailSheetState extends ConsumerState<FoodDetailSheet> {
                           ),
                         ),
                         Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 6,
-                          ),
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                           decoration: BoxDecoration(
                             color: c.bg2,
                             borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                              color: c.isFlat ? c.line2 : c.line,
-                            ),
+                            border: c.isFlat ? Border.all(color: c.line2, width: 1.5) : null,
                           ),
                           child: Text(
-                            context.l10n.foodParaG(_grams.round().toString()),
+                            context.l10n.foodParaG(NumberFormats.group(_grams)),
                             style: TextStyle(
                               fontFamily: ScFonts.display,
                               fontSize: 13,
@@ -348,23 +332,17 @@ class _FoodDetailSheetState extends ConsumerState<FoodDetailSheet> {
                               if (pPct > 0)
                                 Expanded(
                                   flex: pPct,
-                                  child: Container(
-                                    color: c.isFlat ? c.text : c.protein,
-                                  ),
+                                  child: Container(color: c.isFlat ? c.text : c.protein),
                                 ),
                               if (cPct > 0)
                                 Expanded(
                                   flex: cPct,
-                                  child: Container(
-                                    color: c.isFlat ? c.text2 : c.carbs,
-                                  ),
+                                  child: Container(color: c.isFlat ? c.text2 : c.carbs),
                                 ),
                               if (fPct > 0)
                                 Expanded(
                                   flex: fPct,
-                                  child: Container(
-                                    color: c.isFlat ? c.bg3 : c.fat,
-                                  ),
+                                  child: Container(color: c.isFlat ? c.bg3 : c.fat),
                                 ),
                             ],
                           ),
@@ -399,9 +377,10 @@ class _FoodDetailSheetState extends ConsumerState<FoodDetailSheet> {
                         Expanded(
                           child: MacroDetailBox(
                             title: context.l10n.todayProteina,
-                            value: context.l10n.foodG4(_protein.toStringAsFixed(1).toString()),
-                            sublabel:
-                                context.l10n.foodG100g(widget.food.proteinPer100g.toStringAsFixed(1).toString()),
+                            value: context.l10n.foodG4(NumberFormats.fixed(_protein, 1)),
+                            sublabel: context.l10n.foodG100g(
+                              NumberFormats.fixed(widget.food.proteinPer100g, 1),
+                            ),
                             accentColor: c.isFlat ? c.text : c.protein,
                           ),
                         ),
@@ -409,9 +388,10 @@ class _FoodDetailSheetState extends ConsumerState<FoodDetailSheet> {
                         Expanded(
                           child: MacroDetailBox(
                             title: context.l10n.todayCarbohidratos,
-                            value: context.l10n.foodG5(_carbs.toStringAsFixed(1).toString()),
-                            sublabel:
-                                context.l10n.foodNetosG(_netCarbs.toStringAsFixed(1).toString()),
+                            value: context.l10n.foodG5(NumberFormats.fixed(_carbs, 1)),
+                            sublabel: context.l10n.foodNetosG(
+                              NumberFormats.fixed(_netCarbs, 1),
+                            ),
                             accentColor: c.isFlat ? c.text : c.carbs,
                           ),
                         ),
@@ -423,9 +403,10 @@ class _FoodDetailSheetState extends ConsumerState<FoodDetailSheet> {
                         Expanded(
                           child: MacroDetailBox(
                             title: context.l10n.foodGrasasTotales,
-                            value: context.l10n.foodG6(_fat.toStringAsFixed(1).toString()),
-                            sublabel:
-                                context.l10n.foodG100g(widget.food.fatPer100g.toStringAsFixed(1).toString()),
+                            value: context.l10n.foodG6(NumberFormats.fixed(_fat, 1)),
+                            sublabel: context.l10n.foodG100g(
+                              NumberFormats.fixed(widget.food.fatPer100g, 1),
+                            ),
                             accentColor: c.isFlat ? c.text : c.fat,
                           ),
                         ),
@@ -433,9 +414,10 @@ class _FoodDetailSheetState extends ConsumerState<FoodDetailSheet> {
                         Expanded(
                           child: MacroDetailBox(
                             title: context.l10n.foodFibraYAzucar,
-                            value: context.l10n.foodGFibra(_fiber.toStringAsFixed(1).toString()),
-                            sublabel:
-                                context.l10n.foodGAzucares(_sugar.toStringAsFixed(1).toString()),
+                            value: context.l10n.foodGFibra(NumberFormats.fixed(_fiber, 1)),
+                            sublabel: context.l10n.foodGAzucares(
+                              NumberFormats.fixed(_sugar, 1),
+                            ),
                             accentColor: c.isFlat ? c.text : c.steps,
                           ),
                         ),
@@ -453,50 +435,37 @@ class _FoodDetailSheetState extends ConsumerState<FoodDetailSheet> {
                 style: TextStyle(
                   fontFamily: ScFonts.display,
                   fontSize: 15,
-                  fontWeight: FontWeight.w800,
+                  fontWeight: FontWeight.w700,
                   color: c.text,
                 ),
               ),
               const SizedBox(height: 10),
               Row(
                 children: <Widget>[
-                  GramStepButton(
-                    label: '-25',
-                    onTap: () => _updateGrams(_grams - 25),
-                  ),
+                  GramStepButton(label: '-25', onTap: () => _updateGrams(_grams - 25)),
                   const SizedBox(width: 6),
-                  GramStepButton(
-                    label: '-10',
-                    onTap: () => _updateGrams(_grams - 10),
-                  ),
+                  GramStepButton(label: '-10', onTap: () => _updateGrams(_grams - 10)),
                   const SizedBox(width: 8),
                   Expanded(
                     child: TextField(
                       controller: _gramsController,
-                      keyboardType:
-                          const TextInputType.numberWithOptions(decimal: true),
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontFamily: ScFonts.display,
                         fontSize: 19,
-                        fontWeight: FontWeight.w800,
+                        fontWeight: FontWeight.w700,
                         color: c.text,
                       ),
                       decoration: InputDecoration(
                         suffixText: 'g',
                         filled: true,
                         fillColor: c.bg3,
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 12,
-                        ),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(14),
-                        ),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
                       ),
                       onChanged: (String val) {
-                        final double? parsed =
-                            double.tryParse(val.replaceAll(',', '.'));
+                        final double? parsed = double.tryParse(val.replaceAll(',', '.'));
                         if (parsed != null && parsed > 0) {
                           setState(() => _grams = parsed.clamp(1.0, 5000.0));
                         }
@@ -504,15 +473,9 @@ class _FoodDetailSheetState extends ConsumerState<FoodDetailSheet> {
                     ),
                   ),
                   const SizedBox(width: 8),
-                  GramStepButton(
-                    label: '+10',
-                    onTap: () => _updateGrams(_grams + 10),
-                  ),
+                  GramStepButton(label: '+10', onTap: () => _updateGrams(_grams + 10)),
                   const SizedBox(width: 6),
-                  GramStepButton(
-                    label: '+25',
-                    onTap: () => _updateGrams(_grams + 25),
-                  ),
+                  GramStepButton(label: '+25', onTap: () => _updateGrams(_grams + 25)),
                 ],
               ),
               const SizedBox(height: 10),
@@ -540,7 +503,7 @@ class _FoodDetailSheetState extends ConsumerState<FoodDetailSheet> {
                 style: TextStyle(
                   fontFamily: ScFonts.display,
                   fontSize: 15,
-                  fontWeight: FontWeight.w800,
+                  fontWeight: FontWeight.w700,
                   color: c.text,
                 ),
               ),
@@ -560,10 +523,7 @@ class _FoodDetailSheetState extends ConsumerState<FoodDetailSheet> {
                 decoration: BoxDecoration(
                   color: c.bg3.withValues(alpha: c.isFlat ? 1.0 : 0.7),
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: c.isFlat ? c.line2 : c.line,
-                    width: c.isFlat ? 1.4 : 1.0,
-                  ),
+                  border: c.isFlat ? Border.all(color: c.line2, width: 1.5) : null,
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -579,7 +539,7 @@ class _FoodDetailSheetState extends ConsumerState<FoodDetailSheet> {
                             style: TextStyle(
                               fontFamily: ScFonts.display,
                               fontSize: 14,
-                              fontWeight: FontWeight.w800,
+                              fontWeight: FontWeight.w700,
                               color: c.text,
                             ),
                           ),
@@ -589,21 +549,23 @@ class _FoodDetailSheetState extends ConsumerState<FoodDetailSheet> {
                     const SizedBox(height: 10),
                     ElectrolyteDetailRow(
                       label: context.l10n.foodSodioNa,
-                      valueText: context.l10n.foodMg(_sodium.round().toString()),
+                      valueText: context.l10n.foodMg(NumberFormats.group(_sodium)),
                       isReported: true,
                     ),
                     const SizedBox(height: 6),
                     ElectrolyteDetailRow(
                       label: context.l10n.foodPotasioK,
                       valueText: unreportedPotassium
-                          ? context.l10n.foodDatoNoReportado: context.l10n.foodMg2(_potassium.round().toString()),
+                          ? context.l10n.foodDatoNoReportado
+                          : context.l10n.foodMg2(NumberFormats.group(_potassium)),
                       isReported: !unreportedPotassium,
                     ),
                     const SizedBox(height: 6),
                     ElectrolyteDetailRow(
                       label: context.l10n.foodMagnesioMg,
                       valueText: unreportedMagnesium
-                          ? context.l10n.foodDatoNoReportado: context.l10n.foodMg3(_magnesium.round().toString()),
+                          ? context.l10n.foodDatoNoReportado
+                          : context.l10n.foodMg3(NumberFormats.group(_magnesium)),
                       isReported: !unreportedMagnesium,
                     ),
                     if (unreportedPotassium || unreportedMagnesium) ...<Widget>[
@@ -611,11 +573,7 @@ class _FoodDetailSheetState extends ConsumerState<FoodDetailSheet> {
                       Text(
                         context.l10n.foodLasEtiquetasComercialesSuelenDeclarar,
                         softWrap: true,
-                        style: TextStyle(
-                          fontFamily: ScFonts.ui,
-                          fontSize: 11.5,
-                          color: c.text3,
-                        ),
+                        style: TextStyle(fontFamily: ScFonts.ui, fontSize: 11.5, color: c.text3),
                       ),
                     ],
                   ],
@@ -633,26 +591,24 @@ class _FoodDetailSheetState extends ConsumerState<FoodDetailSheet> {
                   style: FilledButton.styleFrom(
                     backgroundColor: c.accent,
                     foregroundColor: c.ink,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                   ),
                   icon: _isSaving
                       ? SizedBox(
                           width: 20,
                           height: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: c.ink,
-                          ),
+                          child: CircularProgressIndicator(strokeWidth: 2, color: c.ink),
                         )
                       : const Icon(AppIcons.check),
                   label: Text(
-                    context.l10n.foodRegistrarEnKcal(selectedSlot.title(context.l10n).toString(), _kcal.round().toString()),
+                    context.l10n.foodRegistrarEnKcal(
+                      selectedSlot.title(context.l10n).toString(),
+                      NumberFormats.group(_kcal),
+                    ),
                     style: const TextStyle(
                       fontFamily: ScFonts.display,
                       fontSize: 15.5,
-                      fontWeight: FontWeight.w800,
+                      fontWeight: FontWeight.w700,
                     ),
                   ),
                 ),
@@ -664,4 +620,3 @@ class _FoodDetailSheetState extends ConsumerState<FoodDetailSheet> {
     );
   }
 }
-

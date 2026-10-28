@@ -23,12 +23,20 @@ class HealthSyncDao {
     int readCount = 0,
     int writeCount = 0,
   }) async {
-    await _db.into(_db.healthSyncCheckpoints).insertOnConflictUpdate(
-          HealthSyncCheckpointsCompanion(
-            recordType: Value(recordType),
-            lastSyncTimestamp: Value(timestamp),
-            lastReadCount: Value(readCount),
-            lastWriteCount: Value(writeCount),
+    final HealthSyncCheckpointsCompanion row = HealthSyncCheckpointsCompanion(
+      recordType: Value(recordType),
+      lastSyncTimestamp: Value(timestamp),
+      lastReadCount: Value(readCount),
+      lastWriteCount: Value(writeCount),
+    );
+    // El conflicto es por `record_type` (único), no por el id: con
+    // insertOnConflictUpdate la segunda sincronización fallaba y revertía la
+    // transacción entera (los pasos y el sueño leídos no se guardaban).
+    await _db.into(_db.healthSyncCheckpoints).insert(
+          row,
+          onConflict: DoUpdate(
+            (_) => row,
+            target: <Column<Object>>[_db.healthSyncCheckpoints.recordType],
           ),
         );
   }

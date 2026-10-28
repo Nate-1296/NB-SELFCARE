@@ -14,27 +14,19 @@ import '../../application/supplement_service.dart';
 
 /// Modal interactivo para el control y adherencia de suplementos y medicación.
 class SupplementTrackerSheet extends ConsumerStatefulWidget {
-  const SupplementTrackerSheet({
-    super.key,
-    required this.dateKey,
-  });
+  const SupplementTrackerSheet({super.key, required this.dateKey});
 
   final String dateKey;
 
   static Future<void> show(BuildContext context, {required String dateKey}) {
-    return mostrarHojaMenu<void>(
-      context,
-      builder: (_) => SupplementTrackerSheet(dateKey: dateKey),
-    );
+    return mostrarHojaMenu<void>(context, builder: (_) => SupplementTrackerSheet(dateKey: dateKey));
   }
 
   @override
-  ConsumerState<SupplementTrackerSheet> createState() =>
-      _SupplementTrackerSheetState();
+  ConsumerState<SupplementTrackerSheet> createState() => _SupplementTrackerSheetState();
 }
 
-class _SupplementTrackerSheetState
-    extends ConsumerState<SupplementTrackerSheet> {
+class _SupplementTrackerSheetState extends ConsumerState<SupplementTrackerSheet> {
   Future<void> _openAddSupplementDialog() async {
     final TextEditingController nameCtrl = TextEditingController();
     final TextEditingController dosageCtrl = TextEditingController();
@@ -49,10 +41,7 @@ class _SupplementTrackerSheetState
             return AlertDialog(
               title: Text(
                 context.l10n.perfilNuevoSuplemento,
-                style: const TextStyle(
-                  fontFamily: ScFonts.display,
-                  fontWeight: FontWeight.w800,
-                ),
+                style: const TextStyle(fontFamily: ScFonts.display, fontWeight: FontWeight.w700),
               ),
               content: SingleChildScrollView(
                 child: Column(
@@ -86,11 +75,7 @@ class _SupplementTrackerSheetState
                       ),
                       subtitle: Text(
                         context.l10n.perfilActivaloParaCreatinaEvitaFalsas,
-                        style: TextStyle(
-                          fontFamily: ScFonts.ui,
-                          fontSize: 11,
-                          color: c.text2,
-                        ),
+                        style: TextStyle(fontFamily: ScFonts.ui, fontSize: 11, color: c.text2),
                       ),
                       value: affectsWater,
                       onChanged: (bool val) {
@@ -123,7 +108,9 @@ class _SupplementTrackerSheetState
     if (created == true && nameCtrl.text.trim().isNotEmpty && mounted) {
       unawaited(HapticFeedback.lightImpact());
       final String fallbackDose = context.l10n.perfil1Dosis;
-      await ref.read(supplementServiceProvider).add(
+      await ref
+          .read(supplementServiceProvider)
+          .add(
             name: nameCtrl.text.trim(),
             dosage: dosageCtrl.text.trim().isNotEmpty ? dosageCtrl.text.trim() : fallbackDose,
             affectsWaterRetention: affectsWater,
@@ -167,16 +154,10 @@ class _SupplementTrackerSheetState
                         Container(
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            color: c.isFlat
-                                ? c.line2
-                                : c.accent.withValues(alpha: 0.15),
+                            color: c.isFlat ? c.line2 : c.accent.withValues(alpha: 0.15),
                             borderRadius: BorderRadius.circular(12),
                           ),
-                          child: Icon(
-                            Icons.medication_rounded,
-                            color: c.accent,
-                            size: 22,
-                          ),
+                          child: Icon(Icons.medication_rounded, color: c.accent, size: 22),
                         ),
                         const SizedBox(width: 12),
                         Expanded(
@@ -188,12 +169,16 @@ class _SupplementTrackerSheetState
                                 style: TextStyle(
                                   fontFamily: ScFonts.display,
                                   fontSize: 17,
-                                  fontWeight: FontWeight.w800,
+                                  fontWeight: FontWeight.w700,
                                   color: c.text,
                                 ),
                               ),
                               Text(
-                                context.l10n.perfilDeTomadosHoy(takenIds.length.toString(), supplements.length.toString(), widget.dateKey.toString()),
+                                context.l10n.perfilDeTomadosHoy(
+                                  takenIds.length.toString(),
+                                  supplements.length.toString(),
+                                  widget.dateKey.toString(),
+                                ),
                                 style: TextStyle(
                                   fontFamily: ScFonts.ui,
                                   fontSize: 12,
@@ -218,17 +203,11 @@ class _SupplementTrackerSheetState
                         decoration: BoxDecoration(
                           color: c.bg3,
                           borderRadius: BorderRadius.circular(14),
-                          border: Border.all(
-                            color: c.isFlat ? c.line2 : c.line,
-                          ),
+                          border: c.isFlat ? Border.all(color: c.line2, width: 1.5) : null,
                         ),
                         child: Column(
                           children: <Widget>[
-                            Icon(
-                              Icons.medication_outlined,
-                              size: 36,
-                              color: c.text2,
-                            ),
+                            Icon(Icons.medication_outlined, size: 36, color: c.text2),
                             const SizedBox(height: 10),
                             Text(
                               context.l10n.perfilAunNoTienesSuplementosConfigurados,
@@ -256,17 +235,11 @@ class _SupplementTrackerSheetState
                       for (final SupplementsTrackerData item in supplements)
                         Container(
                           margin: const EdgeInsets.only(bottom: 8),
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 10,
-                          ),
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                           decoration: BoxDecoration(
                             color: c.bg3,
                             borderRadius: BorderRadius.circular(14),
-                            border: Border.all(
-                              color: c.isFlat ? c.line2 : c.line,
-                              width: c.isFlat ? 1.3 : 1.0,
-                            ),
+                            border: c.isFlat ? Border.all(color: c.line2, width: 1.5) : null,
                           ),
                           child: Row(
                             children: <Widget>[
@@ -275,11 +248,13 @@ class _SupplementTrackerSheetState
                                 onChanged: (bool? val) {
                                   unawaited(HapticFeedback.selectionClick());
                                   unawaited(
-                                    ref.read(supplementServiceProvider).setTaken(
-                                      dateKey: widget.dateKey,
-                                      supplementId: item.id,
-                                      taken: val ?? false,
-                                    ),
+                                    ref
+                                        .read(supplementServiceProvider)
+                                        .setTaken(
+                                          dateKey: widget.dateKey,
+                                          supplementId: item.id,
+                                          taken: val ?? false,
+                                        ),
                                   );
                                 },
                               ),
@@ -297,10 +272,9 @@ class _SupplementTrackerSheetState
                                             fontSize: 14,
                                             fontWeight: FontWeight.w700,
                                             color: c.text,
-                                            decoration:
-                                                takenIds.contains(item.id)
-                                                    ? TextDecoration.lineThrough
-                                                    : null,
+                                            decoration: takenIds.contains(item.id)
+                                                ? TextDecoration.lineThrough
+                                                : null,
                                           ),
                                         ),
                                         if (item.affectsWaterRetention) ...<Widget>[
@@ -313,10 +287,8 @@ class _SupplementTrackerSheetState
                                             decoration: BoxDecoration(
                                               color: c.isFlat
                                                   ? c.line2
-                                                  : c.steps
-                                                      .withValues(alpha: 0.15),
-                                              borderRadius:
-                                                  BorderRadius.circular(6),
+                                                  : c.steps.withValues(alpha: 0.15),
+                                              borderRadius: BorderRadius.circular(6),
                                             ),
                                             child: Text(
                                               context.l10n.perfilAguaBia,
@@ -324,9 +296,7 @@ class _SupplementTrackerSheetState
                                                 fontFamily: ScFonts.ui,
                                                 fontSize: 10,
                                                 fontWeight: FontWeight.w700,
-                                                color: c.isFlat
-                                                    ? c.text
-                                                    : c.steps,
+                                                color: c.isFlat ? c.text : c.steps,
                                               ),
                                             ),
                                           ),
@@ -345,11 +315,7 @@ class _SupplementTrackerSheetState
                                 ),
                               ),
                               IconButton(
-                                icon: Icon(
-                                  Icons.delete_outline_rounded,
-                                  size: 18,
-                                  color: c.text2,
-                                ),
+                                icon: Icon(Icons.delete_outline_rounded, size: 18, color: c.text2),
                                 onPressed: () {
                                   unawaited(ref.read(supplementServiceProvider).remove(item.id));
                                 },

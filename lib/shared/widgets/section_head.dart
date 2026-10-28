@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 
 import '../theme/sc_colors.dart';
 import '../theme/sc_theme.dart';
+import '../theme/sc_tokens.dart';
 import '../utils/responsive.dart';
 
-/// Encabezado de sección con título y acción secundaria opcional.
+/// Encabezado de sección: título con una línea de contexto debajo y una
+/// acción de texto opcional a la derecha.
 class SectionHead extends StatelessWidget {
   const SectionHead({
     super.key,
@@ -13,7 +15,7 @@ class SectionHead extends StatelessWidget {
     this.onAction,
     this.big = false,
     this.subtitle,
-    this.padding = const EdgeInsets.fromLTRB(20, 20, 20, 10),
+    this.padding = const EdgeInsets.fromLTRB(20, ScSpace.sectionGap, 12, 10),
   });
 
   final String title;
@@ -31,59 +33,49 @@ class SectionHead extends StatelessWidget {
     return Padding(
       padding: padding,
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.end,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: <Widget>[
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (subtitle != null) ...[
-                  Text(
-                    subtitle!.toUpperCase(),
+              children: <Widget>[
+                Semantics(
+                  header: true,
+                  child: Text(
+                    title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: TextStyle(
-                      fontFamily: ScFonts.ui,
-                      fontSize: 11.5 * context.uiScale,
+                      fontFamily: ScFonts.display,
+                      fontSize: size,
                       fontWeight: FontWeight.w700,
-                      letterSpacing: 1.2,
-                      color: c.text3,
+                      letterSpacing: -0.025 * size,
+                      color: c.text,
                     ),
                   ),
-                  const SizedBox(height: 2),
-                ],
-                Text(
-                  title,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontFamily: ScFonts.display,
-                    fontSize: size,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: -0.02 * size,
-                    color: c.text,
-                  ),
                 ),
+                if (subtitle != null) ...<Widget>[
+                  const SizedBox(height: 2),
+                  Text(subtitle!, style: context.type.caption.copyWith(color: c.text3)),
+                ],
               ],
             ),
           ),
           if (actionLabel != null)
-            GestureDetector(
-              onTap: onAction,
-              child: Padding(
-                padding: const EdgeInsets.only(bottom: 2),
-                child: Text(
-                  actionLabel!,
-                  style: TextStyle(
-                    fontFamily: ScFonts.ui,
-                    fontSize: 13.5 * context.uiScale,
-                    fontWeight: FontWeight.w700,
-                    color: c.accent,
-                  ),
+            TextButton(
+              onPressed: onAction,
+              style: TextButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 10),
+                textStyle: TextStyle(
+                  fontFamily: ScFonts.ui,
+                  fontSize: 13.5 * context.uiScale,
+                  fontWeight: FontWeight.w700,
                 ),
               ),
+              child: Text(actionLabel!),
             ),
         ],
       ),
     );
   }
 }
-

@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../../core/domain/metabolic_phase.dart';
 import '../../../../core/l10n/l10n.dart';
 import '../../../../shared/theme/sc_colors.dart';
-import '../../../../shared/theme/sc_theme.dart';
+import '../../../../shared/theme/sc_tokens.dart';
 import '../../../../shared/widgets/health_card.dart';
 import '../metabolic_phase_l10n.dart';
 
@@ -18,7 +18,9 @@ class PhaseTimeline extends StatelessWidget {
   Widget build(BuildContext context) {
     final ScColors c = context.sc;
     final AppLocalizations l10n = context.l10n;
-    final MetabolicPhase? current = elapsedHours == null ? null : MetabolicPhase.forHours(elapsedHours!);
+    final MetabolicPhase? current = elapsedHours == null
+        ? null
+        : MetabolicPhase.forHours(elapsedHours!);
     const List<MetabolicPhase> phases = MetabolicPhase.values;
     return HealthCard(
       padding: const EdgeInsets.all(16),
@@ -65,6 +67,9 @@ class _PhaseTimelineStep extends StatelessWidget {
   Widget build(BuildContext context) {
     final ScColors c = context.sc;
     final Color resolvedColor = c.isFlat ? c.text : color;
+    final Color onNode = resolvedColor.computeLuminance() > 0.45
+        ? const Color(0xFF0A0C10)
+        : Colors.white;
 
     return IntrinsicHeight(
       child: Row(
@@ -77,25 +82,26 @@ class _PhaseTimelineStep extends StatelessWidget {
                 height: 22,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: (isCompleted || isActive) ? resolvedColor : c.bg3,
-                  border: Border.all(
-                    color: isActive ? resolvedColor : c.line2,
-                    width: isActive ? 2.4 : 1.2,
-                  ),
+                  color: (isCompleted || isActive) ? resolvedColor : (c.isFlat ? c.bg2 : c.bg3),
+                  border: c.isFlat || isActive
+                      ? Border.all(color: resolvedColor, width: 1.5)
+                      : null,
+                  boxShadow: isActive && !c.isFlat
+                      ? <BoxShadow>[
+                          BoxShadow(color: resolvedColor.withValues(alpha: 0.45), blurRadius: 10),
+                        ]
+                      : null,
                 ),
                 child: Center(
                   child: isCompleted
-                      ? Icon(Icons.check, size: 13, color: c.ink)
+                      ? Icon(Icons.check_rounded, size: 14, color: onNode)
                       : (isActive
-                          ? Container(
-                              width: 8,
-                              height: 8,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: c.ink,
-                              ),
-                            )
-                          : null),
+                            ? Container(
+                                width: 8,
+                                height: 8,
+                                decoration: BoxDecoration(shape: BoxShape.circle, color: onNode),
+                              )
+                            : null),
                 ),
               ),
               if (!isLast)
@@ -104,7 +110,7 @@ class _PhaseTimelineStep extends StatelessWidget {
                     width: 2,
                     color: isCompleted
                         ? resolvedColor.withValues(alpha: 0.65)
-                        : c.line,
+                        : (c.isFlat ? c.line2 : c.line),
                   ),
                 ),
             ],
@@ -123,38 +129,21 @@ class _PhaseTimelineStep extends StatelessWidget {
                         child: Text(
                           title,
                           softWrap: true,
-                          style: TextStyle(
-                            fontFamily: ScFonts.display,
-                            fontSize: 14,
-                            fontWeight:
-                                isActive ? FontWeight.w800 : FontWeight.w700,
-                            color: isActive ? resolvedColor : c.text,
+                          style: context.type.label.copyWith(
+                            fontSize: 14.5,
+                            color: isActive ? resolvedColor : (isCompleted ? c.text2 : c.text),
                           ),
                         ),
                       ),
                       const SizedBox(width: 8),
                       Text(
                         hoursLabel,
-                        style: TextStyle(
-                          fontFamily: ScFonts.ui,
-                          fontSize: 11.5,
-                          fontWeight: FontWeight.w700,
-                          color: c.text3,
-                        ),
+                        style: context.type.metricS.copyWith(fontSize: 12.5, color: c.text3),
                       ),
                     ],
                   ),
                   const SizedBox(height: 3),
-                  Text(
-                    subtitle,
-                    softWrap: true,
-                    style: TextStyle(
-                      fontFamily: ScFonts.ui,
-                      fontSize: 12,
-                      color: c.text2,
-                      height: 1.35,
-                    ),
-                  ),
+                  Text(subtitle, softWrap: true, style: context.type.caption),
                 ],
               ),
             ),

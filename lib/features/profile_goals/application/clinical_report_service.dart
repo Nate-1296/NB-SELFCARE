@@ -20,14 +20,14 @@ class ClinicalReportService {
   Future<void> share(UserProfile profile) async {
     final DateTime now = _ref.read(clockProvider).now();
     final String to = now.dateKey;
-    final String from = now.subtract(const Duration(days: 6)).dateKey;
+    final String from = now.addDays(-6).dateKey;
     final BodyMeasurementsDao body = _ref.read(bodyMeasurementsDaoProvider);
 
     double kcal = 0, protein = 0, carbs = 0, fat = 0;
     int foodDays = 0;
     for (int i = 0; i < 7; i++) {
       final List<FoodLog> logs =
-          await _ref.read(foodDaoProvider).getLogsForDate(now.subtract(Duration(days: i)).dateKey);
+          await _ref.read(foodDaoProvider).getLogsForDate(now.addDays(-i).dateKey);
       if (logs.isEmpty) continue;
       foodDays++;
       for (final FoodLog l in logs) {
@@ -50,6 +50,7 @@ class ClinicalReportService {
           latestMeasurement: await body.getLatestMeasurement(),
           recentMeasurements: await body.getRecentMeasurements(limit: 14),
           averageDailyKcal: avg(kcal).round(),
+          foodDays: foodDays,
           averageProteinG: avg(protein),
           averageCarbsG: avg(carbs),
           averageFatG: avg(fat),

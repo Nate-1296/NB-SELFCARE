@@ -5,6 +5,7 @@ import '../../../core/database/app_database.dart';
 import '../../../core/database/daos/hydration_dao.dart';
 import '../../../core/database/daos/user_profile_dao.dart';
 import '../../../core/platform/health_connect_gateway.dart';
+import '../../../core/platform/native_call.dart';
 import '../../pet_gamification/application/reward_service.dart';
 import '../../pet_gamification/domain/reward_policy.dart';
 
@@ -21,8 +22,14 @@ class WaterLogResult {
 /// Caso de uso "Vaso de agua en 1 toque" (docs/05 §6): registro atómico,
 /// recompensa al cumplir la meta y exportación a Health Connect.
 class HydrationService {
-  HydrationService(this._db, this._hydrationDao, this._profileDao, this._rewards,
-      this._healthConnect, this._clock);
+  HydrationService(
+    this._db,
+    this._hydrationDao,
+    this._profileDao,
+    this._rewards,
+    this._healthConnect,
+    this._clock,
+  );
 
   final AppDatabase _db;
   final HydrationDao _hydrationDao;
@@ -31,7 +38,13 @@ class HydrationService {
   final HealthConnectGateway _healthConnect;
   final Clock _clock;
 
+  /// Volumen máximo de una toma (una jarra de 5 l ya es un error de tecleo).
+  static const int maxGlassMl = 5000;
+
   Future<WaterLogResult> logGlass({required String dateKey, required int volumeMl}) async {
+    if (volumeMl <= 0 || volumeMl > maxGlassMl) {
+      throw ArgumentError.value(volumeMl, 'volumeMl', 'debe estar entre 1 y $maxGlassMl ml');
+    }
     final UserProfile? profile = await _profileDao.getProfile();
     final WaterLogResult result = await _db.transaction(() async {
       final int id = await _hydrationDao.insertGlass(dateKey: dateKey, volumeMl: volumeMl);
@@ -43,8 +56,10 @@ class HydrationService {
       return WaterLogResult(logId: id, totalMl: total, coins: coins);
     });
 
-    final bool exported =
-        await _healthConnect.writeHydration(volumeMl: volumeMl, at: _clock.now());
+    final bool exported = await bestEffort(
+      () => _healthConnect.writeHydration(volumeMl: volumeMl, at: _clock.now()),
+      false,
+    );
     if (exported) await _hydrationDao.markAsSynced(<int>[result.logId]);
     return result;
   }

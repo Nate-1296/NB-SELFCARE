@@ -13,8 +13,10 @@ import '../../../core/platform/system_permissions.dart';
 import '../../../core/services/backup_service.dart';
 import '../../../shared/theme/sc_colors.dart';
 import '../../../shared/theme/sc_theme.dart';
+import '../../../shared/theme/sc_tokens.dart';
 import '../../../shared/theme/theme_controller.dart';
 import '../../../shared/widgets/section_head.dart';
+import '../../../shared/widgets/top_bar.dart';
 import '../../today/application/health_sync_service.dart';
 import '../../today/application/movement_nudge_service.dart';
 import '../application/profile_queries.dart';
@@ -26,7 +28,7 @@ import 'widgets/settings/reminders_section.dart';
 import 'widgets/settings/theme_picker.dart';
 
 /// Subpágina dedicada a la configuración global de NB Selfcare:
-/// - Aspecto y Pantalla (22 temas visuales de alta gama)
+/// - Aspecto y pantalla (catálogo de temas de color y de papel)
 /// - Dispositivos y Conectividad (Báscula Xiaomi BLE y Android Health Connect)
 /// - Portabilidad y Respaldo Local (SQLite VACUUM INTO atómico)
 /// - Permisos del Sistema (evaluación dinámica y reactiva en tiempo real)
@@ -38,8 +40,7 @@ class AppSettingsScreen extends ConsumerStatefulWidget {
   ConsumerState<AppSettingsScreen> createState() => _AppSettingsScreenState();
 }
 
-class _AppSettingsScreenState extends ConsumerState<AppSettingsScreen>
-    with WidgetsBindingObserver {
+class _AppSettingsScreenState extends ConsumerState<AppSettingsScreen> with WidgetsBindingObserver {
   // Estados de evaluación de permisos del sistema
   bool _hasBluetooth = false;
   bool _hasHealthConnect = false;
@@ -162,9 +163,7 @@ class _AppSettingsScreenState extends ConsumerState<AppSettingsScreen>
       context: context,
       builder: (BuildContext ctx) => AlertDialog(
         title: Text(context.l10n.settingsRestaurarRespaldoSqlite),
-        content: Text(
-          context.l10n.settingsSeVerificaraLaIntegridadAtomica,
-        ),
+        content: Text(context.l10n.settingsSeVerificaraLaIntegridadAtomica),
         actions: <Widget>[
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
@@ -179,8 +178,7 @@ class _AppSettingsScreenState extends ConsumerState<AppSettingsScreen>
     );
 
     if (!mounted || confirmed != true) return;
-    final result =
-        await ref.read(backupServiceProvider).importDatabaseFromPicker();
+    final result = await ref.read(backupServiceProvider).importDatabaseFromPicker();
     if (!mounted || result.cancelled) return;
     if (result.restored) {
       await ref.read(appSyncCoordinatorProvider).sync();
@@ -191,19 +189,17 @@ class _AppSettingsScreenState extends ConsumerState<AppSettingsScreen>
       SnackBar(
         content: Text(
           result.restored
-              ? context.l10n.settingsBaseDeDatosRestauradaCon: context.l10n.settingsElArchivoSeleccionadoNoEs,
+              ? context.l10n.settingsBaseDeDatosRestauradaCon
+              : context.l10n.settingsElArchivoSeleccionadoNoEs,
         ),
       ),
     );
   }
 
-
-
   @override
   Widget build(BuildContext context) {
     final ScColors c = context.sc;
-    final AsyncValue<UserProfile?> profileAsync =
-        ref.watch(userProfileStreamProvider);
+    final AsyncValue<UserProfile?> profileAsync = ref.watch(userProfileStreamProvider);
     final UserProfile? profile = profileAsync.value;
     final String currentThemeKey = ref.watch(themeControllerProvider);
     final List<Reminder> reminders =
@@ -211,75 +207,66 @@ class _AppSettingsScreenState extends ConsumerState<AppSettingsScreen>
 
     return Scaffold(
       backgroundColor: c.bg,
-      appBar: AppBar(
-        backgroundColor: c.bg,
-        elevation: 0,
-        scrolledUnderElevation: 0,
-        title: Text(
-          context.l10n.settingsAjustesDeLaAplicacion,
-          style: TextStyle(
-            fontFamily: ScFonts.display,
-            fontSize: 20,
-            fontWeight: FontWeight.w800,
-            color: c.text,
-          ),
-        ),
-        leading: BackButton(color: c.text),
-      ),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 40),
-        children: <Widget>[
-          // ==========================================
-          // 1. Aspecto y Pantalla (22 Temas)
-          // ==========================================
-          SectionHead(
-            title: context.l10n.settingsAspectoYPantalla,
-            subtitle: context.l10n.settings22TemasVisualesDeAlta,
-            padding: const EdgeInsets.symmetric(vertical: 4),
-          ),
-          const SizedBox(height: 8),
-          ThemePicker(
-            currentKey: currentThemeKey,
-            onSelect: (String key) {
-              unawaited(HapticFeedback.selectionClick());
-              unawaited(ref.read(themeControllerProvider.notifier).selectTheme(key));
-            },
-          ),
+      body: SafeArea(
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 40),
+          children: <Widget>[
+            TopBar(
+              title: context.l10n.settingsAjustesDeLaAplicacion,
+              leading: BackButton(color: c.text),
+            ),
+            // ==========================================
+            // 1. Aspecto y pantalla (todos los temas)
+            // ==========================================
+            SectionHead(
+              title: context.l10n.settingsAspectoYPantalla,
+              subtitle: context.l10n.settingsThemesCount(kScThemes.length.toString()),
+              padding: const EdgeInsets.symmetric(vertical: 4),
+            ),
+            const SizedBox(height: 8),
+            ThemePicker(
+              currentKey: currentThemeKey,
+              onSelect: (String key) {
+                unawaited(HapticFeedback.selectionClick());
+                unawaited(ref.read(themeControllerProvider.notifier).selectTheme(key));
+              },
+            ),
 
-          const SizedBox(height: 24),
-          RemindersSection(
-            reminders: reminders,
-            movementStatus: _movementStatus,
-            onMovementChanged: (MovementNudgeStatus next) {
-              if (mounted) setState(() => _movementStatus = next);
-            },
-          ),
-          const SizedBox(height: 24),
-          DevicesSection(
-            profile: profile,
-            hasHealthConnect: _hasHealthConnect,
-            onConnectHealth: _requestHealthConnectPermission,
-          ),
-          const SizedBox(height: 24),
-          ModulesSection(profile: profile),
-          const SizedBox(height: 24),
-          PermissionsSection(
-            isLoading: _isLoadingPerms,
-            hasBluetooth: _hasBluetooth,
-            hasCamera: _hasCamera,
-            hasHealthConnect: _hasHealthConnect,
-            hasNotifications: _hasNotifications,
-            hasExactAlarm: _hasExactAlarm,
-            onRefresh: _evaluateAllPermissions,
-            onRequestBluetooth: _requestBlePermission,
-            onRequestCamera: _requestCameraPermission,
-            onRequestHealthConnect: _requestHealthConnectPermission,
-            onRequestNotifications: _requestNotificationPermission,
-            onRequestExactAlarm: _requestExactAlarmPermission,
-          ),
-          const SizedBox(height: 24),
-          BackupSection(onRestore: _handleRestoreBackup),
-        ],
+            const SizedBox(height: ScSpace.sectionGap),
+            RemindersSection(
+              reminders: reminders,
+              movementStatus: _movementStatus,
+              onMovementChanged: (MovementNudgeStatus next) {
+                if (mounted) setState(() => _movementStatus = next);
+              },
+            ),
+            const SizedBox(height: ScSpace.sectionGap),
+            DevicesSection(
+              profile: profile,
+              hasHealthConnect: _hasHealthConnect,
+              onConnectHealth: _requestHealthConnectPermission,
+            ),
+            const SizedBox(height: ScSpace.sectionGap),
+            ModulesSection(profile: profile),
+            const SizedBox(height: ScSpace.sectionGap),
+            PermissionsSection(
+              isLoading: _isLoadingPerms,
+              hasBluetooth: _hasBluetooth,
+              hasCamera: _hasCamera,
+              hasHealthConnect: _hasHealthConnect,
+              hasNotifications: _hasNotifications,
+              hasExactAlarm: _hasExactAlarm,
+              onRefresh: _evaluateAllPermissions,
+              onRequestBluetooth: _requestBlePermission,
+              onRequestCamera: _requestCameraPermission,
+              onRequestHealthConnect: _requestHealthConnectPermission,
+              onRequestNotifications: _requestNotificationPermission,
+              onRequestExactAlarm: _requestExactAlarmPermission,
+            ),
+            const SizedBox(height: ScSpace.sectionGap),
+            BackupSection(onRestore: _handleRestoreBackup),
+          ],
+        ),
       ),
     );
   }

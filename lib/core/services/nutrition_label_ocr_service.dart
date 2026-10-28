@@ -57,13 +57,17 @@ class NutritionLabelOcrService {
       return const OcrNutritionData();
     }
 
-    final double? kcal = _extractRegex(
-      rawText,
-      RegExp(
-        r'(?:calor[ií]as|energ[ií]a|energy|calories|valor\s*energ[eé]tico|kcal)\D{0,15}?(\d+(?:[.,]\d+)?)\s*(?:kcal)?',
+    // Las etiquetas europeas ponen "1500 kJ / 359 kcal": primero se busca una
+    // cifra seguida de "kcal"; si solo hay kJ, se convierte.
+    double? kcal = _extractRegex(rawText, RegExp(r'(\d+(?:[.,]\d+)?)\s*kcal', caseSensitive: false));
+    if (kcal == null) {
+      final RegExpMatch? energy = RegExp(
+        r'(?:calor[ií]as|energ[ií]a|energy|calories|valor\s*energ[eé]tico)\D{0,15}?(\d+(?:[.,]\d+)?)\s*(kj)?',
         caseSensitive: false,
-      ),
-    );
+      ).firstMatch(rawText);
+      final double? value = double.tryParse(energy?.group(1)?.replaceAll(',', '.') ?? '');
+      if (value != null) kcal = energy!.group(2) == null ? value : value / 4.184;
+    }
 
     final double? protein = _extractRegex(
       rawText,
@@ -128,15 +132,19 @@ class NutritionLabelOcrService {
       ),
     );
 
+    // Un error de reconocimiento (un "8" de más, una coma perdida) no debe
+    // llegar al formulario como una cifra imposible: se deja el campo vacío.
+    double? plausible(double? v, double max) => v != null && v.isFinite && v >= 0 && v <= max ? v : null;
+
     return OcrNutritionData(
-      kcal: kcal,
-      proteinG: protein,
-      carbsG: carbs,
-      fatG: fat,
-      fiberG: fiber,
-      sugarG: sugar,
-      sodiumMg: sodiumMg,
-      servingGrams: servingG,
+      kcal: plausible(kcal, 9000),
+      proteinG: plausible(protein, 1000),
+      carbsG: plausible(carbs, 1000),
+      fatG: plausible(fat, 1000),
+      fiberG: plausible(fiber, 1000),
+      sugarG: plausible(sugar, 1000),
+      sodiumMg: plausible(sodiumMg, 100000),
+      servingGrams: plausible(servingG, 5000),
       rawText: rawText,
     );
   }

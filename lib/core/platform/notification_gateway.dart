@@ -1,6 +1,8 @@
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'native_call.dart';
+
 /// Recordatorio listo para programarse en el sistema.
 class ScheduledReminder {
   const ScheduledReminder({
@@ -28,14 +30,14 @@ class ScheduledReminder {
   final int windowEndMinutes;
 
   Map<String, Object?> toMap() => <String, Object?>{
-        'id': id,
-        'title': title,
-        'body': body,
-        'minutesOfDay': minutesOfDay,
-        'daysMask': daysMask,
-        'intervalMinutes': intervalMinutes,
-        'windowEndMinutes': windowEndMinutes,
-      };
+    'id': id,
+    'title': title,
+    'body': body,
+    'minutesOfDay': minutesOfDay,
+    'daysMask': daysMask,
+    'intervalMinutes': intervalMinutes,
+    'windowEndMinutes': windowEndMinutes,
+  };
 }
 
 /// Notificaciones 100 % locales: cronómetro de ayuno, recordatorios y pausas activas.
@@ -64,13 +66,7 @@ class MethodChannelNotificationGateway implements NotificationGateway {
   static const MethodChannel _channel = MethodChannel('com.nb.selfcare/notifications');
 
   Future<void> _invoke(String method, Map<String, Object?> args) async {
-    try {
-      await _channel.invokeMethod<bool>(method, args);
-    } on PlatformException {
-      return;
-    } on MissingPluginException {
-      return;
-    }
+    await callNative<Object>(_channel, method, args);
   }
 
   @override
@@ -110,5 +106,6 @@ class MethodChannelNotificationGateway implements NotificationGateway {
   }
 }
 
-final notificationGatewayProvider =
-    Provider<NotificationGateway>((Ref ref) => const MethodChannelNotificationGateway());
+final notificationGatewayProvider = Provider<NotificationGateway>(
+  (Ref ref) => const MethodChannelNotificationGateway(),
+);

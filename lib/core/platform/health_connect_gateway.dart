@@ -1,6 +1,8 @@
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'native_call.dart';
+
 enum HealthConnectAvailability { available, updateRequired, notInstalled, unsupported }
 
 /// Actividad de un día leída de Health Connect. Los campos `null` significan
@@ -20,8 +22,40 @@ class DailyActivitySnapshot {
   final int remSleepMinutes;
   final int? restingHeartRateBpm;
 
+  /// Construye la instantánea descartando lo que no puede ser un dato real:
+  /// pasos negativos o absurdos, más de 24 h de sueño en un día, fases de sueño
+  /// mayores que el sueño total y FC en reposo fuera de 25–220 lpm (sensor mal
+  /// colocado, unidades erróneas de otra app que escribe en Health Connect).
+  factory DailyActivitySnapshot.sanitized({
+    int? steps,
+    int? sleepMinutes,
+    int? deepSleepMinutes,
+    int? remSleepMinutes,
+    int? restingHeartRateBpm,
+  }) {
+    final int? sleep = sleepMinutes == null || sleepMinutes < 0
+        ? null
+        : sleepMinutes.clamp(0, 24 * 60);
+    int phase(int? v) => sleep == null || v == null || v < 0 ? 0 : v.clamp(0, sleep);
+    return DailyActivitySnapshot(
+      steps: steps == null || steps < 0 || steps > maxDailySteps ? null : steps,
+      sleepMinutes: sleep,
+      deepSleepMinutes: phase(deepSleepMinutes),
+      remSleepMinutes: phase(remSleepMinutes),
+      restingHeartRateBpm:
+          restingHeartRateBpm == null || restingHeartRateBpm < 25 || restingHeartRateBpm > 220
+          ? null
+          : restingHeartRateBpm,
+    );
+  }
+
+  /// Tope de pasos diarios creíble (un ultramaratón ronda los 100 000).
+  static const int maxDailySteps = 200000;
+
   bool get isEmpty => steps == null && sleepMinutes == null && restingHeartRateBpm == null;
 }
+
+int? _finiteInt(Object? value) => value is num && value.isFinite ? value.toInt() : null;
 
 /// Puerto hacia Health Connect (docs/07). Health Connect es un almacén local del
 /// sistema: ningún dato sale del dispositivo. Todas las operaciones degradan a
@@ -54,15 +88,8 @@ class MethodChannelHealthConnectGateway implements HealthConnectGateway {
 
   static const MethodChannel _channel = MethodChannel('com.nb.selfcare/health_connect');
 
-  Future<T?> _invoke<T>(String method, [Map<String, Object?>? args]) async {
-    try {
-      return await _channel.invokeMethod<T>(method, args);
-    } on PlatformException {
-      return null;
-    } on MissingPluginException {
-      return null;
-    }
-  }
+  Future<T?> _invoke<T>(String method, [Map<String, Object?>? args]) =>
+      callNative<T>(_channel, method, args);
 
   @override
   Future<HealthConnectAvailability> availability() async {
@@ -98,13 +125,12 @@ class MethodChannelHealthConnectGateway implements HealthConnectGateway {
       <String, Object?>{'dateKey': dateKey},
     );
     if (raw == null) return null;
-    int? asInt(Object? value) => value is num ? value.toInt() : null;
-    return DailyActivitySnapshot(
-      steps: asInt(raw['steps']),
-      sleepMinutes: asInt(raw['sleepMinutes']),
-      deepSleepMinutes: asInt(raw['deepMinutes']) ?? 0,
-      remSleepMinutes: asInt(raw['remMinutes']) ?? 0,
-      restingHeartRateBpm: asInt(raw['restingHeartRate']),
+    return DailyActivitySnapshot.sanitized(
+      steps: _finiteInt(raw['steps']),
+      sleepMinutes: _finiteInt(raw['sleepMinutes']),
+      deepSleepMinutes: _finiteInt(raw['deepMinutes']),
+      remSleepMinutes: _finiteInt(raw['remMinutes']),
+      restingHeartRateBpm: _finiteInt(raw['restingHeartRate']),
     );
   }
 
@@ -134,5 +160,6 @@ class MethodChannelHealthConnectGateway implements HealthConnectGateway {
   }
 }
 
-final healthConnectGatewayProvider =
-    Provider<HealthConnectGateway>((Ref ref) => const MethodChannelHealthConnectGateway());
+final healthConnectGatewayProvider = Provider<HealthConnectGateway>(
+  (Ref ref) => const MethodChannelHealthConnectGateway(),
+);

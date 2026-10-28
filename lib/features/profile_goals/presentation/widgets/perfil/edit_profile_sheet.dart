@@ -3,11 +3,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../../core/clock/clock.dart';
+import '../../../../../core/constants/app_constants.dart';
 import '../../../../../core/database/app_database.dart';
 import '../../../../../core/domain/enums.dart';
 import '../../../../../core/l10n/l10n.dart';
 import '../../../../../shared/theme/sc_colors.dart';
 import '../../../../../shared/theme/sc_theme.dart';
+import '../../../../../shared/utils/number_formats.dart';
 import '../../../../../shared/widgets/app_icons.dart';
 import '../../../application/profile_service.dart';
 
@@ -33,10 +35,10 @@ class _EditProfileSheetState extends ConsumerState<EditProfileSheet> {
     super.initState();
     _nameCtrl = TextEditingController(text: widget.profile.name);
     _heightCtrl = TextEditingController(
-      text: widget.profile.heightCm.toStringAsFixed(0),
+      text: NumberFormats.input(widget.profile.heightCm, maxDigits: 0),
     );
     _weightCtrl = TextEditingController(
-      text: widget.profile.targetWeightKg.toStringAsFixed(1),
+      text: NumberFormats.input(widget.profile.targetWeightKg, maxDigits: 1),
     );
     _sex = widget.profile.biologicalSex;
     _birthDate = widget.profile.birthDate;
@@ -65,7 +67,7 @@ class _EditProfileSheetState extends ConsumerState<EditProfileSheet> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: <Widget>[
-              Text(
+              Flexible(child: Text(
                 context.l10n.perfilEditarDatosPersonales,
                 style: TextStyle(
                   fontFamily: ScFonts.display,
@@ -73,7 +75,7 @@ class _EditProfileSheetState extends ConsumerState<EditProfileSheet> {
                   fontWeight: FontWeight.bold,
                   color: c.text,
                 ),
-              ),
+              )),
               IconButton(
                 icon: Icon(AppIcons.close, color: c.text2),
                 onPressed: () => Navigator.of(context).pop(),
@@ -83,6 +85,7 @@ class _EditProfileSheetState extends ConsumerState<EditProfileSheet> {
           const SizedBox(height: 14),
           TextField(
             controller: _nameCtrl,
+            maxLength: AppConstants.maxProfileNameLength,
             decoration: InputDecoration(
               labelText: context.l10n.perfilNombreOAlias,
               prefixIcon: const Icon(Icons.person_outline_rounded),
@@ -128,6 +131,7 @@ class _EditProfileSheetState extends ConsumerState<EditProfileSheet> {
             onTap: () async {
               final DateTime? picked = await showDatePicker(
                 context: context,
+                confirmText: context.l10n.commonAccept,
                 initialDate: _birthDate,
                 firstDate: DateTime(1920),
                 lastDate: ref.read(clockProvider).now(),

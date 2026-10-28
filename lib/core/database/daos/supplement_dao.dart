@@ -119,7 +119,7 @@ class SupplementDao {
     // 2. Verificar si hubo al menos 3 tomas en los últimos 7 días (incluido hoy)
     final DateTime? today = DateTime.tryParse(currentDateKey);
     if (today == null) return false;
-    final String fromDateKey = today.subtract(const Duration(days: 6)).dateKey;
+    final String fromDateKey = today.addDays(-6).dateKey;
     final supplementIds = waterSupplements.map((s) => s.id).toList();
     final logs = await (_db.select(_db.supplementLogs)
           ..where((tbl) =>

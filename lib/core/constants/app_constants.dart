@@ -1,5 +1,8 @@
 /// Constantes globales del sistema NB Selfcare.
 abstract final class AppConstants {
+  /// Longitud máxima del nombre del perfil (restricción de la tabla `user_profiles`).
+  static const int maxProfileNameLength = 60;
+
   static const String appName = 'NB Selfcare';
   static const String appPackage = 'com.nb.selfcare';
   static const String appVersion = '0.1.0';

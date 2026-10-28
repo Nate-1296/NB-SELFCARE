@@ -10,7 +10,7 @@ import '../../../../../shared/theme/sc_theme.dart';
 import '../../../../../shared/theme/sc_tokens.dart';
 import '../../../../../shared/widgets/action_tile.dart';
 import '../../../../../shared/widgets/app_icons.dart';
-import '../../../../../shared/widgets/health_card.dart';
+import '../../../../../shared/widgets/pressable.dart';
 import '../../../../fasting/application/fasting_queries.dart';
 import '../../../../fasting/presentation/metabolic_phase_l10n.dart';
 
@@ -61,12 +61,14 @@ class ComerEntryHub extends ConsumerWidget {
 
     final List<Widget> tiles = <Widget>[
       ActionTile(
+        onPage: true,
         icon: AppIcons.textEntry,
         title: l10n.comerWriteMeal,
         subtitle: l10n.comerWriteMealHint,
         onTap: onOpenTextEntry,
       ),
       ActionTile(
+        onPage: true,
         icon: AppIcons.combos,
         tone: c.carbs,
         title: l10n.comerCombos,
@@ -74,6 +76,7 @@ class ComerEntryHub extends ConsumerWidget {
         onTap: onOpenCombos,
       ),
       ActionTile(
+        onPage: true,
         icon: Icons.soup_kitchen_rounded,
         tone: c.fat,
         title: l10n.comerRecipes,
@@ -81,6 +84,7 @@ class ComerEntryHub extends ConsumerWidget {
         onTap: onOpenRecipes,
       ),
       ActionTile(
+        onPage: true,
         icon: AppIcons.add,
         tone: c.protein,
         title: l10n.comerCreateFood,
@@ -88,12 +92,14 @@ class ComerEntryHub extends ConsumerWidget {
         onTap: onOpenCustomFood,
       ),
       ActionTile(
+        onPage: true,
         icon: AppIcons.chispa,
         title: l10n.comerSmartMenu,
         subtitle: l10n.comerSmartMenuHint,
         onTap: onOpenSmartMenu,
       ),
       ActionTile(
+        onPage: true,
         icon: fast == null ? AppIcons.ayuno : AppIcons.ayunoFilled,
         tone: c.fasting,
         title: l10n.comerFasting,
@@ -102,18 +108,12 @@ class ComerEntryHub extends ConsumerWidget {
       ),
     ];
 
-    return HealthCard(
-      padding: const EdgeInsets.all(ScSpace.l),
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(ScSpace.gutter, ScSpace.xs, ScSpace.gutter, ScSpace.s),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
-          Row(
-            children: <Widget>[
-              Expanded(child: _SearchField(onTap: onOpenSearch)),
-              const SizedBox(width: ScSpace.s),
-              _BarcodeButton(onTap: onOpenBarcode),
-            ],
-          ),
+          _SearchField(onTap: onOpenSearch, onScan: onOpenBarcode),
           const SizedBox(height: ScSpace.m),
           for (int i = 0; i < tiles.length; i += 2) ...<Widget>[
             if (i > 0) const SizedBox(height: ScSpace.s),
@@ -134,84 +134,69 @@ class ComerEntryHub extends ConsumerWidget {
   }
 }
 
+/// Buscador protagonista con el escáner integrado a la derecha.
 class _SearchField extends StatelessWidget {
-  const _SearchField({required this.onTap});
+  const _SearchField({required this.onTap, required this.onScan});
 
   final VoidCallback onTap;
+  final VoidCallback onScan;
 
   @override
   Widget build(BuildContext context) {
     final ScColors c = context.sc;
     final String label = context.l10n.comerSearchHint;
-    return Semantics(
-      button: true,
-      label: label,
-      excludeSemantics: true,
+    return Pressable(
+      scale: 0.985,
       child: Material(
-        color: c.bg3,
+        color: c.bg2,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(ScRadius.tile),
+          borderRadius: BorderRadius.circular(ScRadius.tileOf(c)),
           side: BorderSide(color: c.isFlat ? c.line2 : c.line, width: c.isFlat ? 1.5 : 1),
         ),
         clipBehavior: Clip.antiAlias,
-        child: InkWell(
-          onTap: onTap,
-          child: Container(
-            constraints: const BoxConstraints(minHeight: 52),
-            padding: const EdgeInsets.symmetric(horizontal: ScSpace.l - 2),
-            child: Row(
-              children: <Widget>[
-                Icon(AppIcons.search, size: 20, color: c.isFlat ? c.text : c.accent),
-                const SizedBox(width: ScSpace.s + 2),
-                Expanded(
-                  child: Text(
-                    label,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontFamily: ScFonts.ui,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: c.text2,
+        child: Row(
+          children: <Widget>[
+            Expanded(
+              child: Semantics(
+                button: true,
+                label: label,
+                excludeSemantics: true,
+                child: InkWell(
+                  onTap: onTap,
+                  child: Container(
+                    constraints: const BoxConstraints(minHeight: 56),
+                    padding: const EdgeInsets.only(left: ScSpace.l),
+                    child: Row(
+                      children: <Widget>[
+                        Icon(AppIcons.search, size: 22, color: c.isFlat ? c.text : c.accent),
+                        const SizedBox(width: ScSpace.m),
+                        Expanded(
+                          child: Text(
+                            label,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontFamily: ScFonts.ui,
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
+                              color: c.text2,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
-              ],
+              ),
             ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _BarcodeButton extends StatelessWidget {
-  const _BarcodeButton({required this.onTap});
-
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final ScColors c = context.sc;
-    return Tooltip(
-      message: context.l10n.comerScanBarcode,
-      child: Material(
-        color: c.isFlat ? c.bg3 : c.accent.withValues(alpha: 0.14),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(ScRadius.tile),
-          side: BorderSide(
-            color: c.isFlat ? c.line2 : c.accent.withValues(alpha: 0.45),
-            width: c.isFlat ? 1.5 : 1,
-          ),
-        ),
-        clipBehavior: Clip.antiAlias,
-        child: InkWell(
-          onTap: onTap,
-          child: SizedBox(
-            width: 52,
-            height: 52,
-            child: Icon(AppIcons.barcode, color: c.isFlat ? c.text : c.accent),
-          ),
+            Container(width: c.isFlat ? 1.5 : 1, height: 28, color: c.isFlat ? c.line2 : c.line),
+            IconButton(
+              tooltip: context.l10n.comerScanBarcode,
+              onPressed: onScan,
+              style: IconButton.styleFrom(fixedSize: const Size(56, 56)),
+              icon: Icon(AppIcons.barcode, color: c.isFlat ? c.text : c.accent),
+            ),
+          ],
         ),
       ),
     );

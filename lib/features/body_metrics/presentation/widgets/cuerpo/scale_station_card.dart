@@ -1,12 +1,19 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../../core/hardware/body_scale_driver.dart';
 import '../../../../../core/l10n/l10n.dart';
 import '../../../../../shared/theme/sc_colors.dart';
-import '../../../../../shared/theme/sc_theme.dart';
 import '../../../../../shared/theme/sc_tokens.dart';
+import '../../../../../shared/utils/number_formats.dart';
 import '../../../../../shared/widgets/app_icons.dart';
 import '../../../../../shared/widgets/health_card.dart';
+import '../../../../../shared/widgets/metric_value.dart';
+import '../../../../pet_gamification/application/nibi_overview.dart';
+import '../../../../pet_gamification/domain/nibi_activity.dart';
+import '../../../../pet_gamification/presentation/nibi/nibi_view.dart';
 import '../../../application/scale_session.dart';
 
 /// Pesaje con la báscula Bluetooth, a mano o con cinta métrica.
@@ -43,10 +50,11 @@ class ScaleStationCard extends StatelessWidget {
       ScalePhase.measuring => l10n.cuerpoScaleMeasuring,
       ScalePhase.awaitingImpedance => l10n.cuerpoScaleAwaitingImpedance,
       ScalePhase.error => l10n.cuerpoScaleError,
+      ScalePhase.notFound => l10n.cuerpoScaleNotFound,
       ScalePhase.idle when weightOnly => l10n.cuerpoScaleIdleWeightOnly,
       ScalePhase.idle when live != null && session.capture == null => l10n.cuerpoScaleLastReading(
-          live.weightKg.toStringAsFixed(1),
-        ),
+        NumberFormats.fixed(live.weightKg, 1),
+      ),
       ScalePhase.idle => isBound ? l10n.cuerpoScaleIdleBound : l10n.cuerpoScaleIdle,
     };
   }
@@ -59,30 +67,26 @@ class ScaleStationCard extends StatelessWidget {
     final ScaleMeasurementEvent? live = scanning ? session.live : null;
 
     return HealthCard(
-      backgroundColor: scanning && !c.isFlat ? c.accent.withValues(alpha: 0.08) : null,
+      backgroundColor: scanning && !c.isFlat
+          ? Color.alphaBlend(c.accent.withValues(alpha: 0.07), c.bg2)
+          : null,
       borderColor: scanning ? (c.isFlat ? c.text : c.accent) : null,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
           Row(
             children: <Widget>[
-              Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  color: scanning && !c.isFlat ? c.accent : c.bg3,
-                  shape: BoxShape.circle,
-                  border: c.isFlat ? Border.all(color: c.line2, width: 1.5) : null,
-                ),
-                child: Icon(AppIcons.bluetooth, size: 22, color: scanning && !c.isFlat ? c.ink : c.text),
-              ),
+              _ScaleBeacon(active: scanning),
               const SizedBox(width: ScSpace.m),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
-                    Text(l10n.cuerpoScaleTitle, style: context.text.titleMedium),
-                    Semantics(liveRegion: true, child: Text(_status(l10n), style: context.text.bodySmall)),
+                    Text(l10n.cuerpoScaleTitle, style: context.text.titleLarge),
+                    Semantics(
+                      liveRegion: true,
+                      child: Text(_status(l10n), style: context.type.caption),
+                    ),
                   ],
                 ),
               ),
@@ -97,7 +101,7 @@ class ScaleStationCard extends StatelessWidget {
             const SizedBox(height: ScSpace.m),
             _LiveReading(event: live, onAcceptWeightOnly: onAcceptWeightOnly, phase: session.phase),
           ],
-          const SizedBox(height: ScSpace.m),
+          const SizedBox(height: ScSpace.l),
           FilledButton.icon(
             onPressed: scanning ? onStop : onScan,
             icon: Icon(scanning ? Icons.stop_rounded : AppIcons.bluetooth),
@@ -145,30 +149,32 @@ class _LiveReading extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(ScSpace.m),
       decoration: BoxDecoration(
-        color: c.bg3,
-        borderRadius: BorderRadius.circular(ScRadius.tile),
-        border: Border.all(color: c.isFlat ? c.text : c.accent, width: c.isFlat ? 1.5 : 1.0),
+        color: c.isFlat ? c.bg2 : c.bg3,
+        borderRadius: BorderRadius.circular(ScRadius.tileOf(c)),
+        border: c.isFlat ? Border.all(color: c.text, width: 1.5) : null,
       ),
       child: Column(
         children: <Widget>[
-          Text.rich(
-            TextSpan(
-              children: <InlineSpan>[
-                TextSpan(
-                  text: event.weightKg.toStringAsFixed(1),
-                  style: TextStyle(
-                    fontFamily: ScFonts.display,
-                    fontSize: 40,
-                    fontWeight: FontWeight.w800,
-                    color: c.isFlat ? c.text : c.accent,
-                  ),
+          // Nibi se sube a su mini báscula mientras se pesa contigo.
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: <Widget>[
+              // Nibi se sube a su báscula con lo que lleva puesto.
+              Consumer(
+                builder: (BuildContext context, WidgetRef ref, _) =>
+                    NibiView(activity: NibiActivity.weighing, size: 84, look: ref.watch(nibiLookProvider)),
+              ),
+              const SizedBox(width: ScSpace.s),
+              Flexible(
+                child: AnimatedMetricValue(
+                  value: event.weightKg,
+                  format: (double v) => NumberFormats.oneDecimal(v, context.l10n.localeName),
+                  unit: context.l10n.unitKg,
+                  size: 44,
+                  color: c.isFlat ? c.text : c.accent,
                 ),
-                TextSpan(
-                  text: ' kg',
-                  style: TextStyle(fontFamily: ScFonts.display, fontSize: 18, color: c.text2),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
           if (phase == ScalePhase.awaitingImpedance)
             TextButton.icon(
@@ -177,6 +183,98 @@ class _LiveReading extends StatelessWidget {
               label: Text(context.l10n.cuerpoSaveWeightOnly),
             ),
         ],
+      ),
+    );
+  }
+}
+
+/// Icono de la báscula; mientras busca, emite ondas suaves (solo en color).
+class _ScaleBeacon extends StatefulWidget {
+  const _ScaleBeacon({required this.active});
+
+  final bool active;
+
+  @override
+  State<_ScaleBeacon> createState() => _ScaleBeaconState();
+}
+
+class _ScaleBeaconState extends State<_ScaleBeacon> with SingleTickerProviderStateMixin {
+  late final AnimationController _pulse = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 1600),
+  );
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _sync();
+  }
+
+  @override
+  void didUpdateWidget(_ScaleBeacon oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    _sync();
+  }
+
+  void _sync() {
+    final bool animate = widget.active && ScMotion.enabled(context);
+    if (animate && !_pulse.isAnimating) {
+      unawaited(_pulse.repeat());
+    } else if (!animate && _pulse.isAnimating) {
+      _pulse
+        ..stop()
+        ..value = 0;
+    }
+  }
+
+  @override
+  void dispose() {
+    _pulse.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final ScColors c = context.sc;
+    final bool on = widget.active;
+    return SizedBox.square(
+      dimension: 48,
+      child: RepaintBoundary(
+        child: AnimatedBuilder(
+          animation: _pulse,
+          builder: (BuildContext context, Widget? child) {
+            final double t = _pulse.value;
+            return Stack(
+              alignment: Alignment.center,
+              children: <Widget>[
+                if (on && !c.isFlat)
+                  Container(
+                    width: 30 + 18 * t,
+                    height: 30 + 18 * t,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: c.accent.withValues(alpha: 0.35 * (1 - t)),
+                    ),
+                  ),
+                child!,
+              ],
+            );
+          },
+          child: Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: on ? (c.isFlat ? c.text : c.accent) : (c.isFlat ? c.bg2 : c.bg3),
+              shape: BoxShape.circle,
+              border: c.isFlat ? Border.all(color: c.line2, width: 1.5) : null,
+            ),
+            child: Icon(
+              AppIcons.bluetooth,
+              size: 20,
+              color: on ? (c.isFlat ? c.bg : c.ink) : c.text,
+            ),
+          ),
+        ),
       ),
     );
   }

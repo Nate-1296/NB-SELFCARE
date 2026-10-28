@@ -9,6 +9,7 @@ import '../../../../core/l10n/l10n.dart';
 import '../../../../core/platform/health_connect_gateway.dart';
 import '../../../../shared/theme/sc_colors.dart';
 import '../../../../shared/theme/sc_theme.dart';
+import '../../../../shared/utils/number_formats.dart';
 import '../../../../shared/widgets/app_icons.dart';
 import '../../../../shared/widgets/chip_pill.dart';
 import '../../../../shared/widgets/sheet.dart';
@@ -37,11 +38,8 @@ class HoyStepsSleepSheet extends ConsumerStatefulWidget {
   }) {
     return mostrarHojaMenu<void>(
       context,
-      builder: (_) => HoyStepsSleepSheet(
-        dateKey: dateKey,
-        profile: profile,
-        currentSummary: currentSummary,
-      ),
+      builder: (_) =>
+          HoyStepsSleepSheet(dateKey: dateKey, profile: profile, currentSummary: currentSummary),
     );
   }
 
@@ -68,8 +66,9 @@ class _HoyStepsSleepSheetState extends ConsumerState<HoyStepsSleepSheet> {
     if (!await gateway.hasPermissions()) {
       await gateway.requestPermissions();
     }
-    final HealthSyncResult result =
-        await ref.read(healthSyncServiceProvider).syncDay(widget.dateKey);
+    final HealthSyncResult result = await ref
+        .read(healthSyncServiceProvider)
+        .syncDay(widget.dateKey);
     final DailyActivitySnapshot? data = result.snapshot;
 
     if (!mounted) return;
@@ -84,10 +83,8 @@ class _HoyStepsSleepSheetState extends ConsumerState<HoyStepsSleepSheet> {
       SnackBar(
         content: Text(switch (result.outcome) {
           HealthSyncOutcome.synced => context.l10n.todayDatosSincronizadosDesdeHealthConnect,
-          HealthSyncOutcome.noData =>
-            context.l10n.todayHealthConnectNoTieneRegistros,
-          HealthSyncOutcome.notConnected =>
-            context.l10n.todayConectaHealthConnectEnAjustes,
+          HealthSyncOutcome.noData => context.l10n.todayHealthConnectNoTieneRegistros,
+          HealthSyncOutcome.notConnected => context.l10n.todayConectaHealthConnectEnAjustes,
         }),
       ),
     );
@@ -95,7 +92,9 @@ class _HoyStepsSleepSheetState extends ConsumerState<HoyStepsSleepSheet> {
 
   Future<void> _save() async {
     unawaited(HapticFeedback.lightImpact());
-    final int coins = await ref.read(dailyActivityServiceProvider).saveManualEntry(
+    final int coins = await ref
+        .read(dailyActivityServiceProvider)
+        .saveManualEntry(
           dateKey: widget.dateKey,
           steps: _steps,
           sleepMinutes: (_sleepHours * 60).round(),
@@ -107,8 +106,12 @@ class _HoyStepsSleepSheetState extends ConsumerState<HoyStepsSleepSheet> {
         SnackBar(
           content: Text(
             coins > 0
-                ? context.l10n.todayActivitySavedCoins(_steps, _sleepHours.toStringAsFixed(1), coins)
-                : context.l10n.todayActivitySaved(_steps, _sleepHours.toStringAsFixed(1)),
+                ? context.l10n.todayActivitySavedCoins(
+                    _steps,
+                    NumberFormats.fixed(_sleepHours, 1),
+                    coins,
+                  )
+                : context.l10n.todayActivitySaved(_steps, NumberFormats.fixed(_sleepHours, 1)),
           ),
         ),
       );
@@ -138,15 +141,16 @@ class _HoyStepsSleepSheetState extends ConsumerState<HoyStepsSleepSheet> {
                 style: TextStyle(
                   fontFamily: ScFonts.display,
                   fontSize: 19,
-                  fontWeight: FontWeight.w800,
+                  fontWeight: FontWeight.w700,
                   color: c.text,
                 ),
               ),
               OutlinedButton.icon(
                 onPressed: _isSyncing ? null : _syncFromHealthConnect,
                 icon: Icon(AppIcons.refresh, size: 16, color: c.accent),
-                label:
-                    Text(_isSyncing ? context.l10n.todaySincronizando: context.l10n.todayHealthConnect),
+                label: Text(
+                  _isSyncing ? context.l10n.todaySincronizando : context.l10n.todayHealthConnect,
+                ),
               ),
             ],
           ),
@@ -154,16 +158,19 @@ class _HoyStepsSleepSheetState extends ConsumerState<HoyStepsSleepSheet> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: <Widget>[
-              Text(
+              Flexible(child: Text(
                 context.l10n.todayPasosDelDia,
                 style: TextStyle(fontWeight: FontWeight.w700, color: c.text),
-              ),
+              )),
               Text(
-                context.l10n.todayTexto2((_steps).toString(), widget.profile.dailyStepsGoal.toString()),
+                context.l10n.todayTexto2(
+                  NumberFormats.group(_steps),
+                  NumberFormats.group(widget.profile.dailyStepsGoal),
+                ),
                 style: TextStyle(
                   fontFamily: ScFonts.display,
                   fontSize: 16,
-                  fontWeight: FontWeight.w800,
+                  fontWeight: FontWeight.w700,
                   color: c.steps,
                 ),
               ),
@@ -183,18 +190,15 @@ class _HoyStepsSleepSheetState extends ConsumerState<HoyStepsSleepSheet> {
             children: <Widget>[
               ChipPill(
                 label: context.l10n.today1000Pasos,
-                onTap: () =>
-                    setState(() => _steps = (_steps + 1000).clamp(0, 50000)),
+                onTap: () => setState(() => _steps = (_steps + 1000).clamp(0, 50000)),
               ),
               ChipPill(
                 label: context.l10n.today2500Pasos,
-                onTap: () =>
-                    setState(() => _steps = (_steps + 2500).clamp(0, 50000)),
+                onTap: () => setState(() => _steps = (_steps + 2500).clamp(0, 50000)),
               ),
               ChipPill(
-                label: context.l10n.todayMeta(widget.profile.dailyStepsGoal.toString()),
-                onTap: () =>
-                    setState(() => _steps = widget.profile.dailyStepsGoal),
+                label: context.l10n.todayMeta(NumberFormats.group(widget.profile.dailyStepsGoal)),
+                onTap: () => setState(() => _steps = widget.profile.dailyStepsGoal),
               ),
             ],
           ),
@@ -202,16 +206,16 @@ class _HoyStepsSleepSheetState extends ConsumerState<HoyStepsSleepSheet> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: <Widget>[
-              Text(
+              Flexible(child: Text(
                 context.l10n.todayHorasDeSuenoAnoche,
                 style: TextStyle(fontWeight: FontWeight.w700, color: c.text),
-              ),
+              )),
               Text(
-                context.l10n.todayH(_sleepHours.toStringAsFixed(1).toString()),
+                context.l10n.todayH(NumberFormats.fixed(_sleepHours, 1)),
                 style: TextStyle(
                   fontFamily: ScFonts.display,
                   fontSize: 16,
-                  fontWeight: FontWeight.w800,
+                  fontWeight: FontWeight.w700,
                   color: c.fasting,
                 ),
               ),
@@ -227,7 +231,8 @@ class _HoyStepsSleepSheetState extends ConsumerState<HoyStepsSleepSheet> {
           ),
           Text(
             _sleepHours >= sleepGoalHours
-                ? context.l10n.todayCumplesTuMetaDeH(sleepGoalHours.toStringAsFixed(1).toString()): context.l10n.todayConHDeSuenoTus(sleepGoalHours.toStringAsFixed(1).toString()),
+                ? context.l10n.todayCumplesTuMetaDeH(NumberFormats.fixed(sleepGoalHours, 1))
+                : context.l10n.todayConHDeSuenoTus(NumberFormats.fixed(sleepGoalHours, 1)),
             style: TextStyle(fontSize: 11.5, color: c.text2),
           ),
           const SizedBox(height: 12),
@@ -235,9 +240,7 @@ class _HoyStepsSleepSheetState extends ConsumerState<HoyStepsSleepSheet> {
             width: double.infinity,
             child: FilledButton(
               onPressed: _save,
-              style: FilledButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 14),
-              ),
+              style: FilledButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 14)),
               child: Text(context.l10n.todayGuardarResumenDiario),
             ),
           ),

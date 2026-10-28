@@ -23,6 +23,19 @@ extension DateTimeExtensions on DateTime {
     return calculateAgeYears(birthDate, referenceDate).floor();
   }
 
+  /// Suma días de calendario conservando la hora local.
+  ///
+  /// A diferencia de `add(Duration(days: n))`, no se desplaza un día en los
+  /// cambios de horario de verano (un día de 23 o 25 horas).
+  DateTime addDays(int days) =>
+      DateTime(year, month, day + days, hour, minute, second, millisecond, microsecond);
+
+  /// Días de calendario desde [other] hasta esta fecha (negativo si es anterior),
+  /// sin verse afectado por los cambios de horario.
+  int calendarDaysSince(DateTime other) => DateTime.utc(year, month, day)
+      .difference(DateTime.utc(other.year, other.month, other.day))
+      .inDays;
+
   /// Retorna el inicio del día (00:00:00.000).
   DateTime get startOfDay => DateTime(year, month, day);
 

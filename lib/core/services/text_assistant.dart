@@ -86,7 +86,7 @@ class JournalTextAnalysis {
       };
 }
 
-/// Asistente de texto 100 % local y determinista (docs/08, ADR-03).
+/// Asistente de texto 100 % local y determinista (ADR-03).
 ///
 /// * Extrae alimentos y gramos de una frase ("200 g de pollo y una manzana").
 /// * Sugiere ánimo, energía, estrés y etiquetas para una entrada del diario.
@@ -181,6 +181,10 @@ class TextAssistant {
           name = foodType;
         }
       }
+
+      // "0 g de arroz" no es una comida; cantidades enormes son errores de dictado.
+      if (!grams.isFinite || grams <= 0) continue;
+      grams = grams.clamp(1.0, 5000.0);
 
       // Limpia artículos o palabras de relleno iniciales
       name = name

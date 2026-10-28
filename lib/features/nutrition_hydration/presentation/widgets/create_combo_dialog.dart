@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../../core/l10n/l10n.dart';
 import '../../../../shared/theme/sc_colors.dart';
 import '../../../../shared/theme/sc_theme.dart';
+import '../../../../shared/utils/number_formats.dart';
 
 /// Diálogo limpio y sin fugas de memoria para nombrar un nuevo combo casero.
 class CreateComboDialog extends StatefulWidget {
@@ -45,7 +46,7 @@ class _CreateComboDialogState extends State<CreateComboDialog> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
           Text(
-            context.l10n.foodSeGuardaranLosAlimentosActuales(widget.itemCount.toString()),
+            context.l10n.foodSeGuardaranLosAlimentosActuales(NumberFormats.group(widget.itemCount)),
             softWrap: true,
             style: TextStyle(
               fontFamily: ScFonts.ui,

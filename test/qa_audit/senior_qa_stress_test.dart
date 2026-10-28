@@ -433,7 +433,7 @@ void main() {
           profile: emptyProfile,
           latestMeasurement: null, // null measurement
           recentMeasurements: <BodyMeasurement>[], // empty list
-          averageDailyKcal: 0,
+          averageDailyKcal: 0, foodDays: 7,
           averageProteinG: 0.0,
           averageCarbsG: 0.0,
           averageFatG: 0.0,

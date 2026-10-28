@@ -4,11 +4,13 @@ import '../../../../core/database/app_database.dart';
 import '../../../../core/l10n/l10n.dart';
 import '../../../../shared/theme/sc_colors.dart';
 import '../../../../shared/theme/sc_theme.dart';
+import '../../../../shared/utils/number_formats.dart';
 import '../../../../shared/widgets/app_icons.dart';
 import 'meal_slot_selector.dart';
 
 class FoodSearchItemCard extends StatelessWidget {
-  const FoodSearchItemCard({super.key, 
+  const FoodSearchItemCard({
+    super.key,
     required this.food,
     required this.onTapDetail,
     required this.onQuickAdd,
@@ -23,8 +25,7 @@ class FoodSearchItemCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ScColors c = context.sc;
-    final double servingG =
-        food.defaultServingGrams > 0 ? food.defaultServingGrams : 100.0;
+    final double servingG = food.defaultServingGrams > 0 ? food.defaultServingGrams : 100.0;
     final double ratio = servingG / 100.0;
     final int servingKcal = (food.kcalPer100g * ratio).round();
     final double p = food.proteinPer100g * ratio;
@@ -41,10 +42,7 @@ class FoodSearchItemCard extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(14, 12, 10, 12),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(18),
-            border: Border.all(
-              color: c.isFlat ? c.line2 : c.line,
-              width: c.isFlat ? 1.4 : 1.0,
-            ),
+            border: Border.all(color: c.isFlat ? c.line2 : c.line, width: c.isFlat ? 1.4 : 1.0),
           ),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.center,
@@ -59,7 +57,7 @@ class FoodSearchItemCard extends StatelessWidget {
                       style: TextStyle(
                         fontFamily: ScFonts.display,
                         fontSize: 15,
-                        fontWeight: FontWeight.w800,
+                        fontWeight: FontWeight.w700,
                         color: c.text,
                         height: 1.2,
                       ),
@@ -73,8 +71,7 @@ class FoodSearchItemCard extends StatelessWidget {
                         runSpacing: 4,
                         crossAxisAlignment: WrapCrossAlignment.center,
                         children: <Widget>[
-                          if (food.brand != null &&
-                              food.brand!.trim().isNotEmpty)
+                          if (food.brand != null && food.brand!.trim().isNotEmpty)
                             Text(
                               food.brand!.trim(),
                               style: TextStyle(
@@ -84,15 +81,20 @@ class FoodSearchItemCard extends StatelessWidget {
                                 color: c.text2,
                               ),
                             ),
-                          if (food.nutriScore != null &&
-                              food.nutriScore!.trim().isNotEmpty)
+                          if (food.nutriScore != null && food.nutriScore!.trim().isNotEmpty)
                             NutriScoreBadge(grade: food.nutriScore!),
                         ],
                       ),
                     ],
                     const SizedBox(height: 6),
                     Text(
-                      context.l10n.foodGKcalPGC(servingG.round().toString(), (servingKcal).toString(), p.toStringAsFixed(0).toString(), carbs.toStringAsFixed(0).toString(), fat.toStringAsFixed(0).toString()),
+                      context.l10n.foodGKcalPGC(
+                        NumberFormats.group(servingG),
+                        NumberFormats.group(servingKcal),
+                        NumberFormats.fixed(p, 0),
+                        NumberFormats.fixed(carbs, 0),
+                        NumberFormats.fixed(fat, 0),
+                      ),
                       softWrap: true,
                       style: TextStyle(
                         fontFamily: ScFonts.ui,
@@ -106,7 +108,8 @@ class FoodSearchItemCard extends StatelessWidget {
               ),
               IconButton(
                 tooltip: food.isFavorite
-                    ? context.l10n.foodQuitarDeFavoritos: context.l10n.foodMarcarComoFavorito,
+                    ? context.l10n.foodQuitarDeFavoritos
+                    : context.l10n.foodMarcarComoFavorito,
                 visualDensity: VisualDensity.compact,
                 onPressed: onToggleFavorite,
                 icon: Icon(
@@ -129,11 +132,7 @@ class FoodSearchItemCard extends StatelessWidget {
                   onTap: onQuickAdd,
                   child: Padding(
                     padding: const EdgeInsets.all(9),
-                    child: Icon(
-                      AppIcons.add,
-                      size: 20,
-                      color: c.isFlat ? c.text : c.accent,
-                    ),
+                    child: Icon(AppIcons.add, size: 20, color: c.isFlat ? c.text : c.accent),
                   ),
                 ),
               ),
@@ -146,7 +145,8 @@ class FoodSearchItemCard extends StatelessWidget {
 }
 
 class EmptySearchState extends StatelessWidget {
-  const EmptySearchState({super.key, 
+  const EmptySearchState({
+    super.key,
     required this.query,
     required this.onCreateCustom,
     this.onSearchOff,
@@ -171,27 +171,25 @@ class EmptySearchState extends StatelessWidget {
             const SizedBox(height: 12),
             Text(
               query.isEmpty
-                  ? context.l10n.foodAunNoHayAlimentosEn: context.l10n.foodNoEncontramosEnTuCatalogo((query).toString()),
+                  ? context.l10n.foodAunNoHayAlimentosEn
+                  : context.l10n.foodNoEncontramosEnTuCatalogo((query).toString()),
               textAlign: TextAlign.center,
               softWrap: true,
               style: TextStyle(
                 fontFamily: ScFonts.display,
                 fontSize: 16,
-                fontWeight: FontWeight.w800,
+                fontWeight: FontWeight.w700,
                 color: c.text,
               ),
             ),
             const SizedBox(height: 6),
             Text(
               query.isNotEmpty
-                  ? context.l10n.foodPuedesBuscarloEnOpenFood: context.l10n.foodPuedesCrearloEnSegundosY,
+                  ? context.l10n.foodPuedesBuscarloEnOpenFood
+                  : context.l10n.foodPuedesCrearloEnSegundosY,
               textAlign: TextAlign.center,
               softWrap: true,
-              style: TextStyle(
-                fontFamily: ScFonts.ui,
-                fontSize: 13,
-                color: c.text2,
-              ),
+              style: TextStyle(fontFamily: ScFonts.ui, fontSize: 13, color: c.text2),
             ),
             const SizedBox(height: 16),
             if (query.isNotEmpty && onSearchOff != null) ...<Widget>[
@@ -201,9 +199,7 @@ class EmptySearchState extends StatelessWidget {
                   onPressed: isSearchingOff ? null : onSearchOff,
                   style: FilledButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
-                    ),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                   ),
                   icon: isSearchingOff
                       ? const SizedBox(
@@ -214,7 +210,8 @@ class EmptySearchState extends StatelessWidget {
                       : const Icon(Icons.travel_explore_rounded, size: 18),
                   label: Text(
                     isSearchingOff
-                        ? context.l10n.foodConsultandoOpenFoodFacts: context.l10n.foodBuscarEnOpenFoodFacts,
+                        ? context.l10n.foodConsultandoOpenFoodFacts
+                        : context.l10n.foodBuscarEnOpenFoodFacts,
                     style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
                 ),
@@ -227,9 +224,7 @@ class EmptySearchState extends StatelessWidget {
                 onPressed: onCreateCustom,
                 style: OutlinedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 12),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
-                  ),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                 ),
                 icon: const Icon(AppIcons.add, size: 18),
                 label: Text(context.l10n.foodCrearAlimentoPropio),
@@ -243,7 +238,8 @@ class EmptySearchState extends StatelessWidget {
 }
 
 class SearchOpenFoodFactsTile extends StatelessWidget {
-  const SearchOpenFoodFactsTile({super.key, 
+  const SearchOpenFoodFactsTile({
+    super.key,
     required this.query,
     required this.isSearching,
     required this.onSearch,
@@ -262,18 +258,11 @@ class SearchOpenFoodFactsTile extends StatelessWidget {
       decoration: BoxDecoration(
         color: c.bg3,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: c.isFlat ? c.line2 : c.line,
-          width: c.isFlat ? 1.3 : 1.0,
-        ),
+        border: c.isFlat ? Border.all(color: c.line2, width: 1.5) : null,
       ),
       child: Row(
         children: <Widget>[
-          Icon(
-            Icons.travel_explore_rounded,
-            color: c.accent,
-            size: 24,
-          ),
+          Icon(Icons.travel_explore_rounded, color: c.accent, size: 24),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
@@ -293,11 +282,7 @@ class SearchOpenFoodFactsTile extends StatelessWidget {
                   context.l10n.foodBuscarEnElCatalogoOpen((query).toString()),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontFamily: ScFonts.ui,
-                    fontSize: 11.5,
-                    color: c.text2,
-                  ),
+                  style: TextStyle(fontFamily: ScFonts.ui, fontSize: 11.5, color: c.text2),
                 ),
               ],
             ),
@@ -305,9 +290,7 @@ class SearchOpenFoodFactsTile extends StatelessWidget {
           const SizedBox(width: 8),
           FilledButton.tonal(
             onPressed: isSearching ? null : onSearch,
-            style: FilledButton.styleFrom(
-              visualDensity: VisualDensity.compact,
-            ),
+            style: FilledButton.styleFrom(visualDensity: VisualDensity.compact),
             child: isSearching
                 ? const SizedBox(
                     width: 14,

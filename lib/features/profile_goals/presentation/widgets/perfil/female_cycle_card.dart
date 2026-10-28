@@ -8,6 +8,7 @@ import '../../../../../core/database/app_database.dart';
 import '../../../../../core/l10n/l10n.dart';
 import '../../../../../shared/theme/sc_colors.dart';
 import '../../../../../shared/theme/sc_theme.dart';
+import '../../../../../shared/widgets/card_header.dart';
 import '../../../../../shared/widgets/health_card.dart';
 import '../../../../../shared/widgets/science_on_demand_sheet.dart';
 import '../../../../body_metrics/application/body_queries.dart';
@@ -27,17 +28,14 @@ class FemaleCycleCard extends ConsumerWidget {
           title: context.l10n.perfilCicloHormonalYGastoCalorico,
           badgeLabel: context.l10n.perfilProgesteronaFaseLuteaYRetencion,
           icon: Icons.female_rounded,
-          quickTake:
-              context.l10n.perfilDuranteLaFaseLuteaEntre,
-          howItWorks:
-              context.l10n.perfilEnLaFaseLuteaEl,
+          quickTake: context.l10n.perfilDuranteLaFaseLuteaEntre,
+          howItWorks: context.l10n.perfilEnLaFaseLuteaEl,
           formula: context.l10n.perfilGastoLuteoBmr100300,
           scientificReferences: <String>[
             context.l10n.perfilWebbP198624Hour,
             context.l10n.perfilBarrSIEtAl,
           ],
-          actionableAdvice:
-              context.l10n.perfilSiTuPesoSubeDurante,
+          actionableAdvice: context.l10n.perfilSiTuPesoSubeDurante,
         ),
       ),
     );
@@ -47,6 +45,7 @@ class FemaleCycleCard extends ConsumerWidget {
     final DateTime now = ref.read(clockProvider).now();
     final DateTime? picked = await showDatePicker(
       context: context,
+      confirmText: context.l10n.commonAccept,
       initialDate: now,
       firstDate: now.subtract(const Duration(days: 60)),
       lastDate: now,
@@ -55,11 +54,8 @@ class FemaleCycleCard extends ConsumerWidget {
     if (picked != null) {
       await ref.read(cycleServiceProvider).logPeriodStart(picked);
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(context.l10n.perfilInicioDeCicloRegistradoCon),
-          ),
-        );
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(context.l10n.perfilInicioDeCicloRegistradoCon)));
       }
     }
   }
@@ -67,8 +63,7 @@ class FemaleCycleCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final ScColors c = context.sc;
-    final AsyncValue<FemaleCycleLog?> cycleAsync =
-        ref.watch(latestFemaleCycleStreamProvider);
+    final AsyncValue<FemaleCycleLog?> cycleAsync = ref.watch(latestFemaleCycleStreamProvider);
 
     return HealthCard(
       margin: EdgeInsets.zero,
@@ -76,38 +71,15 @@ class FemaleCycleCard extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: <Widget>[
-              Row(
-                children: <Widget>[
-                  Icon(
-                    Icons.female_rounded,
-                    size: 20,
-                    color: c.isFlat ? c.text : c.accent,
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    context.l10n.perfilSaludFemeninaYCiclo,
-                    style: TextStyle(
-                      fontFamily: ScFonts.display,
-                      fontSize: 15.5,
-                      fontWeight: FontWeight.bold,
-                      color: c.text,
-                    ),
-                  ),
-                ],
-              ),
-              IconButton(
-                icon: Icon(
-                  Icons.info_outline_rounded,
-                  size: 20,
-                  color: c.accent,
-                ),
-                tooltip: context.l10n.perfilCienciaDelCicloHormonal,
-                onPressed: () => _showCycleScience(context),
-              ),
-            ],
+          CardHeader(
+            icon: Icons.female_rounded,
+            tone: c.fat,
+            title: context.l10n.perfilSaludFemeninaYCiclo,
+            trailing: IconButton(
+              icon: Icon(Icons.info_outline_rounded, size: 20, color: c.text2),
+              tooltip: context.l10n.perfilCienciaDelCicloHormonal,
+              onPressed: () => _showCycleScience(context),
+            ),
           ),
           const SizedBox(height: 10),
           cycleAsync.when(
@@ -119,10 +91,7 @@ class FemaleCycleCard extends ConsumerWidget {
                   decoration: BoxDecoration(
                     color: c.bg3,
                     borderRadius: BorderRadius.circular(14),
-                    border: Border.all(
-                      color: c.isFlat ? c.line2 : c.line,
-                      width: c.isFlat ? 1.3 : 1.0,
-                    ),
+                    border: c.isFlat ? Border.all(color: c.line2, width: 1.5) : null,
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -139,11 +108,7 @@ class FemaleCycleCard extends ConsumerWidget {
                       const SizedBox(height: 4),
                       Text(
                         context.l10n.perfilPermiteCalibrarElGastoMetabolico,
-                        style: TextStyle(
-                          fontFamily: ScFonts.ui,
-                          fontSize: 11.5,
-                          color: c.text2,
-                        ),
+                        style: TextStyle(fontFamily: ScFonts.ui, fontSize: 11.5, color: c.text2),
                       ),
                       const SizedBox(height: 12),
                       OutlinedButton.icon(
@@ -161,10 +126,8 @@ class FemaleCycleCard extends ConsumerWidget {
               }
 
               final DateTime today = ref.read(clockProvider).now();
-              final int diffDays =
-                  today.difference(latest.cycleStartDate).inDays;
-              final int cycleLength =
-                  latest.cycleLengthDays > 0 ? latest.cycleLengthDays : 28;
+              final int diffDays = today.difference(latest.cycleStartDate).inDays;
+              final int cycleLength = latest.cycleLengthDays > 0 ? latest.cycleLengthDays : 28;
               final int currentCycleDay = (diffDays % cycleLength) + 1;
 
               String phaseName;
@@ -173,20 +136,16 @@ class FemaleCycleCard extends ConsumerWidget {
 
               if (currentCycleDay <= 5) {
                 phaseName = context.l10n.perfilFaseMenstrual;
-                phaseDesc =
-                    context.l10n.perfilDiasDeRenovacionPriorizaDescanso;
+                phaseDesc = context.l10n.perfilDiasDeRenovacionPriorizaDescanso;
               } else if (currentCycleDay <= 13) {
                 phaseName = context.l10n.perfilFaseFolicular;
-                phaseDesc =
-                    context.l10n.perfilSensibilidadALaInsulinaOptima;
+                phaseDesc = context.l10n.perfilSensibilidadALaInsulinaOptima;
               } else if (currentCycleDay <= 16) {
                 phaseName = context.l10n.perfilFaseDeOvulacion;
-                phaseDesc =
-                    context.l10n.perfilPicoDeEstrogenosFuerzaY;
+                phaseDesc = context.l10n.perfilPicoDeEstrogenosFuerzaY;
               } else {
                 phaseName = context.l10n.perfilFaseLuteaPremenstrual;
-                phaseDesc =
-                    context.l10n.perfilAumentoDeProgesteronaGastoBasal;
+                phaseDesc = context.l10n.perfilAumentoDeProgesteronaGastoBasal;
                 isLuteal = true;
               }
 
@@ -196,10 +155,7 @@ class FemaleCycleCard extends ConsumerWidget {
                 decoration: BoxDecoration(
                   color: c.bg3,
                   borderRadius: BorderRadius.circular(14),
-                  border: Border.all(
-                    color: c.isFlat ? c.line2 : c.line,
-                    width: c.isFlat ? 1.3 : 1.0,
-                  ),
+                  border: c.isFlat ? Border.all(color: c.line2, width: 1.5) : null,
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -208,24 +164,23 @@ class FemaleCycleCard extends ConsumerWidget {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: <Widget>[
                         Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 4,
-                          ),
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                           decoration: BoxDecoration(
                             color: c.isFlat
                                 ? c.line2
-                                : (isLuteal
-                                    ? c.accent.withValues(alpha: 0.18)
-                                    : c.soft),
+                                : (isLuteal ? c.accent.withValues(alpha: 0.18) : c.soft),
                             borderRadius: BorderRadius.circular(10),
                           ),
                           child: Text(
-                            context.l10n.perfilDiaDe((phaseName).toString(), (currentCycleDay).toString(), (cycleLength).toString()),
+                            context.l10n.perfilDiaDe(
+                              (phaseName).toString(),
+                              (currentCycleDay).toString(),
+                              (cycleLength).toString(),
+                            ),
                             style: TextStyle(
                               fontFamily: ScFonts.display,
                               fontSize: 12,
-                              fontWeight: FontWeight.w800,
+                              fontWeight: FontWeight.w700,
                               color: c.isFlat ? c.text : c.accent,
                             ),
                           ),
@@ -258,23 +213,15 @@ class FemaleCycleCard extends ConsumerWidget {
                       Container(
                         padding: const EdgeInsets.all(10),
                         decoration: BoxDecoration(
-                          color: c.isFlat
-                              ? c.bg2
-                              : c.accent.withValues(alpha: 0.08),
+                          color: c.isFlat ? c.bg2 : c.accent.withValues(alpha: 0.08),
                           borderRadius: BorderRadius.circular(10),
                           border: Border.all(
-                            color: c.isFlat
-                                ? c.line2
-                                : c.accent.withValues(alpha: 0.25),
+                            color: c.isFlat ? c.line2 : c.accent.withValues(alpha: 0.25),
                           ),
                         ),
                         child: Row(
                           children: <Widget>[
-                            Icon(
-                              Icons.local_fire_department_rounded,
-                              size: 16,
-                              color: c.calories,
-                            ),
+                            Icon(Icons.local_fire_department_rounded, size: 16, color: c.calories),
                             const SizedBox(width: 8),
                             Expanded(
                               child: Text(
@@ -296,10 +243,7 @@ class FemaleCycleCard extends ConsumerWidget {
               );
             },
             loading: () => const Center(
-              child: Padding(
-                padding: EdgeInsets.all(12),
-                child: CircularProgressIndicator(),
-              ),
+              child: Padding(padding: EdgeInsets.all(12), child: CircularProgressIndicator()),
             ),
             error: (Object e, _) => Text(
               context.l10n.perfilNoSePudoCargarEl((e).toString()),

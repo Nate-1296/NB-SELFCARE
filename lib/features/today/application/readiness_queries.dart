@@ -19,7 +19,7 @@ const int readinessStrainDays = 3;
 
 /// Rango de fechas (inclusive) que necesita la disposición de [dateKey].
 ({String from, String to}) readinessWindow(String dateKey) => (
-  from: DateTime.parse(dateKey).subtract(const Duration(days: readinessBaselineDays)).dateKey,
+  from: DateTime.parse(dateKey).addDays(-readinessBaselineDays).dateKey,
   to: dateKey,
 );
 
@@ -43,9 +43,7 @@ DailyReadinessResult? evaluateReadiness({
   }
   if (today == null || today.sleepDurationMinutes <= 0) return null;
 
-  final String strainFrom = DateTime.parse(dateKey)
-      .subtract(const Duration(days: readinessStrainDays - 1))
-      .dateKey;
+  final String strainFrom = DateTime.parse(dateKey).addDays(1 - readinessStrainDays).dateKey;
   int strainMinutes = 0;
   double weightedRpe = 0;
   for (final WorkoutBlock w in workouts) {

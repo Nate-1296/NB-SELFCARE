@@ -51,9 +51,7 @@ class TdeeDao {
   }) async {
     final DateTime now = referenceDate ?? _clock.now();
     final String toDateKey = now.dateKey;
-    final String fromDateKey = now
-        .subtract(const Duration(days: AppConstants.adaptiveTdeeWindowDays - 1))
-        .dateKey;
+    final String fromDateKey = now.addDays(1 - AppConstants.adaptiveTdeeWindowDays).dateKey;
 
     final foodRows = await _db.customSelect(
       '''

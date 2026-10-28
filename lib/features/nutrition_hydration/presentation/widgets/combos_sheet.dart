@@ -9,6 +9,7 @@ import '../../../../core/domain/enums.dart';
 import '../../../../core/l10n/l10n.dart';
 import '../../../../shared/theme/sc_colors.dart';
 import '../../../../shared/theme/sc_theme.dart';
+import '../../../../shared/utils/number_formats.dart';
 import '../../../../shared/widgets/app_icons.dart';
 import '../../application/food_catalog_service.dart';
 import '../../application/food_logging_service.dart';
@@ -16,11 +17,7 @@ import 'meal_slot_selector.dart';
 
 /// Subpágina de gestión y escalado proporcional (0.25x – 3.0x) de Combos Caseros.
 class CombosModalSheet extends ConsumerStatefulWidget {
-  const CombosModalSheet({
-    super.key,
-    required this.dateKey,
-    required this.initialMealType,
-  });
+  const CombosModalSheet({super.key, required this.dateKey, required this.initialMealType});
 
   final String dateKey;
   final MealType initialMealType;
@@ -33,14 +30,7 @@ class _CombosModalSheetState extends ConsumerState<CombosModalSheet> {
   double _multiplier = 1.0;
   late MealType _mealType;
 
-  static const List<double> _quickStops = <double>[
-    0.5,
-    0.75,
-    1.0,
-    1.25,
-    1.5,
-    2.0,
-  ];
+  static const List<double> _quickStops = <double>[0.5, 0.75, 1.0, 1.25, 1.5, 2.0];
 
   @override
   void initState() {
@@ -50,9 +40,9 @@ class _CombosModalSheetState extends ConsumerState<CombosModalSheet> {
 
   String _formatMultiplier(double m) {
     if ((m - m.roundToDouble()).abs() < 0.01) {
-      return '${m.toStringAsFixed(1)}x';
+      return '${NumberFormats.fixed(m, 1)}x';
     }
-    return '${m.toStringAsFixed(2)}x';
+    return '${NumberFormats.fixed(m, 2)}x';
   }
 
   @override
@@ -62,7 +52,6 @@ class _CombosModalSheetState extends ConsumerState<CombosModalSheet> {
         ref.watch(mealCombosProvider).value ?? const <MealComboWithDetails>[];
     return Builder(
       builder: (BuildContext context) {
-
         return Padding(
           padding: const EdgeInsets.fromLTRB(20, 4, 20, 24),
           child: Column(
@@ -80,7 +69,7 @@ class _CombosModalSheetState extends ConsumerState<CombosModalSheet> {
                       style: TextStyle(
                         fontFamily: ScFonts.display,
                         fontSize: 20,
-                        fontWeight: FontWeight.w800,
+                        fontWeight: FontWeight.w700,
                         color: c.text,
                       ),
                     ),
@@ -100,10 +89,7 @@ class _CombosModalSheetState extends ConsumerState<CombosModalSheet> {
                   decoration: BoxDecoration(
                     color: c.bg3,
                     borderRadius: BorderRadius.circular(18),
-                    border: Border.all(
-                      color: c.isFlat ? c.line2 : c.line,
-                      width: c.isFlat ? 1.4 : 1.0,
-                    ),
+                    border: c.isFlat ? Border.all(color: c.line2, width: 1.5) : null,
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -113,7 +99,7 @@ class _CombosModalSheetState extends ConsumerState<CombosModalSheet> {
                         style: TextStyle(
                           fontFamily: ScFonts.display,
                           fontSize: 16,
-                          fontWeight: FontWeight.w800,
+                          fontWeight: FontWeight.w700,
                           color: c.text,
                         ),
                       ),
@@ -135,11 +121,7 @@ class _CombosModalSheetState extends ConsumerState<CombosModalSheet> {
                 Text(
                   context.l10n.foodEligeElMomentoDelDia,
                   softWrap: true,
-                  style: TextStyle(
-                    fontFamily: ScFonts.ui,
-                    fontSize: 12.5,
-                    color: c.text2,
-                  ),
+                  style: TextStyle(fontFamily: ScFonts.ui, fontSize: 12.5, color: c.text2),
                 ),
                 const SizedBox(height: 12),
 
@@ -159,9 +141,7 @@ class _CombosModalSheetState extends ConsumerState<CombosModalSheet> {
                   decoration: BoxDecoration(
                     color: c.bg3,
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: c.isFlat ? c.line2 : c.line,
-                    ),
+                    border: c.isFlat ? Border.all(color: c.line2, width: 1.5) : null,
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -182,23 +162,18 @@ class _CombosModalSheetState extends ConsumerState<CombosModalSheet> {
                           ),
                           const SizedBox(width: 8),
                           Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 10,
-                              vertical: 4,
-                            ),
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                             decoration: BoxDecoration(
                               color: c.bg2,
                               borderRadius: BorderRadius.circular(10),
-                              border: Border.all(
-                                color: c.isFlat ? c.line2 : c.accent,
-                              ),
+                              border: Border.all(color: c.isFlat ? c.line2 : c.accent),
                             ),
                             child: Text(
                               _formatMultiplier(_multiplier),
                               style: TextStyle(
                                 fontFamily: ScFonts.display,
                                 fontSize: 14,
-                                fontWeight: FontWeight.w800,
+                                fontWeight: FontWeight.w700,
                                 color: c.accent,
                               ),
                             ),
@@ -211,8 +186,7 @@ class _CombosModalSheetState extends ConsumerState<CombosModalSheet> {
                         max: 3.0,
                         divisions: 11,
                         label: _formatMultiplier(_multiplier),
-                        onChanged: (double val) =>
-                            setState(() => _multiplier = val),
+                        onChanged: (double val) => setState(() => _multiplier = val),
                       ),
                       Wrap(
                         spacing: 6,
@@ -244,7 +218,9 @@ class _CombosModalSheetState extends ConsumerState<CombosModalSheet> {
                     onDelete: () => ref.read(foodCatalogServiceProvider).deleteCombo(item.combo.id),
                     onLog: () async {
                       unawaited(HapticFeedback.mediumImpact());
-                      await ref.read(foodLoggingServiceProvider).logCombo(
+                      await ref
+                          .read(foodLoggingServiceProvider)
+                          .logCombo(
                             comboId: item.combo.id,
                             multiplier: _multiplier,
                             mealType: _mealType,
@@ -256,7 +232,11 @@ class _CombosModalSheetState extends ConsumerState<CombosModalSheet> {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
                             content: Text(
-                              context.l10n.foodComboAnadidoA(item.combo.name.toString(), _formatMultiplier(_multiplier).toString(), slot.title(context.l10n).toString()),
+                              context.l10n.foodComboAnadidoA(
+                                item.combo.name.toString(),
+                                _formatMultiplier(_multiplier).toString(),
+                                slot.title(context.l10n).toString(),
+                              ),
                             ),
                           ),
                         );
@@ -297,8 +277,10 @@ class _ComboCardItem extends StatelessWidget {
 
     final String ingredientsSummary = detail.ingredients
         .map(
-          (MealComboIngredientDetail ing) =>
-              context.l10n.foodG12(ing.foodItem.name.toString(), (ing.baseGrams * multiplier).round().toString()),
+          (MealComboIngredientDetail ing) => context.l10n.foodG12(
+            ing.foodItem.name.toString(),
+            NumberFormats.group(ing.baseGrams * multiplier),
+          ),
         )
         .join(' · ');
 
@@ -308,10 +290,7 @@ class _ComboCardItem extends StatelessWidget {
       decoration: BoxDecoration(
         color: c.bg3,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(
-          color: c.isFlat ? c.line2 : c.line,
-          width: c.isFlat ? 1.4 : 1.0,
-        ),
+        border: c.isFlat ? Border.all(color: c.line2, width: 1.5) : null,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -329,28 +308,24 @@ class _ComboCardItem extends StatelessWidget {
                       style: TextStyle(
                         fontFamily: ScFonts.display,
                         fontSize: 16,
-                        fontWeight: FontWeight.w800,
+                        fontWeight: FontWeight.w700,
                         color: c.text,
                       ),
                     ),
                     const SizedBox(height: 2),
                     Text(
                       context.l10n.foodUsadoVeces(detail.combo.timesUsed.toString()),
-                      style: TextStyle(
-                        fontFamily: ScFonts.ui,
-                        fontSize: 11.5,
-                        color: c.text3,
-                      ),
+                      style: TextStyle(fontFamily: ScFonts.ui, fontSize: 11.5, color: c.text3),
                     ),
                   ],
                 ),
               ),
               Text(
-                context.l10n.foodKcal4((scaledKcal).toString()),
+                context.l10n.foodKcal4(NumberFormats.group(scaledKcal)),
                 style: TextStyle(
                   fontFamily: ScFonts.display,
                   fontSize: 16,
-                  fontWeight: FontWeight.w800,
+                  fontWeight: FontWeight.w700,
                   color: c.isFlat ? c.text : c.calories,
                 ),
               ),
@@ -361,17 +336,16 @@ class _ComboCardItem extends StatelessWidget {
             Text(
               ingredientsSummary,
               softWrap: true,
-              style: TextStyle(
-                fontFamily: ScFonts.ui,
-                fontSize: 12.5,
-                color: c.text2,
-                height: 1.3,
-              ),
+              style: TextStyle(fontFamily: ScFonts.ui, fontSize: 12.5, color: c.text2, height: 1.3),
             ),
           ],
           const SizedBox(height: 6),
           Text(
-            context.l10n.foodPGCGG3(scaledP.toStringAsFixed(0).toString(), scaledC.toStringAsFixed(0).toString(), scaledF.toStringAsFixed(0).toString()),
+            context.l10n.foodPGCGG3(
+              NumberFormats.fixed(scaledP, 0),
+              NumberFormats.fixed(scaledC, 0),
+              NumberFormats.fixed(scaledF, 0),
+            ),
             style: TextStyle(
               fontFamily: ScFonts.ui,
               fontSize: 12,
@@ -396,14 +370,12 @@ class _ComboCardItem extends StatelessWidget {
                     backgroundColor: c.accent,
                     foregroundColor: c.ink,
                     padding: const EdgeInsets.symmetric(vertical: 11),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
                   icon: const Icon(AppIcons.add, size: 18),
                   label: Text(
                     context.l10n.foodRegistrar((multiplierText).toString()),
-                    style: const TextStyle(fontWeight: FontWeight.w800),
+                    style: const TextStyle(fontWeight: FontWeight.w700),
                   ),
                 ),
               ),

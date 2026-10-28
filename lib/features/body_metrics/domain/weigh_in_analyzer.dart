@@ -1,5 +1,6 @@
 import '../../../core/domain/enums.dart';
 import '../../../shared/utils/biometric_formulas.dart';
+import '../../../shared/utils/number_formats.dart';
 
 /// Datos del día anterior y del contexto fisiológico que explican una subida de peso.
 class RetentionContext {
@@ -33,7 +34,7 @@ class PreviousWeighIn {
   final bool hadImpedance;
 }
 
-/// Causas reconocidas de una "falsa subida" de peso (docs/04 §4, docs/14 Fase 6).
+/// Causas reconocidas de una "falsa subida" de peso (docs/04 §4).
 enum RetentionCause {
   highSodium,
   glycogenReload,
@@ -171,7 +172,7 @@ abstract final class WeighInAnalyzer {
         RetentionCause.creatine => 'creatina (agua dentro del músculo, no grasa)',
       };
     }).toList();
-    final String delta = (weightKg - previous.weightKg).toStringAsFixed(1);
+    final String delta = NumberFormats.fixed(weightKg - previous.weightKg, 1);
     return '+$delta kg de agua temporal por ${reasons.join(', ')}. No es grasa: '
         'tu Peso Tendencia apenas se mueve.';
   }

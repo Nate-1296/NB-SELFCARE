@@ -23,7 +23,8 @@
   "@todayWaterLogged": {
     "placeholders": {
       "ml": {
-        "type": "int"
+        "type": "int",
+        "format": "decimalPattern"
       }
     }
   },
@@ -31,10 +32,12 @@
   "@todayWaterLoggedGoal": {
     "placeholders": {
       "ml": {
-        "type": "int"
+        "type": "int",
+        "format": "decimalPattern"
       },
       "coins": {
-        "type": "int"
+        "type": "int",
+        "format": "decimalPattern"
       }
     }
   },
@@ -42,7 +45,8 @@
   "@todayWaterRemoved": {
     "placeholders": {
       "ml": {
-        "type": "int"
+        "type": "int",
+        "format": "decimalPattern"
       }
     }
   },
@@ -50,10 +54,12 @@
   "@todayStepsAdded": {
     "placeholders": {
       "amount": {
-        "type": "int"
+        "type": "int",
+        "format": "decimalPattern"
       },
       "total": {
-        "type": "int"
+        "type": "int",
+        "format": "decimalPattern"
       }
     }
   },
@@ -62,7 +68,8 @@
   "@todayRepeatDone": {
     "placeholders": {
       "count": {
-        "type": "int"
+        "type": "int",
+        "format": "decimalPattern"
       }
     }
   },
@@ -288,8 +295,8 @@
       }
     }
   },
-  "today1000Pasos": "+1,000 pasos",
-  "today2500Pasos": "+2,500 pasos",
+  "today1000Pasos": "+1.000 pasos",
+  "today2500Pasos": "+2.500 pasos",
   "todayMeta": "Meta ({dailyStepsGoal})",
   "@todayMeta": {
     "placeholders": {
@@ -399,7 +406,8 @@
   "@todayActivitySaved": {
     "placeholders": {
       "steps": {
-        "type": "int"
+        "type": "int",
+        "format": "decimalPattern"
       },
       "hours": {
         "type": "String"
@@ -410,13 +418,15 @@
   "@todayActivitySavedCoins": {
     "placeholders": {
       "steps": {
-        "type": "int"
+        "type": "int",
+        "format": "decimalPattern"
       },
       "hours": {
         "type": "String"
       },
       "coins": {
-        "type": "int"
+        "type": "int",
+        "format": "decimalPattern"
       }
     }
   },
@@ -732,7 +742,8 @@
   "@readinessSemantics": {
     "placeholders": {
       "score": {
-        "type": "int"
+        "type": "int",
+        "format": "decimalPattern"
       },
       "category": {
         "type": "String"
@@ -784,10 +795,12 @@
         "type": "String"
       },
       "hours": {
-        "type": "int"
+        "type": "int",
+        "format": "decimalPattern"
       },
       "target": {
-        "type": "int"
+        "type": "int",
+        "format": "decimalPattern"
       }
     }
   },
@@ -796,7 +809,8 @@
   "@comerEntriesCount": {
     "placeholders": {
       "count": {
-        "type": "int"
+        "type": "int",
+        "format": "decimalPattern"
       }
     }
   },
@@ -821,7 +835,8 @@
   "@comerCopiedYesterday": {
     "placeholders": {
       "count": {
-        "type": "int"
+        "type": "int",
+        "format": "decimalPattern"
       },
       "meal": {
         "type": "String"
@@ -843,7 +858,8 @@
         "type": "String"
       },
       "count": {
-        "type": "int"
+        "type": "int",
+        "format": "decimalPattern"
       }
     }
   },
@@ -851,7 +867,8 @@
   "@comerWaterLogged": {
     "placeholders": {
       "ml": {
-        "type": "int"
+        "type": "int",
+        "format": "decimalPattern"
       }
     }
   },
@@ -859,10 +876,12 @@
   "@comerWaterLoggedGoal": {
     "placeholders": {
       "ml": {
-        "type": "int"
+        "type": "int",
+        "format": "decimalPattern"
       },
       "coins": {
-        "type": "int"
+        "type": "int",
+        "format": "decimalPattern"
       }
     }
   },
@@ -870,7 +889,8 @@
   "@comerGlassDeleted": {
     "placeholders": {
       "ml": {
-        "type": "int"
+        "type": "int",
+        "format": "decimalPattern"
       }
     }
   },
@@ -879,7 +899,8 @@
   "@comerNovaFreshBadge": {
     "placeholders": {
       "pct": {
-        "type": "int"
+        "type": "int",
+        "format": "decimalPattern"
       }
     }
   },
@@ -887,7 +908,8 @@
   "@comerNovaFreshKcal": {
     "placeholders": {
       "kcal": {
-        "type": "int"
+        "type": "int",
+        "format": "decimalPattern"
       }
     }
   },
@@ -895,7 +917,8 @@
   "@comerNovaUltraKcal": {
     "placeholders": {
       "kcal": {
-        "type": "int"
+        "type": "int",
+        "format": "decimalPattern"
       }
     }
   },
@@ -903,7 +926,8 @@
   "@comerNovaPartial": {
     "placeholders": {
       "kcal": {
-        "type": "int"
+        "type": "int",
+        "format": "decimalPattern"
       }
     }
   },
@@ -914,7 +938,8 @@
   "@comerBankDaysLeft": {
     "placeholders": {
       "days": {
-        "type": "int"
+        "type": "int",
+        "format": "decimalPattern"
       }
     }
   },
@@ -923,10 +948,12 @@
   "@comerBankSavings": {
     "placeholders": {
       "kcal": {
-        "type": "int"
+        "type": "int",
+        "format": "decimalPattern"
       },
       "days": {
-        "type": "int"
+        "type": "int",
+        "format": "decimalPattern"
       }
     }
   },
@@ -934,10 +961,12 @@
   "@comerBankOver": {
     "placeholders": {
       "kcal": {
-        "type": "int"
+        "type": "int",
+        "format": "decimalPattern"
       },
       "days": {
-        "type": "int"
+        "type": "int",
+        "format": "decimalPattern"
       }
     }
   },
@@ -945,7 +974,8 @@
   "@comerBankEven": {
     "placeholders": {
       "days": {
-        "type": "int"
+        "type": "int",
+        "format": "decimalPattern"
       }
     }
   },
@@ -954,10 +984,12 @@
   "@comerKcalOf": {
     "placeholders": {
       "eaten": {
-        "type": "int"
+        "type": "int",
+        "format": "decimalPattern"
       },
       "target": {
-        "type": "int"
+        "type": "int",
+        "format": "decimalPattern"
       }
     }
   },
@@ -2208,7 +2240,8 @@
   "@bodyCurrentAge": {
     "placeholders": {
       "age": {
-        "type": "int"
+        "type": "int",
+        "format": "decimalPattern"
       }
     }
   },
@@ -2296,7 +2329,8 @@
         "type": "String"
       },
       "coins": {
-        "type": "int"
+        "type": "int",
+        "format": "decimalPattern"
       }
     }
   },
@@ -2343,13 +2377,16 @@
   "@cuerpoStepsSummary": {
     "placeholders": {
       "steps": {
-        "type": "int"
+        "type": "int",
+        "format": "decimalPattern"
       },
       "goal": {
-        "type": "int"
+        "type": "int",
+        "format": "decimalPattern"
       },
       "kcal": {
-        "type": "int"
+        "type": "int",
+        "format": "decimalPattern"
       }
     }
   },
@@ -2359,10 +2396,12 @@
   "@cuerpoWorkoutsSummary": {
     "placeholders": {
       "count": {
-        "type": "int"
+        "type": "int",
+        "format": "decimalPattern"
       },
       "kcal": {
-        "type": "int"
+        "type": "int",
+        "format": "decimalPattern"
       }
     }
   },
@@ -2370,7 +2409,8 @@
   "@cuerpoWorkoutLine": {
     "placeholders": {
       "minutes": {
-        "type": "int"
+        "type": "int",
+        "format": "decimalPattern"
       },
       "intensity": {
         "type": "String"
@@ -2644,10 +2684,6 @@
     }
   },
   "bodyRegistrarEn5Segundos": "Guardar",
-  "bodyMet3560": "MET 3.5 – 6.0",
-  "bodyMet3880": "MET 3.8 – 8.0",
-  "bodyMet50105": "MET 5.0 – 10.5",
-  "bodyMet4085": "MET 4.0 – 8.5",
   "bodyRpe14": "Esfuerzo 1–4",
   "bodyConversacionFluida": "Puedes conversar",
   "bodyRpe57": "Esfuerzo 5–7",
@@ -2704,10 +2740,12 @@
   "@fastPhaseRange": {
     "placeholders": {
       "from": {
-        "type": "int"
+        "type": "int",
+        "format": "decimalPattern"
       },
       "to": {
-        "type": "int"
+        "type": "int",
+        "format": "decimalPattern"
       }
     }
   },
@@ -2715,7 +2753,8 @@
   "@fastPhaseFrom": {
     "placeholders": {
       "from": {
-        "type": "int"
+        "type": "int",
+        "format": "decimalPattern"
       }
     }
   },
@@ -2739,13 +2778,16 @@
   "@fastElapsedSemantics": {
     "placeholders": {
       "hours": {
-        "type": "int"
+        "type": "int",
+        "format": "decimalPattern"
       },
       "minutes": {
-        "type": "int"
+        "type": "int",
+        "format": "decimalPattern"
       },
       "target": {
-        "type": "int"
+        "type": "int",
+        "format": "decimalPattern"
       }
     }
   },
@@ -2753,10 +2795,12 @@
   "@fastGoalProgress": {
     "placeholders": {
       "hours": {
-        "type": "int"
+        "type": "int",
+        "format": "decimalPattern"
       },
       "pct": {
-        "type": "int"
+        "type": "int",
+        "format": "decimalPattern"
       }
     }
   },
@@ -2775,7 +2819,8 @@
   "@fastHours": {
     "placeholders": {
       "hours": {
-        "type": "int"
+        "type": "int",
+        "format": "decimalPattern"
       }
     }
   },
@@ -2796,8 +2841,8 @@
       }
     }
   },
-  "fastStartNow": "Empezar ahora",
-  "fastPickStart": "Ya empecé antes",
+  "fastStartNow": "Desde ahora",
+  "fastPickStart": "Empecé antes",
   "fastStartButton": "Empezar ayuno {protocol}",
   "@fastStartButton": {
     "placeholders": {
@@ -2812,12 +2857,13 @@
   "@fastSafetyAdjust": {
     "placeholders": {
       "hours": {
-        "type": "int"
+        "type": "int",
+        "format": "decimalPattern"
       }
     }
   },
   "fastFinishTitle": "¿Terminar el ayuno?",
-  "fastFinishBody": "Tu ayuno de {hours} h se guardará en el historial.",
+  "fastFinishBody": "Tu ayuno de {hours} se guardará en el historial.",
   "@fastFinishBody": {
     "placeholders": {
       "hours": {
@@ -2825,7 +2871,7 @@
       }
     }
   },
-  "fastFinishBodyReward": "¡Completaste {hours} h! Nibi te dará +20 monedas.",
+  "fastFinishBodyReward": "¡Completaste {hours}! Nibi te dará +20 monedas.",
   "@fastFinishBodyReward": {
     "placeholders": {
       "hours": {
@@ -2841,7 +2887,8 @@
         "type": "String"
       },
       "coins": {
-        "type": "int"
+        "type": "int",
+        "format": "decimalPattern"
       }
     }
   },
@@ -2857,7 +2904,8 @@
         "type": "String"
       },
       "hours": {
-        "type": "int"
+        "type": "int",
+        "format": "decimalPattern"
       },
       "minutes": {
         "type": "String"
@@ -2897,7 +2945,8 @@
         "type": "String"
       },
       "hours": {
-        "type": "int"
+        "type": "int",
+        "format": "decimalPattern"
       },
       "minutes": {
         "type": "String"
@@ -2919,10 +2968,12 @@
   "@perfilTdeeUpdated": {
     "placeholders": {
       "before": {
-        "type": "int"
+        "type": "int",
+        "format": "decimalPattern"
       },
       "after": {
-        "type": "int"
+        "type": "int",
+        "format": "decimalPattern"
       }
     }
   },
@@ -2930,10 +2981,12 @@
   "@perfilTdeeUpdatedClamped": {
     "placeholders": {
       "before": {
-        "type": "int"
+        "type": "int",
+        "format": "decimalPattern"
       },
       "after": {
-        "type": "int"
+        "type": "int",
+        "format": "decimalPattern"
       }
     }
   },
@@ -2941,16 +2994,20 @@
   "@perfilTdeeNeedsData": {
     "placeholders": {
       "food": {
-        "type": "int"
+        "type": "int",
+        "format": "decimalPattern"
       },
       "foodMin": {
-        "type": "int"
+        "type": "int",
+        "format": "decimalPattern"
       },
       "weighIns": {
-        "type": "int"
+        "type": "int",
+        "format": "decimalPattern"
       },
       "weighInMin": {
-        "type": "int"
+        "type": "int",
+        "format": "decimalPattern"
       }
     }
   },
@@ -3267,7 +3324,6 @@
   "settingsElegirArchivo": "Elegir archivo",
   "settingsAjustesDeLaAplicacion": "Ajustes",
   "settingsAspectoYPantalla": "Apariencia",
-  "settings22TemasVisualesDeAlta": "22 temas, incluidos los de modo papel",
   "settingsRecordatoriosDelSantuario": "Recordatorios",
   "settingsHorariosLocalesAjustablesParaTus": "Toca la hora para cambiarla",
   "settingsActivaTus4RutinasSugeridas": "Activa los recordatorios sugeridos: pesaje, agua, ayuno y diario.",
@@ -3384,7 +3440,8 @@
   "@protocolSupplementsTitle": {
     "placeholders": {
       "count": {
-        "type": "int"
+        "type": "int",
+        "format": "decimalPattern"
       }
     }
   },
@@ -3395,10 +3452,12 @@
   "@protocolBalancedBody": {
     "placeholders": {
       "workouts": {
-        "type": "int"
+        "type": "int",
+        "format": "decimalPattern"
       },
       "fasts": {
-        "type": "int"
+        "type": "int",
+        "format": "decimalPattern"
       }
     }
   },
@@ -3541,7 +3600,8 @@
   "@journalDiscomfortLine": {
     "placeholders": {
       "level": {
-        "type": "int"
+        "type": "int",
+        "format": "decimalPattern"
       }
     }
   },
@@ -3571,10 +3631,12 @@
   "@onbStepOf": {
     "placeholders": {
       "step": {
-        "type": "int"
+        "type": "int",
+        "format": "decimalPattern"
       },
       "total": {
-        "type": "int"
+        "type": "int",
+        "format": "decimalPattern"
       }
     }
   },
@@ -3593,7 +3655,8 @@
         "type": "String"
       },
       "age": {
-        "type": "int"
+        "type": "int",
+        "format": "decimalPattern"
       }
     }
   },
@@ -3629,10 +3692,12 @@
   "@onbWater": {
     "placeholders": {
       "ml": {
-        "type": "int"
+        "type": "int",
+        "format": "decimalPattern"
       },
       "glasses": {
-        "type": "int"
+        "type": "int",
+        "format": "decimalPattern"
       }
     }
   },
@@ -3640,7 +3705,8 @@
   "@onbSteps": {
     "placeholders": {
       "steps": {
-        "type": "int"
+        "type": "int",
+        "format": "decimalPattern"
       }
     }
   },
@@ -3657,7 +3723,8 @@
   "@onbEstimateBody": {
     "placeholders": {
       "kcal": {
-        "type": "int"
+        "type": "int",
+        "format": "decimalPattern"
       }
     }
   },
@@ -3685,5 +3752,324 @@
         "type": "String"
       }
     }
-  }
+  },
+  "unitMl": "ml",
+  "unitKg": "kg",
+  "unitHours": "h",
+  "unitKcal": "kcal",
+  "todayWaterCaption": "{pct} % de {goal} ml",
+  "@todayWaterCaption": {
+    "placeholders": {
+      "pct": {
+        "type": "String"
+      },
+      "goal": {
+        "type": "String"
+      }
+    }
+  },
+  "todayWaterGlasses": "{count} tomas registradas hoy",
+  "@todayWaterGlasses": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "todayStepsCaption": "Meta {goal} · ~{kcal} kcal activas",
+  "@todayStepsCaption": {
+    "placeholders": {
+      "goal": {
+        "type": "String"
+      },
+      "kcal": {
+        "type": "String"
+      }
+    }
+  },
+  "todayAdd1000Steps": "+1.000",
+  "todaySleepGoalCaption": "Meta {goal} h de descanso",
+  "@todaySleepGoalCaption": {
+    "placeholders": {
+      "goal": {
+        "type": "String"
+      }
+    }
+  },
+  "todayKcalLeft": "kcal restantes",
+  "todayKcalOver": "kcal de más",
+  "readinessSleepLabel": "Sueño",
+  "readinessPulseLabel": "Pulso",
+  "readinessLoadLabel": "Carga",
+  "comerOfGoalKcal": "de {goal} kcal",
+  "@comerOfGoalKcal": {
+    "placeholders": {
+      "goal": {
+        "type": "String"
+      }
+    }
+  },
+  "comerAvailableLabel": "Disponibles",
+  "comerOverLabel": "Por encima",
+  "bodyNextStop": "Siguiente parada",
+  "perfilChangePhoto": "Cambiar foto de perfil",
+  "settingsThemesCount": "{count} temas, incluidos los de modo papel",
+  "@settingsThemesCount": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "bodyChartMetricLabel": "Medida",
+  "bodyChartPeriodLabel": "Período",
+  "bodyPeriodDays": "{days} días",
+  "@bodyPeriodDays": {
+    "placeholders": {
+      "days": {
+        "type": "String"
+      }
+    }
+  },
+  "nibiPetSemantics": "{name}. Tócalo en la cabeza, la panza o la cola; mantenlo pulsado para que ronronee",
+  "@nibiPetSemantics": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "nibiCoins": "Monedas",
+  "nibiShields": "Escudos",
+  "nibiStreak": "Racha",
+  "nibiDays": "{days} d",
+  "@nibiDays": {
+    "placeholders": {
+      "days": {
+        "type": "String"
+      }
+    }
+  },
+  "nibiCarePet": "Acariciar",
+  "nibiCareWater": "Dar agua",
+  "nibiCareSnack": "Merienda",
+  "nibiCareBreathe": "Respirar",
+  "nibiTodayTitle": "Su día contigo",
+  "nibiTodaySubtitle": "Nibi refleja tus hábitos de hoy",
+  "nibiWater": "Agua",
+  "nibiSleep": "Sueño",
+  "nibiMeals": "Comidas",
+  "nibiMealsValue": "{count} registradas",
+  "@nibiMealsValue": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "nibiSleepValue": "{hours} h de {goal} h",
+  "@nibiSleepValue": {
+    "placeholders": {
+      "hours": {
+        "type": "String"
+      },
+      "goal": {
+        "type": "String"
+      }
+    }
+  },
+  "nibiWaterValue": "{ml} de {goal} ml",
+  "@nibiWaterValue": {
+    "placeholders": {
+      "ml": {
+        "type": "String"
+      },
+      "goal": {
+        "type": "String"
+      }
+    }
+  },
+  "nibiWardrobeTitle": "Armario",
+  "nibiWardrobeSubtitle": "Lo que ya es suyo; toca para ponérselo",
+  "nibiHats": "Sombreros",
+  "nibiHabitats": "Escenarios",
+  "nibiNoHat": "Sin sombrero",
+  "nibiEquipped": "Puesto",
+  "nibiShop": "Tienda",
+  "nibiRename": "Cambiar nombre",
+  "nibiRenameHint": "Nombre de tu dragón",
+  "nibiSayIdle": "¡Qué bien que estés aquí! ¿Qué hacemos hoy?",
+  "nibiSayHappy": "¡Hoy vamos genial! Me encanta acompañarte.",
+  "nibiSayCelebrating": "¡Agua y sueño completos! Hoy brillamos juntos.",
+  "nibiSayZen": "Llevamos un buen rato de ayuno. Respiro contigo, con calma.",
+  "nibiSaySleeping": "Zzz… Mañana seguimos. Descansa tú también.",
+  "nibiSayCurious": "¿Qué vas a comer hoy? Tengo curiosidad.",
+  "nibiSayWater": "¡Glup, glup! Qué agua tan fresca.",
+  "nibiSaySnack": "¡Ñam! Gracias por la merienda.",
+  "nibiSayDrinkLogged": "¡Vi tu vaso de agua! Brindo contigo.",
+  "nibiSayMealLogged": "¡Buen provecho! Qué rico se ve.",
+  "nibiSayRenamed": "¡Me encanta mi nuevo nombre!",
+  "shopTitle": "Tienda",
+  "shopShieldsTitle": "Escudos de racha",
+  "shopShieldsHint": "Si un día no abres la app, un escudo mantiene tu racha.",
+  "shopHatsTitle": "Sombreros",
+  "shopHabitatsTitle": "Escenarios",
+  "shopNotEnough": "Te faltan {missing} monedas",
+  "@shopNotEnough": {
+    "placeholders": {
+      "missing": {
+        "type": "String"
+      }
+    }
+  },
+  "shopBought": "¡Listo! {item} ya es tuyo.",
+  "@shopBought": {
+    "placeholders": {
+      "item": {
+        "type": "String"
+      }
+    }
+  },
+  "petItemShieldDaily": "Escudo de un día",
+  "petItemShieldWeekend": "Pack de 3 escudos",
+  "petItemHatChef": "Gorro de chef",
+  "petItemHatHeadband": "Cinta deportiva",
+  "petItemHatZenHalo": "Halo zen",
+  "petItemHatCrown": "Corona",
+  "petItemBgDefaultRoom": "Habitación",
+  "petItemBgZenGarden": "Jardín zen",
+  "petItemBgMountainDawn": "Amanecer andino",
+  "petItemBgStarryDojo": "Dojo estelar",
+  "commonInvalidTime": "Hora no válida",
+  "nibiCarePlay": "Jugar",
+  "nibiSayPlay": "¡Atrápala! Jugar contigo es lo mejor.",
+  "nibiSayPat": "¡Mmm, qué rico! Otra vez.",
+  "nibiSayGiggle": "¡Jijiji! ¡Qué cosquillas!",
+  "nibiSaySpin": "¡Wiii! ¿Viste mi vuelta?",
+  "nibiSayHop": "¡Hop! ¡Mira qué alto!",
+  "nibiSayPuff": "¡Fuuu! Una llamita de dragón.",
+  "nibiSayPurr": "Rrrr… Qué a gusto estoy contigo.",
+  "nibiSayBreatheSetup": "Respira conmigo. Elige un ritmo y empezamos.",
+  "nibiSayBreatheDone": "¡Qué calma! Gracias por respirar conmigo.",
+  "breathMinutes": "{minutes} min",
+  "@breathMinutes": {
+    "placeholders": {
+      "minutes": {
+        "type": "String"
+      }
+    }
+  },
+  "breathStart": "Empezar",
+  "breathStop": "Terminar",
+  "breathAgain": "Otra vez",
+  "breathInhale": "Inhala",
+  "breathHoldIn": "Mantén",
+  "breathExhale": "Exhala",
+  "breathHoldOut": "Pausa",
+  "breathDone": "¡Listo!",
+  "breathCycleOf": "Respiración {cycle} de {total}",
+  "@breathCycleOf": {
+    "placeholders": {
+      "cycle": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "breathSummary": "{cycles} respiraciones · {time}",
+  "@breathSummary": {
+    "placeholders": {
+      "cycles": {
+        "type": "String"
+      },
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "breathCoins": "+{coins} monedas por respirar con {name}",
+  "@breathCoins": {
+    "placeholders": {
+      "coins": {
+        "type": "String"
+      },
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "breathPatternBox": "Caja",
+  "breathPatternBoxHint": "Calma y foco: cuatro tiempos iguales.",
+  "breathPatternTriangle": "Triángulo",
+  "breathPatternTriangleHint": "La más sencilla, para empezar.",
+  "breathPatternRelax": "Relajante",
+  "breathPatternRelaxHint": "Exhalación larga, ideal antes de dormir.",
+  "breathPatternCoherence": "Coherencia",
+  "breathPatternCoherenceHint": "Seis respiraciones por minuto, sin pausas.",
+  "nibiAccessories": "Accesorios",
+  "nibiColors": "Colores",
+  "nibiNoAccessory": "Sin accesorio",
+  "nibiMoreInShop": "Ver tienda",
+  "shopAccessoriesTitle": "Accesorios",
+  "shopColorsTitle": "Colores",
+  "shopColorsHint": "Cambian el color de Nibi en toda la app.",
+  "shopAllOwned": "¡Ya los tienes todos!",
+  "shopBoughtEquipped": "¡{item} ya es suyo y lo lleva puesto!",
+  "@shopBoughtEquipped": {
+    "placeholders": {
+      "item": {
+        "type": "String"
+      }
+    }
+  },
+  "petItemHatParty": "Gorro de fiesta",
+  "petItemHatBeanie": "Gorro de lana",
+  "petItemHatCap": "Gorra",
+  "petItemHatFlowers": "Corona de flores",
+  "petItemHatWizard": "Sombrero de mago",
+  "petItemAccBowtie": "Pajarita",
+  "petItemAccScarf": "Bufanda",
+  "petItemAccBell": "Cascabel",
+  "petItemAccGlasses": "Gafas redondas",
+  "petItemAccSunglasses": "Gafas de sol",
+  "petItemColorJade": "Jade",
+  "petItemColorOcean": "Océano",
+  "petItemColorLilac": "Lila",
+  "petItemColorCoral": "Coral",
+  "petItemColorEmber": "Brasa",
+  "petItemColorMidnight": "Medianoche",
+  "petItemColorGold": "Dorado",
+  "petItemBgBeach": "Playa al atardecer",
+  "petItemBgForest": "Bosque de luciérnagas",
+  "petItemBgSnow": "Valle nevado",
+  "petItemBgSakura": "Cerezos en flor",
+  "petItemBgSpace": "Luna y estrellas",
+  "scanCameraDeniedTitle": "Sin acceso a la cámara",
+  "scanCameraDeniedBody": "Permite la cámara en Ajustes para escanear. Mientras tanto, puedes escribir el código o leer la etiqueta.",
+  "scanCameraErrorTitle": "La cámara no está disponible",
+  "scanCameraErrorBody": "Cierra otras apps que la usen e inténtalo de nuevo, o escribe el código a mano.",
+  "scanOpenSettings": "Abrir Ajustes",
+  "fastDurationMinutes": "{minutes} min",
+  "@fastDurationMinutes": {
+    "placeholders": {
+      "minutes": {
+        "type": "String"
+      }
+    }
+  },
+  "fastDurationHours": "{hours} h {minutes} min",
+  "@fastDurationHours": {
+    "placeholders": {
+      "hours": {
+        "type": "String"
+      },
+      "minutes": {
+        "type": "String"
+      }
+    }
+  },
+  "cuerpoScaleNotFound": "No encontramos la báscula. Súbete un momento para despertarla y vuelve a pulsar «Pesarme».",
+  "commonAccept": "Aceptar"
 }

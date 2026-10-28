@@ -3,10 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../../core/l10n/l10n.dart';
 import '../../../../../shared/theme/sc_colors.dart';
-import '../../../../../shared/theme/sc_theme.dart';
+import '../../../../../shared/theme/sc_tokens.dart';
 import '../../../../../shared/utils/date_time_extensions.dart';
 import '../../../../../shared/widgets/app_icons.dart';
-import '../../../../../shared/widgets/health_card.dart';
 import '../../../application/nutrition_day.dart';
 
 /// Franja semanal interactiva (L a D) con indicadores de registro y botón rápido a Hoy.
@@ -26,7 +25,7 @@ class ComerWeekStrip extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final ScColors c = context.sc;
     final DateTime normalized = DateTime(activeDate.year, activeDate.month, activeDate.day);
-    final DateTime weekMonday = normalized.subtract(Duration(days: normalized.weekday - 1));
+    final DateTime weekMonday = normalized.addDays(1 - normalized.weekday);
     final List<DateTime> weekDays = List<DateTime>.generate(
       7,
       (int i) => DateTime(weekMonday.year, weekMonday.month, weekMonday.day + i),
@@ -38,8 +37,9 @@ class ComerWeekStrip extends ConsumerWidget {
     final List<String> weekdayInitials = l10n.comerWeekdayInitials.split(',');
     final bool isToday = activeDate.dateKey == today.dateKey;
 
-    return HealthCard(
-      padding: const EdgeInsets.fromLTRB(8, 10, 8, 12),
+    // Sin tarjeta: la semana es navegación, no contenido.
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(ScSpace.s, 0, ScSpace.s, ScSpace.s),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
@@ -48,51 +48,29 @@ class ComerWeekStrip extends ConsumerWidget {
               IconButton(
                 tooltip: l10n.comerPreviousDay,
                 icon: Icon(AppIcons.chevronLeft, color: c.text2),
-                onPressed: () => onSelectDate(normalized.subtract(const Duration(days: 1))),
+                onPressed: () => onSelectDate(normalized.addDays(-1)),
               ),
               Expanded(
                 child: Center(
                   child: isToday
                       ? Text(
                           l10n.comerThisWeek,
-                          style: TextStyle(
-                            fontFamily: ScFonts.ui,
-                            fontSize: 12.5,
-                            fontWeight: FontWeight.w700,
-                            color: c.text2,
-                          ),
+                          style: context.type.overline.copyWith(color: c.text2),
                         )
-                      : InkWell(
-                          borderRadius: BorderRadius.circular(20),
-                          onTap: () => onSelectDate(today),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: c.isFlat ? c.bg3 : c.accent.withValues(alpha: 0.15),
-                              borderRadius: BorderRadius.circular(20),
-                              border: Border.all(color: c.isFlat ? c.line2 : c.accent),
-                            ),
-                            child: Text(
-                              l10n.comerBackToToday,
-                              style: TextStyle(
-                                fontFamily: ScFonts.ui,
-                                fontSize: 12,
-                                fontWeight: FontWeight.w800,
-                                color: c.isFlat ? c.text : c.accent,
-                              ),
-                            ),
-                          ),
+                      : TextButton.icon(
+                          onPressed: () => onSelectDate(today),
+                          icon: const Icon(Icons.today_rounded, size: 17),
+                          label: Text(l10n.comerBackToToday),
                         ),
                 ),
               ),
               IconButton(
                 tooltip: l10n.comerNextDay,
                 icon: Icon(AppIcons.chevronRight, color: c.text2),
-                onPressed: () => onSelectDate(normalized.add(const Duration(days: 1))),
+                onPressed: () => onSelectDate(normalized.addDays(1)),
               ),
             ],
           ),
-          const SizedBox(height: 4),
           Row(
             children: List<Widget>.generate(7, (int index) {
               final DateTime d = weekDays[index];
@@ -100,59 +78,59 @@ class ComerWeekStrip extends ConsumerWidget {
               final bool selected = key == activeDate.dateKey;
               final bool isCurrentToday = key == today.dateKey;
               final bool hasLogs = loggedKeys.contains(key);
+              final Color dayInk = selected ? (c.isFlat ? c.bg : c.ink) : c.text;
 
               return Expanded(
-                child: InkWell(
-                  borderRadius: BorderRadius.circular(14),
-                  onTap: () => onSelectDate(d),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 2),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 8),
-                      decoration: BoxDecoration(
-                        color: selected ? c.accent : (isCurrentToday ? c.bg3 : Colors.transparent),
-                        borderRadius: BorderRadius.circular(14),
-                        border: Border.all(
-                          color: selected
-                              ? c.accent
-                              : (isCurrentToday
-                                    ? (c.isFlat ? c.line2 : c.line)
-                                    : Colors.transparent),
-                          width: selected ? 1.5 : 1.0,
+                child: Semantics(
+                  selected: selected,
+                  button: true,
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(ScRadius.tileOf(c)),
+                    onTap: () => onSelectDate(d),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 3),
+                      child: AnimatedContainer(
+                        duration: ScMotion.of(context, ScMotion.standard),
+                        curve: ScMotion.ease,
+                        padding: const EdgeInsets.symmetric(vertical: ScSpace.s + 2),
+                        decoration: BoxDecoration(
+                          color: selected ? (c.isFlat ? c.text : c.accent) : Colors.transparent,
+                          borderRadius: BorderRadius.circular(ScRadius.tileOf(c)),
+                          border: Border.all(
+                            color: selected || isCurrentToday
+                                ? (c.isFlat ? c.line2 : c.accent)
+                                : Colors.transparent,
+                            width: c.isFlat ? 1.5 : 1.2,
+                          ),
                         ),
-                      ),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: <Widget>[
-                          Text(
-                            weekdayInitials[index],
-                            style: TextStyle(
-                              fontFamily: ScFonts.ui,
-                              fontSize: 11,
-                              fontWeight: FontWeight.w700,
-                              color: selected ? c.ink : c.text3,
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: <Widget>[
+                            Text(
+                              weekdayInitials[index],
+                              style: context.type.overline.copyWith(
+                                color: selected ? dayInk.withValues(alpha: 0.75) : c.text3,
+                                letterSpacing: 0.4,
+                              ),
                             ),
-                          ),
-                          const SizedBox(height: 3),
-                          Text(
-                            '${d.day}',
-                            style: TextStyle(
-                              fontFamily: ScFonts.display,
-                              fontSize: 14,
-                              fontWeight: FontWeight.w800,
-                              color: selected ? c.ink : c.text,
+                            const SizedBox(height: ScSpace.xs),
+                            Text(
+                              '${d.day}',
+                              style: context.type.metricS.copyWith(fontSize: 17, color: dayInk),
                             ),
-                          ),
-                          const SizedBox(height: 4),
-                          Container(
-                            width: 5,
-                            height: 5,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: hasLogs ? (selected ? c.ink : c.accent) : Colors.transparent,
+                            const SizedBox(height: ScSpace.xs + 1),
+                            Container(
+                              width: 4,
+                              height: 4,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: hasLogs
+                                    ? (selected ? dayInk : (c.isFlat ? c.text : c.accent))
+                                    : Colors.transparent,
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
                   ),

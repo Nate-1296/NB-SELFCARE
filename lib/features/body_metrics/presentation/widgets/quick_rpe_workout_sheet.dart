@@ -1,14 +1,17 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/constants/met_constants.dart';
 import '../../../../core/database/app_database.dart';
 import '../../../../core/domain/enums.dart';
 import '../../../../core/l10n/l10n.dart';
 import '../../../../shared/theme/sc_colors.dart';
 import '../../../../shared/theme/sc_theme.dart';
+import '../../../../shared/utils/number_formats.dart';
 import '../../../../shared/widgets/app_icons.dart';
 import '../../../../shared/widgets/health_card.dart';
 import '../../../../shared/widgets/sheet.dart';
@@ -35,12 +38,10 @@ class _QuickRpeWorkoutContent extends ConsumerStatefulWidget {
   final UserProfile profile;
 
   @override
-  ConsumerState<_QuickRpeWorkoutContent> createState() =>
-      _QuickRpeWorkoutContentState();
+  ConsumerState<_QuickRpeWorkoutContent> createState() => _QuickRpeWorkoutContentState();
 }
 
-class _QuickRpeWorkoutContentState
-    extends ConsumerState<_QuickRpeWorkoutContent> {
+class _QuickRpeWorkoutContentState extends ConsumerState<_QuickRpeWorkoutContent> {
   WorkoutCategory _selectedCategory = WorkoutCategory.weights;
   RpeIntensity _selectedRpe = RpeIntensity.moderate;
   int _durationMinutes = 45;
@@ -51,8 +52,7 @@ class _QuickRpeWorkoutContentState
   Widget build(BuildContext context) {
     final ScColors c = context.sc;
     final latestMeas = ref.watch(latestMeasurementStreamProvider).value;
-    final double userWeight =
-        latestMeas?.weightKg ?? widget.profile.targetWeightKg;
+    final double userWeight = latestMeas?.weightKg ?? widget.profile.targetWeightKg;
     final WorkoutEstimate estimate = WorkoutService.estimate(
       category: _selectedCategory,
       intensity: _selectedRpe,
@@ -76,9 +76,7 @@ class _QuickRpeWorkoutContentState
                 decoration: BoxDecoration(
                   color: c.soft,
                   borderRadius: BorderRadius.circular(14),
-                  border: c.isFlat
-                      ? Border.all(color: c.line2, width: 1.5)
-                      : null,
+                  border: c.isFlat ? Border.all(color: c.line2, width: 1.5) : null,
                 ),
                 child: Icon(AppIcons.pesa, color: c.accent, size: 22),
               ),
@@ -92,18 +90,14 @@ class _QuickRpeWorkoutContentState
                       style: TextStyle(
                         fontFamily: ScFonts.display,
                         fontSize: 18.5,
-                        fontWeight: FontWeight.w800,
+                        fontWeight: FontWeight.w700,
                         color: c.text,
                       ),
                       softWrap: true,
                     ),
                     Text(
                       context.l10n.bodyGastoNetoRealSinContar,
-                      style: TextStyle(
-                        fontFamily: ScFonts.ui,
-                        fontSize: 12.5,
-                        color: c.text2,
-                      ),
+                      style: TextStyle(fontFamily: ScFonts.ui, fontSize: 12.5, color: c.text2),
                       softWrap: true,
                     ),
                   ],
@@ -135,7 +129,7 @@ class _QuickRpeWorkoutContentState
                 child: _DisciplineCard(
                   title: context.l10n.bodyPesasFuerza,
                   icon: AppIcons.pesa,
-                  metRange: context.l10n.bodyMet3560,
+                  metRange: _metRange(context, WorkoutCategory.weights),
                   isSelected: _selectedCategory == WorkoutCategory.weights,
                   onTap: () {
                     unawaited(HapticFeedback.selectionClick());
@@ -148,12 +142,11 @@ class _QuickRpeWorkoutContentState
                 child: _DisciplineCard(
                   title: context.l10n.bodyFuncional,
                   icon: Icons.sports_gymnastics_rounded,
-                  metRange: context.l10n.bodyMet3880,
+                  metRange: _metRange(context, WorkoutCategory.calisthenics),
                   isSelected: _selectedCategory == WorkoutCategory.calisthenics,
                   onTap: () {
                     unawaited(HapticFeedback.selectionClick());
-                    setState(
-                        () => _selectedCategory = WorkoutCategory.calisthenics);
+                    setState(() => _selectedCategory = WorkoutCategory.calisthenics);
                   },
                 ),
               ),
@@ -166,7 +159,7 @@ class _QuickRpeWorkoutContentState
                 child: _DisciplineCard(
                   title: context.l10n.workoutCardio,
                   icon: Icons.directions_run_rounded,
-                  metRange: context.l10n.bodyMet50105,
+                  metRange: _metRange(context, WorkoutCategory.cardio),
                   isSelected: _selectedCategory == WorkoutCategory.cardio,
                   onTap: () {
                     unawaited(HapticFeedback.selectionClick());
@@ -179,7 +172,7 @@ class _QuickRpeWorkoutContentState
                 child: _DisciplineCard(
                   title: context.l10n.workoutSports,
                   icon: Icons.sports_soccer_rounded,
-                  metRange: context.l10n.bodyMet4085,
+                  metRange: _metRange(context, WorkoutCategory.sports),
                   isSelected: _selectedCategory == WorkoutCategory.sports,
                   onTap: () {
                     unawaited(HapticFeedback.selectionClick());
@@ -211,16 +204,14 @@ class _QuickRpeWorkoutContentState
                 decoration: BoxDecoration(
                   color: c.soft,
                   borderRadius: BorderRadius.circular(999),
-                  border: c.isFlat
-                      ? Border.all(color: c.line2, width: 1.2)
-                      : null,
+                  border: c.isFlat ? Border.all(color: c.line2, width: 1.2) : null,
                 ),
                 child: Text(
                   context.l10n.bodyMin((_durationMinutes).toString()),
                   style: TextStyle(
                     fontFamily: ScFonts.display,
                     fontSize: 14,
-                    fontWeight: FontWeight.w800,
+                    fontWeight: FontWeight.w700,
                     color: c.accent,
                   ),
                 ),
@@ -240,15 +231,12 @@ class _QuickRpeWorkoutContentState
                   setState(() => _durationMinutes = mins);
                 },
                 child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                   decoration: BoxDecoration(
                     color: isSel ? c.accent : c.bg3,
                     borderRadius: BorderRadius.circular(10),
                     border: Border.all(
-                      color: isSel && c.isFlat
-                          ? c.text
-                          : (c.isFlat ? c.line2 : c.line),
+                      color: isSel && c.isFlat ? c.text : (c.isFlat ? c.line2 : c.line),
                       width: c.isFlat ? 1.5 : 1.0,
                     ),
                   ),
@@ -271,8 +259,7 @@ class _QuickRpeWorkoutContentState
             max: 180,
             divisions: 34,
             label: context.l10n.bodyMin((_durationMinutes).toString()),
-            onChanged: (val) =>
-                setState(() => _durationMinutes = val.round()),
+            onChanged: (val) => setState(() => _durationMinutes = val.round()),
           ),
           const SizedBox(height: 4),
 
@@ -344,20 +331,16 @@ class _QuickRpeWorkoutContentState
                     children: [
                       Text(
                         context.l10n.bodyGastoNetoEstimadoDescontandoReposo,
-                        style: TextStyle(
-                          fontFamily: ScFonts.ui,
-                          fontSize: 12,
-                          color: c.text2,
-                        ),
+                        style: TextStyle(fontFamily: ScFonts.ui, fontSize: 12, color: c.text2),
                         softWrap: true,
                       ),
                       const SizedBox(height: 3),
                       Text(
-                        context.l10n.bodyKcalNetas(netKcal.toStringAsFixed(0).toString()),
+                        context.l10n.bodyKcalNetas(NumberFormats.fixed(netKcal, 0)),
                         style: TextStyle(
                           fontFamily: ScFonts.display,
                           fontSize: 22,
-                          fontWeight: FontWeight.w800,
+                          fontWeight: FontWeight.w700,
                           color: c.accent,
                         ),
                       ),
@@ -366,17 +349,11 @@ class _QuickRpeWorkoutContentState
                 ),
                 const SizedBox(width: 10),
                 Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 8,
-                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   decoration: BoxDecoration(
                     color: c.bg2,
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: c.isFlat ? c.line2 : c.line,
-                      width: c.isFlat ? 1.5 : 1.0,
-                    ),
+                    border: c.isFlat ? Border.all(color: c.line2, width: 1.5) : null,
                   ),
                   child: Column(
                     children: [
@@ -390,11 +367,11 @@ class _QuickRpeWorkoutContentState
                         ),
                       ),
                       Text(
-                        context.l10n.bodyMet(met.toStringAsFixed(1).toString()),
+                        context.l10n.bodyMet(NumberFormats.fixed(met, 1)),
                         style: TextStyle(
                           fontFamily: ScFonts.display,
                           fontSize: 13.5,
-                          fontWeight: FontWeight.w800,
+                          fontWeight: FontWeight.w700,
                           color: c.text,
                         ),
                       ),
@@ -409,28 +386,34 @@ class _QuickRpeWorkoutContentState
           FilledButton.icon(
             onPressed: () async {
               unawaited(HapticFeedback.mediumImpact());
-              final WorkoutLogResult result = await ref.read(workoutServiceProvider).log(
+              final WorkoutLogResult result = await ref
+                  .read(workoutServiceProvider)
+                  .log(
                     category: _selectedCategory,
                     intensity: _selectedRpe,
                     durationMinutes: _durationMinutes,
                   );
 
               if (context.mounted) {
-                final String coins =
-                    result.reward.granted ? context.l10n.bodyMonedas(result.reward.coins.toString()): '';
+                final String coins = result.reward.granted
+                    ? context.l10n.bodyMonedas(result.reward.coins.toString())
+                    : '';
                 Navigator.of(context).pop();
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
-                    content: Text(context.l10n.bodyBloqueRegistradoKcalNetas(result.netKcal.toString(), (coins).toString())),
+                    content: Text(
+                      context.l10n.bodyBloqueRegistradoKcalNetas(
+                        NumberFormats.group(result.netKcal),
+                        (coins).toString(),
+                      ),
+                    ),
                   ),
                 );
               }
             },
             icon: const Icon(AppIcons.check, size: 18),
             label: Text(context.l10n.bodyRegistrarEn5Segundos),
-            style: FilledButton.styleFrom(
-              minimumSize: const Size.fromHeight(48),
-            ),
+            style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(48)),
           ),
         ],
       ),
@@ -465,19 +448,13 @@ class _DisciplineCard extends StatelessWidget {
           color: isSelected ? c.soft : c.bg3,
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
-            color: isSelected
-                ? c.accent
-                : (c.isFlat ? c.line2 : c.line),
+            color: isSelected ? c.accent : (c.isFlat ? c.line2 : c.line),
             width: isSelected || c.isFlat ? 1.5 : 1.0,
           ),
         ),
         child: Row(
           children: [
-            Icon(
-              icon,
-              size: 20,
-              color: isSelected ? c.accent : c.text2,
-            ),
+            Icon(icon, size: 20, color: isSelected ? c.accent : c.text2),
             const SizedBox(width: 8),
             Expanded(
               child: Column(
@@ -496,11 +473,7 @@ class _DisciplineCard extends StatelessWidget {
                   ),
                   Text(
                     metRange,
-                    style: TextStyle(
-                      fontFamily: ScFonts.ui,
-                      fontSize: 10,
-                      color: c.text3,
-                    ),
+                    style: TextStyle(fontFamily: ScFonts.ui, fontSize: 10, color: c.text3),
                     maxLines: 1,
                   ),
                 ],
@@ -540,9 +513,7 @@ class _RpeCard extends StatelessWidget {
           color: isSelected ? c.soft : c.bg3,
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
-            color: isSelected
-                ? c.accent
-                : (c.isFlat ? c.line2 : c.line),
+            color: isSelected ? c.accent : (c.isFlat ? c.line2 : c.line),
             width: isSelected || c.isFlat ? 1.5 : 1.0,
           ),
         ),
@@ -570,13 +541,10 @@ class _RpeCard extends StatelessWidget {
             const SizedBox(height: 2),
             Text(
               cue,
-              style: TextStyle(
-                fontFamily: ScFonts.ui,
-                fontSize: 9.5,
-                color: c.text3,
-              ),
+              style: TextStyle(fontFamily: ScFonts.ui, fontSize: 10, height: 1.2, color: c.text3),
               textAlign: TextAlign.center,
-              maxLines: 1,
+              // Dos líneas: "Hablas con frases cortas" se lee completo.
+              maxLines: 2,
               overflow: TextOverflow.ellipsis,
             ),
           ],
@@ -584,4 +552,12 @@ class _RpeCard extends StatelessWidget {
       ),
     );
   }
+}
+
+/// "MET 3,5 – 6,5": el rango sale de la misma tabla que el cálculo.
+String _metRange(BuildContext context, WorkoutCategory category) {
+  final Iterable<double> mets = MetConstants.table[category]!.values;
+  return context.l10n.bodyMet(
+    '${NumberFormats.fixed(mets.reduce(math.min), 1)} – ${NumberFormats.fixed(mets.reduce(math.max), 1)}',
+  );
 }

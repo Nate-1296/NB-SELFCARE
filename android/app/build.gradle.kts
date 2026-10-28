@@ -28,8 +28,9 @@ android {
         applicationId = "com.nb.selfcare"
         minSdk = 26
         targetSdk = 36
-        versionCode = 1
-        versionName = "0.1.0"
+        // Versión desde pubspec.yaml (version: X.Y.Z+N).
+        versionCode = flutter.versionCode
+        versionName = flutter.versionName
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }

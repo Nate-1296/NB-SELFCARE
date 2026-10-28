@@ -10,6 +10,7 @@ import '../../../../core/l10n/l10n.dart';
 import '../../../../core/services/open_food_facts_service.dart';
 import '../../../../shared/theme/sc_colors.dart';
 import '../../../../shared/theme/sc_theme.dart';
+import '../../../../shared/utils/number_formats.dart';
 import '../../../../shared/widgets/app_icons.dart';
 import '../../../../shared/widgets/chip_pill.dart';
 import '../../application/food_catalog_service.dart';
@@ -23,11 +24,7 @@ import 'meal_slot_selector.dart';
 /// Subpágina de búsqueda instantánea FTS5 con registro rápido en 1 toque (+ porción base)
 /// o apertura de detalle completo al tocar el alimento.
 class FoodSearchModal extends ConsumerStatefulWidget {
-  const FoodSearchModal({
-    super.key,
-    required this.initialMealType,
-    required this.targetDateKey,
-  });
+  const FoodSearchModal({super.key, required this.initialMealType, required this.targetDateKey});
 
   final MealType initialMealType;
   final String targetDateKey;
@@ -81,12 +78,14 @@ class _FoodSearchModalState extends ConsumerState<FoodSearchModal> {
 
     try {
       final String q = rawQuery ?? _searchController.text;
-      final List<FoodItem> items = await ref.read(foodCatalogServiceProvider).search(
-        query: q,
-        onlyFavorites: _filter == _CatalogFilter.favorites,
-        onlyCustom: _filter == _CatalogFilter.custom,
-        limit: 45,
-      );
+      final List<FoodItem> items = await ref
+          .read(foodCatalogServiceProvider)
+          .search(
+            query: q,
+            onlyFavorites: _filter == _CatalogFilter.favorites,
+            onlyCustom: _filter == _CatalogFilter.custom,
+            limit: 45,
+          );
       if (!mounted) return;
       setState(() {
         _results = items;
@@ -106,8 +105,9 @@ class _FoodSearchModalState extends ConsumerState<FoodSearchModal> {
     unawaited(HapticFeedback.lightImpact());
 
     try {
-      final List<FoodItem> offItems =
-          await ref.read(openFoodFactsServiceProvider).searchProducts(q);
+      final List<FoodItem> offItems = await ref
+          .read(openFoodFactsServiceProvider)
+          .searchProducts(q);
       if (!mounted) return;
 
       if (offItems.isNotEmpty) {
@@ -130,11 +130,8 @@ class _FoodSearchModalState extends ConsumerState<FoodSearchModal> {
           ),
         );
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(context.l10n.foodNoSeHallaronResultadosEn),
-          ),
-        );
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(context.l10n.foodNoSeHallaronResultadosEn)));
       }
     } catch (e) {
       if (mounted) {
@@ -157,22 +154,26 @@ class _FoodSearchModalState extends ConsumerState<FoodSearchModal> {
 
   Future<void> _quickAddDefaultServing(FoodItem food) async {
     unawaited(HapticFeedback.mediumImpact());
-    final double grams =
-        food.defaultServingGrams > 0 ? food.defaultServingGrams : 100.0;
+    final double grams = food.defaultServingGrams > 0 ? food.defaultServingGrams : 100.0;
 
-    await ref.read(foodLoggingServiceProvider).logPortion(
-      food: food,
-      grams: grams,
-      mealType: _activeMealType,
-      dateKey: widget.targetDateKey,
-    );
+    await ref
+        .read(foodLoggingServiceProvider)
+        .logPortion(
+          food: food,
+          grams: grams,
+          mealType: _activeMealType,
+          dateKey: widget.targetDateKey,
+        );
 
     if (!mounted) return;
     final MealSlotMeta slot = MealSlotMeta.of(_activeMealType);
     _noticeTimer?.cancel();
     setState(() {
-      _quickAddedNotice =
-          context.l10n.foodAnadidoGEn(food.name.toString(), grams.round().toString(), slot.title(context.l10n).toString());
+      _quickAddedNotice = context.l10n.foodAnadidoGEn(
+        food.name.toString(),
+        NumberFormats.group(grams),
+        slot.title(context.l10n).toString(),
+      );
     });
     _noticeTimer = Timer(const Duration(seconds: 4), () {
       if (mounted) {
@@ -184,6 +185,7 @@ class _FoodSearchModalState extends ConsumerState<FoodSearchModal> {
   Future<void> _openFoodDetail(FoodItem food) async {
     final bool? logged = await showModalBottomSheet<bool>(
       context: context,
+      useSafeArea: true,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (_) => FoodDetailSheet(
@@ -203,6 +205,7 @@ class _FoodSearchModalState extends ConsumerState<FoodSearchModal> {
   Future<void> _openCustomFoodCreator([String? initialName]) async {
     final FoodItem? created = await showModalBottomSheet<FoodItem>(
       context: context,
+      useSafeArea: true,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (_) => CustomFoodSheet(initialName: initialName),
@@ -220,6 +223,7 @@ class _FoodSearchModalState extends ConsumerState<FoodSearchModal> {
     Navigator.of(context).pop();
     await showModalBottomSheet<void>(
       context: context,
+      useSafeArea: true,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (_) => BarcodeScannerSheet(
@@ -238,9 +242,7 @@ class _FoodSearchModalState extends ConsumerState<FoodSearchModal> {
       decoration: BoxDecoration(
         color: c.bg,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-        border: c.isFlat
-            ? Border(top: BorderSide(color: c.line2, width: 1.5))
-            : null,
+        border: c.isFlat ? Border(top: BorderSide(color: c.line2, width: 1.5)) : null,
       ),
       child: SafeArea(
         top: false,
@@ -250,10 +252,7 @@ class _FoodSearchModalState extends ConsumerState<FoodSearchModal> {
             Container(
               width: 40,
               height: 4,
-              decoration: BoxDecoration(
-                color: c.line2,
-                borderRadius: BorderRadius.circular(2),
-              ),
+              decoration: BoxDecoration(color: c.line2, borderRadius: BorderRadius.circular(2)),
             ),
 
             // 1. Encabezado limpio
@@ -270,7 +269,7 @@ class _FoodSearchModalState extends ConsumerState<FoodSearchModal> {
                           style: TextStyle(
                             fontFamily: ScFonts.display,
                             fontSize: 21,
-                            fontWeight: FontWeight.w800,
+                            fontWeight: FontWeight.w700,
                             color: c.text,
                           ),
                         ),
@@ -278,11 +277,7 @@ class _FoodSearchModalState extends ConsumerState<FoodSearchModal> {
                         Text(
                           context.l10n.foodTocaParaPorcionRapidaO,
                           softWrap: true,
-                          style: TextStyle(
-                            fontFamily: ScFonts.ui,
-                            fontSize: 12,
-                            color: c.text2,
-                          ),
+                          style: TextStyle(fontFamily: ScFonts.ui, fontSize: 12, color: c.text2),
                         ),
                       ],
                     ),
@@ -313,12 +308,9 @@ class _FoodSearchModalState extends ConsumerState<FoodSearchModal> {
               Padding(
                 padding: const EdgeInsets.fromLTRB(18, 10, 18, 0),
                 child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   decoration: BoxDecoration(
-                    color: c.isFlat
-                        ? c.bg3
-                        : c.success.withValues(alpha: 0.14),
+                    color: c.isFlat ? c.bg3 : c.success.withValues(alpha: 0.14),
                     borderRadius: BorderRadius.circular(14),
                     border: Border.all(
                       color: c.isFlat ? c.line2 : c.success,
@@ -327,11 +319,7 @@ class _FoodSearchModalState extends ConsumerState<FoodSearchModal> {
                   ),
                   child: Row(
                     children: <Widget>[
-                      Icon(
-                        AppIcons.check,
-                        size: 17,
-                        color: c.isFlat ? c.text : c.success,
-                      ),
+                      Icon(AppIcons.check, size: 17, color: c.isFlat ? c.text : c.success),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
@@ -347,9 +335,7 @@ class _FoodSearchModalState extends ConsumerState<FoodSearchModal> {
                       ),
                       TextButton(
                         onPressed: () => Navigator.of(context).pop(true),
-                        style: TextButton.styleFrom(
-                          visualDensity: VisualDensity.compact,
-                        ),
+                        style: TextButton.styleFrom(visualDensity: VisualDensity.compact),
                         child: Text(context.l10n.foodListo),
                       ),
                     ],
@@ -369,22 +355,14 @@ class _FoodSearchModalState extends ConsumerState<FoodSearchModal> {
                       controller: _searchController,
                       autofocus: true,
                       onChanged: _onQueryChanged,
-                      style: TextStyle(
-                        fontFamily: ScFonts.ui,
-                        fontSize: 14.5,
-                        color: c.text,
-                      ),
+                      style: TextStyle(fontFamily: ScFonts.ui, fontSize: 14.5, color: c.text),
                       decoration: InputDecoration(
                         hintText: context.l10n.foodBuscarIngredientePlatoOMarca,
                         prefixIcon: Icon(AppIcons.search, color: c.text2),
                         suffixIcon: _searchController.text.isNotEmpty
                             ? IconButton(
                                 tooltip: context.l10n.foodLimpiarTexto,
-                                icon: Icon(
-                                  AppIcons.close,
-                                  size: 18,
-                                  color: c.text3,
-                                ),
+                                icon: Icon(AppIcons.close, size: 18, color: c.text3),
                                 onPressed: () {
                                   _searchController.clear();
                                   _onQueryChanged('');
@@ -393,10 +371,7 @@ class _FoodSearchModalState extends ConsumerState<FoodSearchModal> {
                             : null,
                         filled: true,
                         fillColor: c.bg2,
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 13,
-                        ),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(16),
                           borderSide: BorderSide(
@@ -482,9 +457,7 @@ class _FoodSearchModalState extends ConsumerState<FoodSearchModal> {
                     label: context.l10n.foodCrearNuevo,
                     icon: AppIcons.add,
                     iconColor: c.accent,
-                    onTap: () => unawaited(
-                      _openCustomFoodCreator(_searchController.text.trim()),
-                    ),
+                    onTap: () => unawaited(_openCustomFoodCreator(_searchController.text.trim())),
                   ),
                 ],
               ),
@@ -498,48 +471,40 @@ class _FoodSearchModalState extends ConsumerState<FoodSearchModal> {
                   ? Center(
                       child: Text(
                         context.l10n.foodConsultandoCatalogoLocal,
-                        style: TextStyle(
-                          fontFamily: ScFonts.ui,
-                          fontSize: 13.5,
-                          color: c.text2,
-                        ),
+                        style: TextStyle(fontFamily: ScFonts.ui, fontSize: 13.5, color: c.text2),
                       ),
                     )
                   : _results.isEmpty
-                      ? EmptySearchState(
-                          query: _searchController.text.trim(),
-                          isSearchingOff: _isSearchingOff,
-                          onSearchOff: _searchOpenFoodFacts,
-                          onCreateCustom: () => unawaited(
-                            _openCustomFoodCreator(
-                              _searchController.text.trim(),
-                            ),
-                          ),
-                        )
-                      : ListView.separated(
-                          padding: const EdgeInsets.fromLTRB(18, 4, 18, 28),
-                          itemCount: _searchController.text.trim().isNotEmpty
-                              ? _results.length + 1
-                              : _results.length,
-                          separatorBuilder: (_, _) =>
-                              const SizedBox(height: 8),
-                          itemBuilder: (BuildContext context, int index) {
-                            if (index == _results.length) {
-                              return SearchOpenFoodFactsTile(
-                                query: _searchController.text.trim(),
-                                isSearching: _isSearchingOff,
-                                onSearch: _searchOpenFoodFacts,
-                              );
-                            }
-                            final FoodItem item = _results[index];
-                            return FoodSearchItemCard(
-                              food: item,
-                              onTapDetail: () => _openFoodDetail(item),
-                              onQuickAdd: () => _quickAddDefaultServing(item),
-                              onToggleFavorite: () => _toggleFavorite(item),
-                            );
-                          },
-                        ),
+                  ? EmptySearchState(
+                      query: _searchController.text.trim(),
+                      isSearchingOff: _isSearchingOff,
+                      onSearchOff: _searchOpenFoodFacts,
+                      onCreateCustom: () =>
+                          unawaited(_openCustomFoodCreator(_searchController.text.trim())),
+                    )
+                  : ListView.separated(
+                      padding: const EdgeInsets.fromLTRB(18, 4, 18, 28),
+                      itemCount: _searchController.text.trim().isNotEmpty
+                          ? _results.length + 1
+                          : _results.length,
+                      separatorBuilder: (_, _) => const SizedBox(height: 8),
+                      itemBuilder: (BuildContext context, int index) {
+                        if (index == _results.length) {
+                          return SearchOpenFoodFactsTile(
+                            query: _searchController.text.trim(),
+                            isSearching: _isSearchingOff,
+                            onSearch: _searchOpenFoodFacts,
+                          );
+                        }
+                        final FoodItem item = _results[index];
+                        return FoodSearchItemCard(
+                          food: item,
+                          onTapDetail: () => _openFoodDetail(item),
+                          onQuickAdd: () => _quickAddDefaultServing(item),
+                          onToggleFavorite: () => _toggleFavorite(item),
+                        );
+                      },
+                    ),
             ),
           ],
         ),
@@ -547,4 +512,3 @@ class _FoodSearchModalState extends ConsumerState<FoodSearchModal> {
     );
   }
 }
-

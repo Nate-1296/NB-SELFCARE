@@ -52,12 +52,10 @@ class DevicesSection extends ConsumerWidget {
                     height: 44,
                     decoration: BoxDecoration(
                       color: c.isFlat ? c.bg3 : c.soft,
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(
-                        color: c.isFlat ? c.line2 : c.accent.withValues(alpha: 0.3),
-                      ),
+                      shape: BoxShape.circle,
+                      border: c.isFlat ? Border.all(color: c.line2, width: 1.5) : null,
                     ),
-                    child: Icon(AppIcons.bascula, color: c.accent, size: 22),
+                    child: Icon(AppIcons.bascula, color: c.isFlat ? c.text : c.accent, size: 22),
                   ),
                   const SizedBox(width: 14),
                   Expanded(
@@ -103,7 +101,7 @@ class DevicesSection extends ConsumerWidget {
                       decoration: BoxDecoration(
                         color: c.bg3,
                         borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: c.isFlat ? c.line2 : c.line),
+                        border: c.isFlat ? Border.all(color: c.line2, width: 1.5) : null,
                       ),
                       child: Text(
                         context.l10n.settingsBleListo,
@@ -129,12 +127,10 @@ class DevicesSection extends ConsumerWidget {
                     height: 44,
                     decoration: BoxDecoration(
                       color: c.isFlat ? c.bg3 : c.soft,
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(
-                        color: c.isFlat ? c.line2 : c.accent.withValues(alpha: 0.3),
-                      ),
+                      shape: BoxShape.circle,
+                      border: c.isFlat ? Border.all(color: c.line2, width: 1.5) : null,
                     ),
-                    child: Icon(AppIcons.corazon, color: c.accent, size: 22),
+                    child: Icon(AppIcons.corazon, color: c.isFlat ? c.text : c.accent, size: 22),
                   ),
                   const SizedBox(width: 14),
                   Expanded(
@@ -161,13 +157,18 @@ class DevicesSection extends ConsumerWidget {
                     ),
                   ),
                   const SizedBox(width: 8),
-                  FilledButton.tonal(
-                    onPressed: onConnectHealth,
-                    style: FilledButton.styleFrom(visualDensity: VisualDensity.compact),
-                    child: Text(
-                      hasHealthConnect
-                          ? context.l10n.settingsGestionar
-                          : context.l10n.settingsConectar,
+                  Flexible(
+                    child: FilledButton.tonal(
+                      onPressed: onConnectHealth,
+                      style: FilledButton.styleFrom(visualDensity: VisualDensity.compact),
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(
+                          hasHealthConnect
+                              ? context.l10n.settingsGestionar
+                              : context.l10n.settingsConectar,
+                        ),
+                      ),
                     ),
                   ),
                 ],

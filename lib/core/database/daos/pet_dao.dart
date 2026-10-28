@@ -46,6 +46,17 @@ class PetDao {
   }) async {
     return _db.transaction(() async {
       try {
+        // Ya reclamada hoy: se comprueba antes de insertar. Dejar que salte el
+        // índice único dentro de una transacción anidada (el diario guarda la
+        // entrada y la recompensa juntas) hacía que el aislado de Drift
+        // informara la excepción como no controlada aunque aquí se capturara.
+        final QueryRow? claimed = await _db.customSelect(
+          'SELECT 1 AS hit FROM coin_ledger WHERE date_key = ? AND action_type = ? LIMIT 1',
+          variables: [Variable.withString(dateKey), Variable.withString(ledgerKey)],
+          readsFrom: {_db.coinLedger},
+        ).getSingleOrNull();
+        if (claimed != null) return false;
+
         // Revisar si es la primera recompensa positiva del día para avanzar la racha
         final priorTodayRows = await _db.customSelect(
           'SELECT COUNT(*) AS cnt FROM coin_ledger WHERE date_key = ? AND amount > 0',
@@ -235,9 +246,11 @@ class PetDao {
     );
   }
 
-  /// Equipa o desequipa un sombrero y/o fondo sin sobrescribir la ranura no indicada.
+  /// Equipa o quita sombrero, accesorio, color y/o fondo sin tocar las ranuras no indicadas.
   Future<void> equipItem({
     Object? hatId = _unset,
+    Object? accessoryId = _unset,
+    Object? colorId = _unset,
     Object? bgId = _unset,
   }) async {
     final PetStatusData? pet = await getPetStatus();
@@ -250,6 +263,12 @@ class PetDao {
         equippedHatId: identical(hatId, _unset)
             ? const Value.absent()
             : Value(hatId as String?),
+        equippedAccessoryId: identical(accessoryId, _unset)
+            ? const Value.absent()
+            : Value(accessoryId as String?),
+        equippedColorId: identical(colorId, _unset)
+            ? const Value.absent()
+            : Value(colorId as String?),
         equippedBackgroundId: identical(bgId, _unset)
             ? const Value.absent()
             : Value((bgId as String?) ?? 'bg_default_room'),

@@ -7,7 +7,7 @@ import '../../../shared/utils/date_time_extensions.dart';
 import '../../pet_gamification/application/reward_service.dart';
 import '../../pet_gamification/domain/reward_policy.dart';
 
-/// Mini-hitos psicológicos de 1,5 kg (estilo Happy Scale, docs/14 Fase 7).
+/// Mini-hitos psicológicos de 1,5 kg (estilo Happy Scale).
 class MilestoneService {
   MilestoneService(this._db, this._milestoneDao, this._rewards, this._clock);
 

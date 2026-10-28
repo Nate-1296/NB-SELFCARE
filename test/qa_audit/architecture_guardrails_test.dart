@@ -167,12 +167,7 @@ void main() {
     });
 
     test('Guardrail 7: La hora actual solo se obtiene a través de core/clock', () {
-      // La vista animada de Nibi usa el reloj de pared solo para temporizar partículas;
-      // se reemplaza por el motor de animación de Nibi 2.0 (docs/15 Fase 6).
-      const Set<String> allowed = <String>{
-        'lib/core/clock/clock.dart',
-        'lib/features/pet_gamification/presentation/widgets/animated_nibi_view.dart',
-      };
+      const Set<String> allowed = <String>{'lib/core/clock/clock.dart'};
       final List<String> violations = <String>[];
       for (final File file in dartFiles) {
         final String path = file.path.replaceAll(r'\\', '/');
@@ -193,7 +188,7 @@ void main() {
 
     test('Guardrail 8: La UI no salta los casos de uso en escrituras con reglas de negocio', () {
       // Recompensas, cascada biométrica, registro de comida/agua/diario/ayuno y TDEE
-      // pasan siempre por features/*/application (docs/15 §6).
+      // pasan siempre por features/*/application (docs/02 §1).
       const List<String> forbiddenCalls = <String>[
         '.recordReward(',
         '.insertMeasurement(',
@@ -216,7 +211,10 @@ void main() {
         if (!path.contains('/presentation/') && !path.startsWith('lib/shared/')) continue;
         final List<String> lines = file.readAsLinesSync();
         for (int i = 0; i < lines.length; i++) {
-          if (lines[i].contains('ServiceProvider)')) continue;
+          // La llamada puede ir en la línea siguiente al `ref.read(xServiceProvider)`
+          // cuando el formateador parte la cadena de métodos.
+          final int from = i >= 2 ? i - 2 : 0;
+          if (lines.sublist(from, i + 1).any((String l) => l.contains('ServiceProvider)'))) continue;
           for (final String call in forbiddenCalls) {
             if (lines[i].contains(call)) violations.add('$path:${i + 1} -> ${lines[i].trim()}');
           }
@@ -247,15 +245,10 @@ void main() {
     });
 
     test('Guardrail 10: la presentación lee y escribe por application/, nunca por DAOs', () {
-      // Excepción temporal: Nibi y su tienda se reescriben enteros en la Fase 6 (Nibi 2.0).
-      const List<String> pendingRewrite = <String>[
-        'lib/features/pet_gamification/presentation/nibi_screen.dart',
-        'lib/features/pet_gamification/presentation/shop_modal.dart',
-      ];
       final List<String> violations = <String>[];
       for (final File file in dartFiles) {
         final String path = file.path.replaceAll(r'\\', '/');
-        if (!path.contains('/presentation/') || pendingRewrite.contains(path)) continue;
+        if (!path.contains('/presentation/')) continue;
         final List<String> lines = file.readAsLinesSync();
         for (int i = 0; i < lines.length; i++) {
           final String line = lines[i].trim();

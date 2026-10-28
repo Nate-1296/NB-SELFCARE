@@ -58,9 +58,7 @@ class BiometricMetricDetailSheet extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: c.soft,
                   borderRadius: BorderRadius.circular(14),
-                  border: c.isFlat
-                      ? Border.all(color: c.line2, width: 1.5)
-                      : null,
+                  border: c.isFlat ? Border.all(color: c.line2, width: 1.5) : null,
                 ),
                 child: Icon(spec.icon, color: c.accent, size: 22),
               ),
@@ -74,33 +72,25 @@ class BiometricMetricDetailSheet extends StatelessWidget {
                       style: TextStyle(
                         fontFamily: ScFonts.display,
                         fontSize: 19,
-                        fontWeight: FontWeight.w800,
+                        fontWeight: FontWeight.w700,
                         color: c.text,
                       ),
                     ),
                     const SizedBox(height: 2),
                     Text(
                       spec.subtitle,
-                      style: TextStyle(
-                        fontFamily: ScFonts.ui,
-                        fontSize: 12.5,
-                        color: c.text2,
-                      ),
+                      style: TextStyle(fontFamily: ScFonts.ui, fontSize: 12.5, color: c.text2),
                     ),
                   ],
                 ),
               ),
               const SizedBox(width: 8),
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                 decoration: BoxDecoration(
                   color: c.bg3,
                   borderRadius: BorderRadius.circular(999),
-                  border: Border.all(
-                    color: badgeColor,
-                    width: c.isFlat ? 1.5 : 1.1,
-                  ),
+                  border: Border.all(color: badgeColor, width: c.isFlat ? 1.5 : 1.1),
                 ),
                 child: Text(
                   spec.statusLabel,
@@ -121,21 +111,14 @@ class BiometricMetricDetailSheet extends StatelessWidget {
             decoration: BoxDecoration(
               color: c.bg3,
               borderRadius: BorderRadius.circular(18),
-              border: Border.all(
-                color: c.isFlat ? c.line2 : c.line,
-                width: c.isFlat ? 1.5 : 1.0,
-              ),
+              border: c.isFlat ? Border.all(color: c.line2, width: 1.5) : null,
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   context.l10n.bodyValorActual,
-                  style: TextStyle(
-                    fontFamily: ScFonts.ui,
-                    fontSize: 12,
-                    color: c.text3,
-                  ),
+                  style: TextStyle(fontFamily: ScFonts.ui, fontSize: 12, color: c.text3),
                 ),
                 const SizedBox(height: 4),
                 Text(
@@ -143,7 +126,7 @@ class BiometricMetricDetailSheet extends StatelessWidget {
                   style: TextStyle(
                     fontFamily: ScFonts.display,
                     fontSize: 28,
-                    fontWeight: FontWeight.w800,
+                    fontWeight: FontWeight.w700,
                     color: c.text,
                   ),
                 ),
@@ -155,9 +138,7 @@ class BiometricMetricDetailSheet extends StatelessWidget {
                       value: spec.progressFraction,
                       minHeight: 7,
                       backgroundColor: c.bg2,
-                      valueColor: AlwaysStoppedAnimation<Color>(
-                        c.isFlat ? c.text : badgeColor,
-                      ),
+                      valueColor: AlwaysStoppedAnimation<Color>(c.isFlat ? c.text : badgeColor),
                     ),
                   ),
                 ],
@@ -178,12 +159,7 @@ class BiometricMetricDetailSheet extends StatelessWidget {
           const SizedBox(height: 4),
           Text(
             spec.whatItMeans,
-            style: TextStyle(
-              fontFamily: ScFonts.ui,
-              fontSize: 13,
-              height: 1.42,
-              color: c.text2,
-            ),
+            style: TextStyle(fontFamily: ScFonts.ui, fontSize: 13, height: 1.42, color: c.text2),
           ),
           const SizedBox(height: 12),
 
@@ -192,10 +168,7 @@ class BiometricMetricDetailSheet extends StatelessWidget {
             decoration: BoxDecoration(
               color: c.bg3,
               borderRadius: BorderRadius.circular(14),
-              border: Border.all(
-                color: c.isFlat ? c.line2 : c.line,
-                width: c.isFlat ? 1.5 : 1.0,
-              ),
+              border: c.isFlat ? Border.all(color: c.line2, width: 1.5) : null,
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -233,17 +206,13 @@ class BiometricMetricDetailSheet extends StatelessWidget {
               },
               icon: const Icon(AppIcons.tape, size: 18),
               label: Text(actionLabel!),
-              style: FilledButton.styleFrom(
-                minimumSize: const Size.fromHeight(48),
-              ),
+              style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(48)),
             ),
             const SizedBox(height: 8),
           ],
           OutlinedButton(
             onPressed: () => Navigator.of(context).pop(),
-            style: OutlinedButton.styleFrom(
-              minimumSize: const Size.fromHeight(46),
-            ),
+            style: OutlinedButton.styleFrom(minimumSize: const Size.fromHeight(46)),
             child: Text(context.l10n.commonClose),
           ),
         ],

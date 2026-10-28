@@ -7,6 +7,7 @@ import '../../../core/database/daos/health_sync_dao.dart';
 import '../../../core/database/daos/user_profile_dao.dart';
 import '../../../core/domain/activity_energy.dart';
 import '../../../core/platform/health_connect_gateway.dart';
+import '../../../core/platform/native_call.dart';
 import '../../../shared/utils/date_time_extensions.dart';
 import '../../pet_gamification/application/reward_service.dart';
 import '../../pet_gamification/domain/reward_policy.dart';
@@ -25,8 +26,14 @@ class HealthSyncResult {
 /// diario local. Es la fuente del multiplicador de sueño, el Readiness Score,
 /// el NEAT y las correlaciones de sueño.
 class HealthSyncService {
-  HealthSyncService(this._db, this._gateway, this._healthSyncDao, this._profileDao, this._rewards,
-      this._clock);
+  HealthSyncService(
+    this._db,
+    this._gateway,
+    this._healthSyncDao,
+    this._profileDao,
+    this._rewards,
+    this._clock,
+  );
 
   final AppDatabase _db;
   final HealthConnectGateway _gateway;
@@ -40,17 +47,24 @@ class HealthSyncService {
     final DateTime now = _clock.now();
     final HealthSyncResult today = await syncDay(now.dateKey);
     if (today.outcome == HealthSyncOutcome.notConnected) return today.outcome;
-    await syncDay(now.subtract(const Duration(days: 1)).dateKey);
+    await syncDay(now.addDays(-1).dateKey);
     return today.outcome;
   }
 
   Future<HealthSyncResult> syncDay(String dateKey) async {
     // Cada tipo de dato depende de su propio permiso: si el usuario concedió solo
     // algunos, el puente devuelve `null` en el resto en vez de fallar.
-    if (await _gateway.availability() != HealthConnectAvailability.available) {
+    final HealthConnectAvailability availability = await bestEffort(
+      _gateway.availability,
+      HealthConnectAvailability.unsupported,
+    );
+    if (availability != HealthConnectAvailability.available) {
       return const HealthSyncResult(HealthSyncOutcome.notConnected);
     }
-    final DailyActivitySnapshot? snapshot = await _gateway.readDailyActivity(dateKey);
+    final DailyActivitySnapshot? snapshot = await bestEffort(
+      () => _gateway.readDailyActivity(dateKey),
+      null,
+    );
     if (snapshot == null) return const HealthSyncResult(HealthSyncOutcome.notConnected);
     if (snapshot.isEmpty) return HealthSyncResult(HealthSyncOutcome.noData, snapshot);
 
@@ -81,7 +95,11 @@ class HealthSyncService {
           remMinutes: snapshot.remSleepMinutes,
           sleepGoalHours: profile?.dailySleepGoalHours ?? 7.5,
         );
-        if (multiplier > 1.0) {
+        // Health Connect también trae días anteriores a instalar la app: esos
+        // no dan monedas (ni cuentan para la racha).
+        final bool beforeInstall =
+            profile != null && dateKey.compareTo(profile.createdAt.dateKey) < 0;
+        if (multiplier > 1.0 && !beforeInstall) {
           await _rewards.grant(RewardAction.restorativeSleep, dateKey: dateKey);
         }
       }

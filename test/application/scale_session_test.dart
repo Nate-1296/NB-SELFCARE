@@ -65,6 +65,29 @@ void main() {
     });
   });
 
+  test('Si la báscula no aparece en 90 s, se apaga la radio y se avisa', () {
+    fakeAsync((FakeAsync async) {
+      c.read(scaleSessionProvider.notifier).start(weightOnly: false);
+      async.elapse(const Duration(seconds: 89));
+      expect(c.read(scaleSessionProvider).phase, ScalePhase.searching);
+      async.elapse(const Duration(seconds: 2));
+      expect(c.read(scaleSessionProvider).phase, ScalePhase.notFound);
+      expect(c.read(scaleSessionProvider).isScanning, isFalse);
+      expect(scale.stops, 1);
+    });
+  });
+
+  test('Una trama a tiempo cancela el límite de búsqueda', () {
+    fakeAsync((FakeAsync async) {
+      c.read(scaleSessionProvider.notifier).start(weightOnly: false);
+      async.elapse(const Duration(seconds: 60));
+      scale.controller.add(_event(80.4, stable: false));
+      async.flushMicrotasks();
+      async.elapse(const Duration(seconds: 60));
+      expect(c.read(scaleSessionProvider).phase, ScalePhase.measuring);
+    });
+  });
+
   test('Sin impedancia espera 10 s y luego guarda solo el peso', () {
     fakeAsync((FakeAsync async) {
       c.read(scaleSessionProvider.notifier).start(weightOnly: false);

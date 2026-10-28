@@ -6,6 +6,7 @@ import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 
 import '../../shared/utils/biometric_formulas.dart';
+import '../../shared/utils/number_formats.dart';
 import '../clock/clock.dart';
 import '../database/app_database.dart';
 import '../domain/enums.dart';
@@ -24,6 +25,7 @@ class ClinicalReportPdfService {
     required BodyMeasurement? latestMeasurement,
     required List<BodyMeasurement> recentMeasurements,
     required int averageDailyKcal,
+    required int foodDays,
     required double averageProteinG,
     required double averageCarbsG,
     required double averageFatG,
@@ -32,13 +34,14 @@ class ClinicalReportPdfService {
     required int? readinessScore,
   }) async {
     final pw.Document pdf = pw.Document(
-      title: 'NB Selfcare - Reporte Clinico y Fisiologico',
-      author: 'NB Selfcare Offline Health Engine',
+      title: 'Informe de salud personal',
+      author: 'NB Selfcare',
     );
 
     final DateTime now = _clock.now();
-    final double age = BiometricFormulas.calculateDynamicAge(profile.birthDate, now);
-    final String dateStr = now.toIso8601String().split('T').first;
+    // Años cumplidos (24, no "25,0" a una semana del cumpleaños).
+    final int age = BiometricFormulas.calculateDynamicAge(profile.birthDate, now).floor();
+    final String dateStr = _longDate(now);
 
     pdf.addPage(
       pw.Page(
@@ -56,7 +59,7 @@ class ClinicalReportPdfService {
                     crossAxisAlignment: pw.CrossAxisAlignment.start,
                     children: <pw.Widget>[
                       pw.Text(
-                        'NB SELFCARE - REPORTE DE SALUD PERSONAL',
+                        'Informe de salud personal',
                         style: const pw.TextStyle(
                           fontSize: 16,
                           fontWeight: pw.FontWeight.bold,
@@ -65,7 +68,7 @@ class ClinicalReportPdfService {
                       ),
                       pw.SizedBox(height: 2),
                       pw.Text(
-                        'Motor Biométrico & Nutricional Autónomo (100% Offline / Zero Telemetry)',
+                        'Generado en el teléfono con NB Selfcare. Ningún dato sale del dispositivo.',
                         style: const pw.TextStyle(
                           fontSize: 9,
                           color: PdfColors.blueGrey600,
@@ -74,7 +77,7 @@ class ClinicalReportPdfService {
                     ],
                   ),
                   pw.Text(
-                    'Fecha: $dateStr',
+                    dateStr,
                     style: const pw.TextStyle(
                       fontSize: 10,
                       color: PdfColors.blueGrey700,
@@ -96,11 +99,11 @@ class ClinicalReportPdfService {
                 child: pw.Row(
                   mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                   children: <pw.Widget>[
-                    _pdfField('Usuario', profile.name),
-                    _pdfField('Edad', '${age.toStringAsFixed(1)} años'),
+                    _pdfField('Nombre', profile.name),
+                    _pdfField('Edad', '$age años'),
                     _pdfField('Sexo biológico', profile.biologicalSex == BiologicalSex.female ? 'Femenino' : 'Masculino'),
-                    _pdfField('Altura', '${profile.heightCm.toStringAsFixed(1)} cm'),
-                    _pdfField('Meta de Peso', '${profile.targetWeightKg.toStringAsFixed(1)} kg'),
+                    _pdfField('Estatura', '${NumberFormats.fixed(profile.heightCm, 0)} cm'),
+                    _pdfField('Peso meta', '${NumberFormats.fixed(profile.targetWeightKg, 1)} kg'),
                   ],
                 ),
               ),
@@ -108,7 +111,7 @@ class ClinicalReportPdfService {
 
               // 2. Composición Corporal (Báscula BIA + Tendencia EMA)
               pw.Text(
-                '1. COMPOSICIÓN CORPORAL & TENDENCIA',
+                '1. Composición corporal',
                 style: const pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold),
               ),
               pw.SizedBox(height: 6),
@@ -118,41 +121,41 @@ class ClinicalReportPdfService {
                   pw.TableRow(
                     decoration: const pw.BoxDecoration(color: PdfColors.grey200),
                     children: <pw.Widget>[
-                      _tableHeader('Métrica Fisiológica'),
-                      _tableHeader('Valor Actual'),
-                      _tableHeader('Tendencia EMA'),
-                      _tableHeader('Referencia / Estado'),
+                      _tableHeader('Medida'),
+                      _tableHeader('Último valor'),
+                      _tableHeader('Tendencia'),
+                      _tableHeader('Referencia'),
                     ],
                   ),
                   _tableRow(
-                    'Peso Corporal Total',
-                    latestMeasurement != null ? '${latestMeasurement.weightKg.toStringAsFixed(1)} kg' : 'N/D',
-                    latestMeasurement != null ? '${latestMeasurement.trendWeightKg.toStringAsFixed(1)} kg' : 'N/D',
-                    'IMC: ${latestMeasurement?.bmi.toStringAsFixed(1) ?? "N/D"}',
+                    'Peso',
+                    latestMeasurement != null ? '${NumberFormats.fixed(latestMeasurement.weightKg, 1)} kg' : 'N/D',
+                    latestMeasurement != null ? '${NumberFormats.fixed(latestMeasurement.trendWeightKg, 1)} kg' : 'N/D',
+                    'IMC: ${latestMeasurement == null ? "N/D" : NumberFormats.fixed(latestMeasurement.bmi, 1)}',
                   ),
                   _tableRow(
-                    'Porcentaje de Grasa Corporal',
-                    latestMeasurement?.bodyFatPercentage != null ? '${latestMeasurement!.bodyFatPercentage!.toStringAsFixed(1)} %' : 'N/D',
+                    'Grasa corporal',
+                    latestMeasurement?.bodyFatPercentage != null ? '${NumberFormats.fixed(latestMeasurement!.bodyFatPercentage!, 1)} %' : 'N/D',
                     '-',
-                    'Grasa Visceral: ${latestMeasurement?.visceralFatIndex ?? "N/D"}',
+                    'Grasa visceral: ${latestMeasurement?.visceralFatIndex ?? "N/D"}',
                   ),
                   _tableRow(
-                    'Masa Muscular Esquelética',
-                    latestMeasurement?.muscleMassKg != null ? '${latestMeasurement!.muscleMassKg!.toStringAsFixed(1)} kg' : 'N/D',
+                    'Masa muscular',
+                    latestMeasurement?.muscleMassKg != null ? '${NumberFormats.fixed(latestMeasurement!.muscleMassKg!, 1)} kg' : 'N/D',
                     '-',
-                    'Masa Libre de Grasa: ${latestMeasurement?.leanBodyMassKg?.toStringAsFixed(1) ?? "N/D"} kg',
+                    'Masa libre de grasa: ${latestMeasurement?.leanBodyMassKg == null ? "N/D" : NumberFormats.fixed(latestMeasurement!.leanBodyMassKg!, 1)} kg',
                   ),
                   _tableRow(
-                    'Agua Corporal Total (BIA)',
-                    latestMeasurement?.waterPercentage != null ? '${latestMeasurement!.waterPercentage!.toStringAsFixed(1)} %' : 'N/D',
+                    'Agua corporal',
+                    latestMeasurement?.waterPercentage != null ? '${NumberFormats.fixed(latestMeasurement!.waterPercentage!, 1)} %' : 'N/D',
                     '-',
-                    'Fisiológico normal: 50% - 65%',
+                    'Rango habitual: 50–65 %',
                   ),
                   _tableRow(
-                    'Tasa Metabólica Basal (BMR)',
-                    latestMeasurement?.basalMetabolicRateKcal != null ? '${latestMeasurement!.basalMetabolicRateKcal} kcal' : 'N/D',
+                    'Metabolismo basal',
+                    latestMeasurement?.basalMetabolicRateKcal != null ? '${NumberFormats.group(latestMeasurement!.basalMetabolicRateKcal!)} kcal' : 'N/D',
                     '-',
-                    'Edad Metabólica: ${latestMeasurement?.metabolicAge ?? "N/D"} años',
+                    'Edad metabólica: ${latestMeasurement?.metabolicAge ?? "N/D"} años',
                   ),
                 ],
               ),
@@ -160,7 +163,7 @@ class ClinicalReportPdfService {
 
               // 3. Nutrición & Perfil de Macronutrientes
               pw.Text(
-                '2. PROMEDIO NUTRICIONAL & ENERGÍA (7 DÍAS)',
+                '2. Alimentación (media de los días con registro, últimos 7 días)',
                 style: const pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold),
               ),
               pw.SizedBox(height: 6),
@@ -173,11 +176,12 @@ class ClinicalReportPdfService {
                 child: pw.Row(
                   mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                   children: <pw.Widget>[
-                    _pdfField('Ingesta Media', '$averageDailyKcal kcal/día'),
-                    _pdfField('Proteína', '${averageProteinG.toStringAsFixed(0)} g/día'),
-                    _pdfField('Carbohidratos', '${averageCarbsG.toStringAsFixed(0)} g/día'),
-                    _pdfField('Grasas', '${averageFatG.toStringAsFixed(0)} g/día'),
-                    _pdfField('Arquetipo', DietArchetypeInfo.getById(profile.activeDietArchetype).name),
+                    _pdfField('Energía', '${NumberFormats.group(averageDailyKcal)} kcal/día'),
+                    _pdfField('Proteína', '${NumberFormats.fixed(averageProteinG, 0)} g/día'),
+                    _pdfField('Carbohidratos', '${NumberFormats.fixed(averageCarbsG, 0)} g/día'),
+                    _pdfField('Grasas', '${NumberFormats.fixed(averageFatG, 0)} g/día'),
+                    _pdfField('Estilo', DietArchetypeInfo.getById(profile.activeDietArchetype).name),
+                    _pdfField('Días con registro', '$foodDays de 7'),
                   ],
                 ),
               ),
@@ -185,7 +189,7 @@ class ClinicalReportPdfService {
 
               // 4. Cronobiología, Recuperación & Suplementación
               pw.Text(
-                '3. CRONOBIOLOGÍA, RECUPERACIÓN & SUPLEMENTOS',
+                '3. Descanso y suplementos',
                 style: const pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold),
               ),
               pw.SizedBox(height: 6),
@@ -201,20 +205,21 @@ class ClinicalReportPdfService {
                     pw.Row(
                       mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                       children: <pw.Widget>[
-                        _pdfField('Sueño Promedio', averageSleepHours > 0 ? '${averageSleepHours.toStringAsFixed(1)} horas/noche' : 'Sin registros'),
-                        _pdfField('Disposición (Readiness)', readinessScore == null ? 'Sin sueño registrado' : '$readinessScore / 100 pts'),
-                        _pdfField('Ciclo Femenino', profile.biologicalSex == BiologicalSex.female ? (profile.isCycleTrackingEnabled ? 'Activo' : 'Inactivo') : 'N/A'),
+                        _pdfField('Sueño medio', averageSleepHours > 0 ? '${NumberFormats.fixed(averageSleepHours, 1)} h/noche' : 'Sin registros'),
+                        _pdfField('Disposición de hoy', readinessScore == null ? 'Sin sueño registrado' : '$readinessScore / 100'),
+                        if (profile.biologicalSex == BiologicalSex.female)
+                          _pdfField('Seguimiento del ciclo', profile.isCycleTrackingEnabled ? 'Activo' : 'Inactivo'),
                       ],
                     ),
                     pw.SizedBox(height: 8),
                     pw.Text(
-                      'Pauta de Suplementación Activa:',
+                      'Suplementos activos',
                       style: const pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold),
                     ),
                     pw.SizedBox(height: 2),
                     pw.Text(
                       activeSupplements.isEmpty
-                          ? 'Ningún suplemento activo registrado.'
+                          ? 'Ninguno.'
                           : activeSupplements.map((s) => '- ${s.name} (${s.dosage})').join('   '),
                       style: const pw.TextStyle(fontSize: 9.5, color: PdfColors.blueGrey800),
                     ),
@@ -232,9 +237,8 @@ class ClinicalReportPdfService {
                   borderRadius: pw.BorderRadius.circular(4),
                 ),
                 child: pw.Text(
-                  'AVISO CLÍNICO LEGAL: Este documento es un resumen de registros personales, hábitos de estilo de vida '
-                  'y estimaciones mediante bioimpedancia eléctrica (BIA). No constituye un diagnóstico médico formal ni '
-                  'reemplaza el criterio clínico o de laboratorio de un profesional de la salud colegiado.',
+                  'Aviso: este documento resume registros personales y estimaciones por bioimpedancia (BIA). '
+                  'No es un diagnóstico médico ni sustituye el criterio de un profesional de la salud.',
                   style: const pw.TextStyle(
                     fontSize: 7.5,
                     color: PdfColors.grey700,
@@ -251,12 +255,23 @@ class ClinicalReportPdfService {
     return pdf.save();
   }
 
+  /// "28 de octubre de 2026" sin depender de los datos de idioma de intl
+  /// (el servicio también se usa fuera de la app, en pruebas).
+  static String _longDate(DateTime d) {
+    const List<String> months = <String>[
+      'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
+      'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre',
+    ];
+    return '${d.day} de ${months[d.month - 1]} de ${d.year}';
+  }
+
   /// Despliega el visor de impresión nativo o comparte el PDF.
   Future<void> shareOrPrintReport({
     required UserProfile profile,
     required BodyMeasurement? latestMeasurement,
     required List<BodyMeasurement> recentMeasurements,
     required int averageDailyKcal,
+    required int foodDays,
     required double averageProteinG,
     required double averageCarbsG,
     required double averageFatG,
@@ -269,6 +284,7 @@ class ClinicalReportPdfService {
       latestMeasurement: latestMeasurement,
       recentMeasurements: recentMeasurements,
       averageDailyKcal: averageDailyKcal,
+      foodDays: foodDays,
       averageProteinG: averageProteinG,
       averageCarbsG: averageCarbsG,
       averageFatG: averageFatG,

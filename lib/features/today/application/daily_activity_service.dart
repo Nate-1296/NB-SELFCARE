@@ -5,6 +5,7 @@ import '../../../core/database/app_database.dart';
 import '../../../core/database/daos/health_sync_dao.dart';
 import '../../../core/database/daos/user_profile_dao.dart';
 import '../../../core/domain/activity_energy.dart';
+import '../../../core/platform/health_connect_gateway.dart';
 import '../../pet_gamification/application/reward_service.dart';
 import '../../pet_gamification/domain/reward_policy.dart';
 
@@ -22,7 +23,7 @@ class DailyActivityService {
 
   /// Fija los pasos del día (atajo "+1000 pasos" y su Deshacer).
   Future<void> setSteps({required String dateKey, required int steps}) {
-    final int safeSteps = steps.clamp(0, 100000);
+    final int safeSteps = steps.clamp(0, DailyActivitySnapshot.maxDailySteps);
     return _healthSyncDao.upsertDailySummary(
       DailySummariesCompanion(
         dateKey: Value(dateKey),
@@ -39,13 +40,15 @@ class DailyActivityService {
     required int steps,
     required int sleepMinutes,
   }) {
+    final int safeSteps = steps.clamp(0, DailyActivitySnapshot.maxDailySteps);
+    final int safeSleep = sleepMinutes.clamp(0, 24 * 60);
     return _db.transaction(() async {
       await _healthSyncDao.upsertDailySummary(
         DailySummariesCompanion(
           dateKey: Value(dateKey),
-          stepsCount: Value(steps),
-          activeCaloriesFromSteps: Value(ActivityEnergy.kcalFromSteps(steps)),
-          sleepDurationMinutes: Value(sleepMinutes),
+          stepsCount: Value(safeSteps),
+          activeCaloriesFromSteps: Value(ActivityEnergy.kcalFromSteps(safeSteps)),
+          sleepDurationMinutes: Value(safeSleep),
           sleepDeepMinutes: const Value(0),
           sleepRemMinutes: const Value(0),
         ),
@@ -53,7 +56,7 @@ class DailyActivityService {
 
       final UserProfile? profile = await _profileDao.getProfile();
       final double goalHours = profile?.dailySleepGoalHours ?? 7.5;
-      if (sleepMinutes < (goalHours * 60).round()) return 0;
+      if (safeSleep < (goalHours * 60).round()) return 0;
       return (await _rewards.grant(RewardAction.restorativeSleep, dateKey: dateKey)).coins;
     });
   }

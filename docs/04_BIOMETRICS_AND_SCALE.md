@@ -1,4 +1,4 @@
-# 04 · Biometría, Protocolo de Báscula BLE y Algoritmos Fisiológicos (`docs/04_BIOMETRICS_AND_SCALE.md`)
+# 04 · Biometría y báscula
 
 > **Contexto Técnico:** Especificación del protocolo BLE de la **Xiaomi Mi Body Composition Scale 2 (`XMTZC05HM`)**, derivación matemática de las **13 métricas**, Peso Tendencia (EMA), Detector de Retención Hídrica y calibrador de **TDEE Adaptativo (14 días)**.
 

@@ -27,11 +27,11 @@ import '../application/protocol_service.dart';
 import '../domain/weekly_protocol.dart';
 
 String dietPhaseLabel(AppLocalizations l10n, DietPhase phase) => switch (phase) {
-      DietPhase.deficit => l10n.protocolPhaseDeficit,
-      DietPhase.maintenance => l10n.protocolPhaseMaintenance,
-      DietPhase.dietBreak => l10n.protocolPhaseBreak,
-      DietPhase.reverseDiet => l10n.protocolPhaseReverse,
-    };
+  DietPhase.deficit => l10n.protocolPhaseDeficit,
+  DietPhase.maintenance => l10n.protocolPhaseMaintenance,
+  DietPhase.dietBreak => l10n.protocolPhaseBreak,
+  DietPhase.reverseDiet => l10n.protocolPhaseReverse,
+};
 
 /// "Mi protocolo": plan semanal de dieta, ayuno, entrenamiento y suplementos.
 class ProtocolPlannerScreen extends ConsumerStatefulWidget {
@@ -57,7 +57,9 @@ class _ProtocolPlannerScreenState extends ConsumerState<ProtocolPlannerScreen> {
   Future<void> _save(WeeklyProtocol plan, DietArchetype archetype) async {
     unawaited(HapticFeedback.lightImpact());
     final AppLocalizations l10n = context.l10n;
-    await ref.read(protocolServiceProvider).save(
+    await ref
+        .read(protocolServiceProvider)
+        .save(
           plan,
           archetype: archetype,
           planName: l10n.protocolPlanName(DietArchetypeInfo.getById(archetype).name),
@@ -75,7 +77,10 @@ class _ProtocolPlannerScreenState extends ConsumerState<ProtocolPlannerScreen> {
         ref.watch(activeSupplementsProvider).value ?? const <SupplementsTrackerData>[];
 
     if (saved.isLoading && _draft == null) {
-      return Scaffold(backgroundColor: c.bg, body: const Center(child: CircularProgressIndicator()));
+      return Scaffold(
+        backgroundColor: c.bg,
+        body: const Center(child: CircularProgressIndicator()),
+      );
     }
     final WeeklyProtocol plan = _draft ?? saved.value ?? WeeklyProtocol.defaults;
     final DietArchetype archetype = profile?.activeDietArchetype ?? DietArchetype.flexible;
@@ -91,8 +96,6 @@ class _ProtocolPlannerScreenState extends ConsumerState<ProtocolPlannerScreen> {
             TopBar(
               title: l10n.protocolTitle,
               subtitle: l10n.protocolSubtitle,
-              subtitleBelowTitle: true,
-              uppercaseSubtitle: false,
               leading: BackButton(
                 color: c.text,
                 onPressed: () => context.canPop() ? context.pop() : context.go('/perfil'),
@@ -123,7 +126,11 @@ class _ProtocolPlannerScreenState extends ConsumerState<ProtocolPlannerScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: <Widget>[
-                  CardHeader(icon: AppIcons.ayuno, tone: c.fasting, title: l10n.protocolFastingTitle),
+                  CardHeader(
+                    icon: AppIcons.ayuno,
+                    tone: c.fasting,
+                    title: l10n.protocolFastingTitle,
+                  ),
                   const SizedBox(height: ScSpace.m),
                   Text(l10n.protocolFastingDays, style: context.text.bodySmall),
                   const SizedBox(height: ScSpace.s),
@@ -131,7 +138,8 @@ class _ProtocolPlannerScreenState extends ConsumerState<ProtocolPlannerScreen> {
                     initials: initials,
                     selected: plan.fastingDays,
                     tone: c.fasting,
-                    onToggle: (int d) => _toggle(plan.fastingDays, d, (Set<int> s) => plan.copyWith(fastingDays: s)),
+                    onToggle: (int d) =>
+                        _toggle(plan.fastingDays, d, (Set<int> s) => plan.copyWith(fastingDays: s)),
                   ),
                   const SizedBox(height: ScSpace.m),
                   Text(l10n.protocolFastingHours, style: context.text.bodySmall),
@@ -144,7 +152,8 @@ class _ProtocolPlannerScreenState extends ConsumerState<ProtocolPlannerScreen> {
                         ChoiceChip(
                           label: Text('$h:${24 - h}'),
                           selected: plan.fastingHours == h,
-                          onSelected: (_) => setState(() => _draft = plan.copyWith(fastingHours: h)),
+                          onSelected: (_) =>
+                              setState(() => _draft = plan.copyWith(fastingHours: h)),
                         ),
                     ],
                   ),
@@ -156,7 +165,11 @@ class _ProtocolPlannerScreenState extends ConsumerState<ProtocolPlannerScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: <Widget>[
-                  CardHeader(icon: Icons.fitness_center_rounded, tone: c.steps, title: l10n.protocolWorkoutTitle),
+                  CardHeader(
+                    icon: Icons.fitness_center_rounded,
+                    tone: c.steps,
+                    title: l10n.protocolWorkoutTitle,
+                  ),
                   const SizedBox(height: ScSpace.m),
                   Text(l10n.protocolWorkoutDays, style: context.text.bodySmall),
                   const SizedBox(height: ScSpace.s),
@@ -164,7 +177,8 @@ class _ProtocolPlannerScreenState extends ConsumerState<ProtocolPlannerScreen> {
                     initials: initials,
                     selected: plan.workoutDays,
                     tone: c.steps,
-                    onToggle: (int d) => _toggle(plan.workoutDays, d, (Set<int> s) => plan.copyWith(workoutDays: s)),
+                    onToggle: (int d) =>
+                        _toggle(plan.workoutDays, d, (Set<int> s) => plan.copyWith(workoutDays: s)),
                   ),
                   const SizedBox(height: ScSpace.m),
                   Text(l10n.protocolWorkoutTime, style: context.text.bodySmall),
@@ -172,9 +186,18 @@ class _ProtocolPlannerScreenState extends ConsumerState<ProtocolPlannerScreen> {
                   SegmentedButton<WorkoutTimeOfDay>(
                     showSelectedIcon: false,
                     segments: <ButtonSegment<WorkoutTimeOfDay>>[
-                      ButtonSegment<WorkoutTimeOfDay>(value: WorkoutTimeOfDay.morning, label: Text(l10n.protocolMorning)),
-                      ButtonSegment<WorkoutTimeOfDay>(value: WorkoutTimeOfDay.afternoon, label: Text(l10n.protocolAfternoon)),
-                      ButtonSegment<WorkoutTimeOfDay>(value: WorkoutTimeOfDay.evening, label: Text(l10n.protocolEvening)),
+                      ButtonSegment<WorkoutTimeOfDay>(
+                        value: WorkoutTimeOfDay.morning,
+                        label: Text(l10n.protocolMorning),
+                      ),
+                      ButtonSegment<WorkoutTimeOfDay>(
+                        value: WorkoutTimeOfDay.afternoon,
+                        label: Text(l10n.protocolAfternoon),
+                      ),
+                      ButtonSegment<WorkoutTimeOfDay>(
+                        value: WorkoutTimeOfDay.evening,
+                        label: Text(l10n.protocolEvening),
+                      ),
                     ],
                     selected: <WorkoutTimeOfDay>{plan.workoutTime},
                     onSelectionChanged: (Set<WorkoutTimeOfDay> sel) =>
@@ -192,7 +215,10 @@ class _ProtocolPlannerScreenState extends ConsumerState<ProtocolPlannerScreen> {
                     title: l10n.protocolSupplementsTitle(supplements.length),
                     trailing: TextButton(
                       onPressed: () => unawaited(
-                        SupplementTrackerSheet.show(context, dateKey: ref.read(clockProvider).now().dateKey),
+                        SupplementTrackerSheet.show(
+                          context,
+                          dateKey: ref.read(clockProvider).now().dateKey,
+                        ),
                       ),
                       child: Text(l10n.commonEdit),
                     ),
@@ -206,7 +232,10 @@ class _ProtocolPlannerScreenState extends ConsumerState<ProtocolPlannerScreen> {
                       runSpacing: ScSpace.xs,
                       children: <Widget>[
                         for (final SupplementsTrackerData s in supplements)
-                          Chip(label: Text('${s.name} · ${s.dosage}'), visualDensity: VisualDensity.compact),
+                          Chip(
+                            label: Text('${s.name} · ${s.dosage}'),
+                            visualDensity: VisualDensity.compact,
+                          ),
                       ],
                     ),
                 ],
@@ -229,7 +258,12 @@ class _ProtocolPlannerScreenState extends ConsumerState<ProtocolPlannerScreen> {
 }
 
 class _DayPicker extends StatelessWidget {
-  const _DayPicker({required this.initials, required this.selected, required this.tone, required this.onToggle});
+  const _DayPicker({
+    required this.initials,
+    required this.selected,
+    required this.tone,
+    required this.onToggle,
+  });
 
   final List<String> initials;
   final Set<int> selected;
@@ -257,7 +291,9 @@ class _DayPicker extends StatelessWidget {
                     height: 44,
                     alignment: Alignment.center,
                     decoration: BoxDecoration(
-                      color: selected.contains(d) ? (c.isFlat ? c.bg3 : tint.withValues(alpha: 0.16)) : c.bg3,
+                      color: selected.contains(d)
+                          ? (c.isFlat ? c.bg3 : tint.withValues(alpha: 0.16))
+                          : c.bg3,
                       borderRadius: BorderRadius.circular(ScRadius.control - 2),
                       border: Border.all(
                         color: selected.contains(d) ? tint : (c.isFlat ? c.line2 : c.line),
@@ -269,7 +305,7 @@ class _DayPicker extends StatelessWidget {
                       style: TextStyle(
                         fontFamily: ScFonts.display,
                         fontSize: 14,
-                        fontWeight: FontWeight.w800,
+                        fontWeight: FontWeight.w700,
                         color: selected.contains(d) ? tint : c.text2,
                       ),
                     ),

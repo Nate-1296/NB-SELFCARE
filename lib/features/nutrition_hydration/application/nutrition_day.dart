@@ -73,7 +73,7 @@ final nutritionDayProvider =
 
 /// Lunes de la semana de [date].
 DateTime mondayOf(DateTime date) =>
-    DateTime(date.year, date.month, date.day).subtract(Duration(days: date.weekday - 1));
+    DateTime(date.year, date.month, date.day).addDays(1 - date.weekday);
 
 /// Días con comidas registradas en la semana (lunes–domingo) que contiene [dateKey].
 final loggedDaysInWeekProvider =
@@ -81,7 +81,7 @@ final loggedDaysInWeekProvider =
   final DateTime monday = mondayOf(DateTime.parse(dateKey));
   return ref
       .watch(foodDaoProvider)
-      .watchLoggedDateKeysInRange(monday.dateKey, monday.add(const Duration(days: 6)).dateKey);
+      .watchLoggedDateKeysInRange(monday.dateKey, monday.addDays(6).dateKey);
 });
 
 final _weekKcalProvider = StreamProvider.family<Map<String, int>, String>((Ref ref, String dateKey) {

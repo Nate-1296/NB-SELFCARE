@@ -76,8 +76,9 @@ class _PerfilYoScreenState extends ConsumerState<PerfilYoScreen> {
     unawaited(HapticFeedback.lightImpact());
 
     try {
-      final TdeeCalibrationOutcome? outcome =
-          await ref.read(tdeeCalibrationServiceProvider).calibrateNow();
+      final TdeeCalibrationOutcome? outcome = await ref
+          .read(tdeeCalibrationServiceProvider)
+          .calibrateNow();
 
       if (!mounted || outcome == null) return;
       final AppLocalizations l10n = context.l10n;
@@ -85,8 +86,11 @@ class _PerfilYoScreenState extends ConsumerState<PerfilYoScreen> {
         context,
         message: outcome.didCalibrate
             ? (outcome.wasClamped
-                ? l10n.perfilTdeeUpdatedClamped(outcome.previousTdeeKcal ?? 0, outcome.newTdeeKcal ?? 0)
-                : l10n.perfilTdeeUpdated(outcome.previousTdeeKcal ?? 0, outcome.newTdeeKcal ?? 0))
+                  ? l10n.perfilTdeeUpdatedClamped(
+                      outcome.previousTdeeKcal ?? 0,
+                      outcome.newTdeeKcal ?? 0,
+                    )
+                  : l10n.perfilTdeeUpdated(outcome.previousTdeeKcal ?? 0, outcome.newTdeeKcal ?? 0))
             : l10n.perfilTdeeNeedsData(
                 outcome.foodDaysLogged,
                 AppConstants.adaptiveTdeeMinFoodLogDays,
@@ -102,21 +106,11 @@ class _PerfilYoScreenState extends ConsumerState<PerfilYoScreen> {
   }
 
   void _showEditProfileSheet(UserProfile profile) {
-    unawaited(
-      mostrarHojaMenu<void>(
-        context,
-        builder: (_) => EditProfileSheet(profile: profile),
-      ),
-    );
+    unawaited(mostrarHojaMenu<void>(context, builder: (_) => EditProfileSheet(profile: profile)));
   }
 
   void _showEditGoalsSheet(UserProfile profile) {
-    unawaited(
-      mostrarHojaMenu<void>(
-        context,
-        builder: (_) => EditGoalsSheet(profile: profile),
-      ),
-    );
+    unawaited(mostrarHojaMenu<void>(context, builder: (_) => EditGoalsSheet(profile: profile)));
   }
 
   Future<void> _exportClinicalPdf(UserProfile profile) async {
@@ -140,7 +134,10 @@ class _PerfilYoScreenState extends ConsumerState<PerfilYoScreen> {
     final DailyMacroTargets? targets = ref.watch(dailyTargetsProvider(now.dateKey));
 
     if (profile == null || targets == null) {
-      return Scaffold(backgroundColor: c.bg, body: const Center(child: CircularProgressIndicator()));
+      return Scaffold(
+        backgroundColor: c.bg,
+        body: const Center(child: CircularProgressIndicator()),
+      );
     }
 
     return Scaffold(
@@ -153,10 +150,9 @@ class _PerfilYoScreenState extends ConsumerState<PerfilYoScreen> {
             TopBar(
               title: l10n.perfilTitle,
               large: true,
-              pageIcon: Icons.person_rounded,
-              trailing: IconButton(
+              trailing: TopBarAction(
+                icon: Icons.settings_outlined,
                 tooltip: l10n.perfilSettings,
-                icon: Icon(Icons.settings_outlined, color: c.text),
                 onPressed: () => unawaited(context.push('/ajustes')),
               ),
             ),
@@ -186,24 +182,34 @@ class _PerfilYoScreenState extends ConsumerState<PerfilYoScreen> {
                   ],
                   SectionHead(
                     title: l10n.perfilHealthTitle,
-                    padding: const EdgeInsets.fromLTRB(ScSpace.xs, ScSpace.xl, ScSpace.xs, ScSpace.s),
+                    padding: const EdgeInsets.fromLTRB(
+                      ScSpace.xs,
+                      ScSpace.sectionGap,
+                      ScSpace.xs,
+                      ScSpace.m,
+                    ),
                   ),
                   _ToolGrid(
                     tiles: <Widget>[
                       ActionTile(
+                        onPage: true,
                         icon: Icons.medication_rounded,
                         title: l10n.perfilSupplements,
                         subtitle: l10n.perfilSupplementsHint,
-                        onTap: () => unawaited(SupplementTrackerSheet.show(context, dateKey: now.dateKey)),
+                        onTap: () =>
+                            unawaited(SupplementTrackerSheet.show(context, dateKey: now.dateKey)),
                       ),
                       ActionTile(
+                        onPage: true,
                         icon: Icons.health_and_safety_rounded,
                         tone: c.water,
                         title: l10n.perfilDigestion,
                         subtitle: l10n.perfilDigestionHint,
-                        onTap: () => unawaited(DigestiveTrackerSheet.show(context, dateKey: now.dateKey)),
+                        onTap: () =>
+                            unawaited(DigestiveTrackerSheet.show(context, dateKey: now.dateKey)),
                       ),
                       ActionTile(
+                        onPage: true,
                         icon: Icons.calendar_month_rounded,
                         tone: c.carbs,
                         title: l10n.perfilProtocol,
@@ -211,6 +217,7 @@ class _PerfilYoScreenState extends ConsumerState<PerfilYoScreen> {
                         onTap: () => unawaited(context.push('/protocolo')),
                       ),
                       ActionTile(
+                        onPage: true,
                         icon: Icons.picture_as_pdf_rounded,
                         tone: c.protein,
                         title: l10n.perfilReport,
@@ -222,7 +229,12 @@ class _PerfilYoScreenState extends ConsumerState<PerfilYoScreen> {
                   SectionHead(
                     title: l10n.perfilInsightsTitle,
                     subtitle: l10n.perfilInsightsSubtitle,
-                    padding: const EdgeInsets.fromLTRB(ScSpace.xs, ScSpace.xl, ScSpace.xs, ScSpace.s),
+                    padding: const EdgeInsets.fromLTRB(
+                      ScSpace.xs,
+                      ScSpace.sectionGap,
+                      ScSpace.xs,
+                      ScSpace.m,
+                    ),
                   ),
                   const CrossAnalyticsCard(),
                 ],

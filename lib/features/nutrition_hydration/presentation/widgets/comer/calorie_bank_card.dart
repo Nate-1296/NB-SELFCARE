@@ -5,7 +5,6 @@ import '../../../../../core/l10n/l10n.dart';
 import '../../../../../core/services/calorie_cycling_service.dart';
 import '../../../../../core/services/smart_meal_suggester.dart';
 import '../../../../../shared/theme/sc_colors.dart';
-import '../../../../../shared/theme/sc_theme.dart';
 import '../../../../../shared/theme/sc_tokens.dart';
 import '../../../../../shared/widgets/app_icons.dart';
 import '../../../../../shared/widgets/card_header.dart';
@@ -27,8 +26,9 @@ class CalorieBankCard extends ConsumerWidget {
     final AppLocalizations l10n = context.l10n;
     final WeeklyCalorieBank? bank = ref.watch(weeklyCalorieBankProvider(dateKey)).value;
     if (bank == null) return const SizedBox.shrink();
-    final String dietName =
-        DietArchetypeInfo.getById(ref.watch(userProfileStreamProvider).value?.activeDietArchetype).name;
+    final String dietName = DietArchetypeInfo.getById(
+      ref.watch(userProfileStreamProvider).value?.activeDietArchetype,
+    ).name;
 
     final String message;
     if (bank.daysLogged == 0) {
@@ -47,11 +47,12 @@ class CalorieBankCard extends ConsumerWidget {
         children: <Widget>[
           CardHeader(
             icon: Icons.account_balance_wallet_rounded,
+            tone: c.carbs,
             title: l10n.comerBankTitle,
             trailing: TonalBadge(label: l10n.comerBankDaysLeft(bank.remainingDaysInWeek)),
           ),
           const SizedBox(height: ScSpace.m),
-          Text(message, style: TextStyle(fontFamily: ScFonts.ui, fontSize: 12.5, color: c.text2, height: 1.35)),
+          Text(message, style: context.type.caption),
           const SizedBox(height: ScSpace.m),
           IntrinsicHeight(
             child: Row(
@@ -61,7 +62,10 @@ class CalorieBankCard extends ConsumerWidget {
                   Expanded(
                     child: _BankStat(
                       label: l10n.comerBankEaten,
-                      value: l10n.comerKcalOf(bank.accumulatedConsumedKcal, bank.accumulatedTargetKcal),
+                      value: l10n.comerKcalOf(
+                        bank.accumulatedConsumedKcal,
+                        bank.accumulatedTargetKcal,
+                      ),
                     ),
                   ),
                   const SizedBox(width: ScSpace.s),
@@ -93,10 +97,10 @@ class _BankStat extends StatelessWidget {
   Widget build(BuildContext context) {
     final ScColors c = context.sc;
     return Material(
-      color: c.bg3,
+      color: c.isFlat ? c.bg2 : c.bg3,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(ScRadius.control),
-        side: BorderSide(color: c.isFlat ? c.line2 : c.line, width: c.isFlat ? 1.5 : 1),
+        borderRadius: BorderRadius.circular(ScRadius.tileOf(c)),
+        side: c.isFlat ? BorderSide(color: c.line2, width: 1.5) : BorderSide.none,
       ),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
@@ -109,17 +113,9 @@ class _BankStat extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
-                    Text(label, style: TextStyle(fontFamily: ScFonts.ui, fontSize: 11, color: c.text3)),
-                    const SizedBox(height: ScSpace.xxs),
-                    Text(
-                      value,
-                      style: TextStyle(
-                        fontFamily: ScFonts.display,
-                        fontSize: 13.5,
-                        fontWeight: FontWeight.w800,
-                        color: c.text,
-                      ),
-                    ),
+                    Text(label.toUpperCase(), style: context.type.overline),
+                    const SizedBox(height: ScSpace.xs),
+                    Text(value, style: context.type.label.copyWith(fontSize: 14.5)),
                   ],
                 ),
               ),
