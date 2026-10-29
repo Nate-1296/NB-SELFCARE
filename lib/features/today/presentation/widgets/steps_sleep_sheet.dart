@@ -12,10 +12,14 @@ import '../../../../shared/theme/sc_theme.dart';
 import '../../../../shared/utils/number_formats.dart';
 import '../../../../shared/widgets/app_icons.dart';
 import '../../../../shared/widgets/chip_pill.dart';
+import '../../../../shared/widgets/science_on_demand_sheet.dart';
 import '../../../../shared/widgets/sheet.dart';
+import '../../../care/presentation/care_l10n.dart';
 import '../../../profile_goals/application/profile_queries.dart';
 import '../../application/daily_activity_service.dart';
 import '../../application/health_sync_service.dart';
+import '../../application/sleep_queries.dart';
+import '../../domain/sleep_regularity.dart';
 
 /// Hoja rápida (< 5s) para ajustar Pasos NEAT, Horas de Sueño y sincronizar Health Connect.
 class HoyStepsSleepSheet extends ConsumerStatefulWidget {
@@ -50,6 +54,7 @@ class HoyStepsSleepSheet extends ConsumerStatefulWidget {
 class _HoyStepsSleepSheetState extends ConsumerState<HoyStepsSleepSheet> {
   late int _steps;
   late double _sleepHours;
+  int? _wakeMinutes;
   bool _isSyncing = false;
 
   @override
@@ -58,6 +63,18 @@ class _HoyStepsSleepSheetState extends ConsumerState<HoyStepsSleepSheet> {
     _steps = widget.currentSummary?.stepsCount ?? 0;
     final int currentMin = widget.currentSummary?.sleepDurationMinutes ?? 0;
     _sleepHours = currentMin > 0 ? (currentMin / 60.0).clamp(3.0, 12.0) : 7.5;
+    _wakeMinutes = widget.currentSummary?.wakeTimeMinutes;
+  }
+
+  Future<void> _pickWakeTime() async {
+    final int initial = _wakeMinutes ?? 7 * 60;
+    final TimeOfDay? picked = await showTimePicker(
+      context: context,
+      helpText: context.l10n.todayWakeTime,
+      confirmText: context.l10n.commonAccept,
+      initialTime: TimeOfDay(hour: initial ~/ 60, minute: initial % 60),
+    );
+    if (picked != null) setState(() => _wakeMinutes = picked.hour * 60 + picked.minute);
   }
 
   Future<void> _syncFromHealthConnect() async {
@@ -77,17 +94,20 @@ class _HoyStepsSleepSheetState extends ConsumerState<HoyStepsSleepSheet> {
       if (data?.steps != null) _steps = data!.steps!;
       final int? sleep = data?.sleepMinutes;
       if (sleep != null && sleep > 0) _sleepHours = (sleep / 60.0).clamp(3.0, 12.0);
+      if (data?.wakeMinutes != null) _wakeMinutes = data!.wakeMinutes;
     });
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(switch (result.outcome) {
-          HealthSyncOutcome.synced => context.l10n.todayDatosSincronizadosDesdeHealthConnect,
-          HealthSyncOutcome.noData => context.l10n.todayHealthConnectNoTieneRegistros,
-          HealthSyncOutcome.notConnected => context.l10n.todayConectaHealthConnectEnAjustes,
-        }),
-      ),
-    );
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text(switch (result.outcome) {
+            HealthSyncOutcome.synced => context.l10n.todayDatosSincronizadosDesdeHealthConnect,
+            HealthSyncOutcome.noData => context.l10n.todayHealthConnectNoTieneRegistros,
+            HealthSyncOutcome.notConnected => context.l10n.todayConectaHealthConnectEnAjustes,
+          }),
+        ),
+      );
   }
 
   Future<void> _save() async {
@@ -98,23 +118,26 @@ class _HoyStepsSleepSheetState extends ConsumerState<HoyStepsSleepSheet> {
           dateKey: widget.dateKey,
           steps: _steps,
           sleepMinutes: (_sleepHours * 60).round(),
+          wakeMinutes: _wakeMinutes,
         );
 
     if (mounted) {
       Navigator.of(context).pop();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            coins > 0
-                ? context.l10n.todayActivitySavedCoins(
-                    _steps,
-                    NumberFormats.fixed(_sleepHours, 1),
-                    coins,
-                  )
-                : context.l10n.todayActivitySaved(_steps, NumberFormats.fixed(_sleepHours, 1)),
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          SnackBar(
+            content: Text(
+              coins > 0
+                  ? context.l10n.todayActivitySavedCoins(
+                      _steps,
+                      NumberFormats.fixed(_sleepHours, 1),
+                      coins,
+                    )
+                  : context.l10n.todayActivitySaved(_steps, NumberFormats.fixed(_sleepHours, 1)),
+            ),
           ),
-        ),
-      );
+        );
     }
   }
 
@@ -158,10 +181,12 @@ class _HoyStepsSleepSheetState extends ConsumerState<HoyStepsSleepSheet> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: <Widget>[
-              Flexible(child: Text(
-                context.l10n.todayPasosDelDia,
-                style: TextStyle(fontWeight: FontWeight.w700, color: c.text),
-              )),
+              Flexible(
+                child: Text(
+                  context.l10n.todayPasosDelDia,
+                  style: TextStyle(fontWeight: FontWeight.w700, color: c.text),
+                ),
+              ),
               Text(
                 context.l10n.todayTexto2(
                   NumberFormats.group(_steps),
@@ -206,10 +231,12 @@ class _HoyStepsSleepSheetState extends ConsumerState<HoyStepsSleepSheet> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: <Widget>[
-              Flexible(child: Text(
-                context.l10n.todayHorasDeSuenoAnoche,
-                style: TextStyle(fontWeight: FontWeight.w700, color: c.text),
-              )),
+              Flexible(
+                child: Text(
+                  context.l10n.todayHorasDeSuenoAnoche,
+                  style: TextStyle(fontWeight: FontWeight.w700, color: c.text),
+                ),
+              ),
               Text(
                 context.l10n.todayH(NumberFormats.fixed(_sleepHours, 1)),
                 style: TextStyle(
@@ -235,6 +262,27 @@ class _HoyStepsSleepSheetState extends ConsumerState<HoyStepsSleepSheet> {
                 : context.l10n.todayConHDeSuenoTus(NumberFormats.fixed(sleepGoalHours, 1)),
             style: TextStyle(fontSize: 11.5, color: c.text2),
           ),
+          const SizedBox(height: 8),
+          Row(
+            children: <Widget>[
+              Expanded(
+                child: Text(
+                  context.l10n.todayWakeTime,
+                  style: TextStyle(fontWeight: FontWeight.w700, color: c.text),
+                ),
+              ),
+              TextButton.icon(
+                onPressed: () => unawaited(_pickWakeTime()),
+                icon: const Icon(Icons.wb_twilight_rounded, size: 18),
+                label: Text(
+                  _wakeMinutes == null
+                      ? context.l10n.todayWakeTimeUnset
+                      : CareText.hhmm(_wakeMinutes!),
+                ),
+              ),
+            ],
+          ),
+          const _SleepRegularityLine(),
           const SizedBox(height: 12),
           SizedBox(
             width: double.infinity,
@@ -246,6 +294,52 @@ class _HoyStepsSleepSheetState extends ConsumerState<HoyStepsSleepSheet> {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// Regularidad del horario de las dos últimas semanas, con "Saber más".
+class _SleepRegularityLine extends ConsumerWidget {
+  const _SleepRegularityLine();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final ScColors c = context.sc;
+    final AppLocalizations l10n = context.l10n;
+    final SleepRegularity? r = ref.watch(sleepRegularityProvider);
+    final String text = r == null
+        ? l10n.sleepRegularityNeedMore
+        : switch (r.band) {
+            SleepRegularityBand.veryRegular => l10n.sleepRegularityVeryRegular(
+              '${r.spreadMinutes}',
+            ),
+            SleepRegularityBand.regular => l10n.sleepRegularityRegular('${r.spreadMinutes}'),
+            SleepRegularityBand.variable => l10n.sleepRegularityVariable,
+          };
+    return Row(
+      children: <Widget>[
+        Expanded(
+          child: Text.rich(
+            TextSpan(
+              children: <InlineSpan>[
+                TextSpan(
+                  text: '${l10n.sleepRegularityTitle}: ',
+                  style: TextStyle(fontWeight: FontWeight.w700, color: c.text),
+                ),
+                TextSpan(text: text),
+              ],
+            ),
+            style: TextStyle(fontSize: 11.5, color: c.text2),
+          ),
+        ),
+        IconButton(
+          tooltip: l10n.careLearnMore,
+          visualDensity: VisualDensity.compact,
+          onPressed: () =>
+              unawaited(ScienceOnDemandSheet.show(context, CareScience.sleepRegularity(l10n))),
+          icon: Icon(Icons.info_outline_rounded, color: c.text3, size: 20),
+        ),
+      ],
     );
   }
 }

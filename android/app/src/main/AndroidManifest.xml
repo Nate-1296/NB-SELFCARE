@@ -22,12 +22,22 @@
     <uses-permission android:name="android.permission.health.READ_HEALTH_DATA_IN_BACKGROUND" />
     <uses-permission android:name="android.permission.health.READ_HYDRATION" />
     <uses-permission android:name="android.permission.health.WRITE_HYDRATION" />
+    <!-- Signos vitales: solo se piden si la persona declara el aparato (tensiómetro, glucómetro…) -->
+    <uses-permission android:name="android.permission.health.READ_BLOOD_PRESSURE" />
+    <uses-permission android:name="android.permission.health.READ_BLOOD_GLUCOSE" />
+    <uses-permission android:name="android.permission.health.READ_OXYGEN_SATURATION" />
+    <uses-permission android:name="android.permission.health.READ_BODY_TEMPERATURE" />
+    <!-- Sesiones de respiración guiada -->
+    <uses-permission android:name="android.permission.health.WRITE_MINDFULNESS" />
 
     <!-- Notificaciones locales: cronómetro de ayuno (Live Update en Android 16) y recordatorios -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.POST_PROMOTED_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+
+    <!-- Vibración que guía los ejercicios de suelo pélvico sin mirar la pantalla -->
+    <uses-permission android:name="android.permission.VIBRATE" />
 
     <!-- Dictado de comidas con el reconocedor de voz on-device de Android -->
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
@@ -42,6 +52,10 @@
         <!-- Servicio de reconocimiento de voz del sistema -->
         <intent>
             <action android:name="android.speech.RecognitionService" />
+        </intent>
+        <!-- Marcar las líneas de apoyo emocional (abre el teléfono, no llama sola) -->
+        <intent>
+            <action android:name="android.intent.action.DIAL" />
         </intent>
     </queries>
 
@@ -94,6 +108,9 @@
 
         <receiver
             android:name=".notifications.ReminderReceiver"
+            android:exported="false" />
+        <receiver
+            android:name=".notifications.ReminderActionReceiver"
             android:exported="false" />
         <receiver
             android:name=".notifications.FastingPhaseReceiver"

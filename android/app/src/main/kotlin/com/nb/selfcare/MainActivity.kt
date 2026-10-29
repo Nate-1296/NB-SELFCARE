@@ -7,6 +7,10 @@ import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.VibrationAttributes
+import android.os.VibrationEffect
+import android.os.Vibrator
+import android.os.VibratorManager
 import android.provider.Settings
 import android.speech.SpeechRecognizer
 import androidx.activity.result.ActivityResultLauncher
@@ -18,6 +22,7 @@ import com.nb.selfcare.health.HealthConnectBridge
 import com.nb.selfcare.notifications.FastingNotifier
 import com.nb.selfcare.notifications.MovementNudgeWorker
 import com.nb.selfcare.notifications.NotificationChannels
+import com.nb.selfcare.notifications.ReminderActionReceiver
 import com.nb.selfcare.notifications.ReminderScheduler
 import com.nb.selfcare.notifications.ReminderSpec
 import io.flutter.embedding.android.FlutterFragmentActivity
@@ -40,6 +45,9 @@ class MainActivity : FlutterFragmentActivity() {
 
     private lateinit var health: HealthConnectBridge
     private var pendingHealthResult: MethodChannel.Result? = null
+
+    /** Permisos que deben quedar concedidos para responder `true` a la petición en curso. */
+    private var pendingHealthRequired: Set<String> = HealthConnectBridge.ALL_PERMISSIONS
     private var pendingPermissionResult: MethodChannel.Result? = null
 
     /** Acción pendiente para Flutter cuando Health Connect abre la política de privacidad. */
@@ -47,7 +55,7 @@ class MainActivity : FlutterFragmentActivity() {
 
     private val healthPermissionLauncher: ActivityResultLauncher<Set<String>> =
         registerForActivityResult(PermissionController.createRequestPermissionResultContract()) { granted ->
-            pendingHealthResult?.success(granted.containsAll(HealthConnectBridge.ALL_PERMISSIONS))
+            pendingHealthResult?.success(granted.containsAll(pendingHealthRequired))
             pendingHealthResult = null
         }
 
@@ -98,7 +106,34 @@ class MainActivity : FlutterFragmentActivity() {
                 }
                 pendingHealthResult?.success(false)
                 pendingHealthResult = result
-                lifecycleScope.launch { health.requestPermissions(healthPermissionLauncher) }
+                lifecycleScope.launch { pendingHealthRequired = health.requestPermissions(healthPermissionLauncher) }
+            }
+            "requestVitalPermissions" -> {
+                val kinds = call.argument<List<String>>("kinds") ?: emptyList()
+                if (health.availability() != "available" || kinds.isEmpty()) {
+                    result.success(false)
+                    return
+                }
+                pendingHealthResult?.success(false)
+                pendingHealthResult = result
+                pendingHealthRequired = health.requestVitalPermissions(healthPermissionLauncher, kinds)
+                if (pendingHealthRequired.isEmpty()) {
+                    pendingHealthResult = null
+                    result.success(false)
+                }
+            }
+            "readVitals" -> launchSafely(result) {
+                health.readVitals(
+                    kinds = call.argument<List<String>>("kinds") ?: emptyList(),
+                    sinceMillis = call.argument<Number>("sinceEpochMs")!!.toLong(),
+                )
+            }
+            "writeMindfulness" -> launchSafely(result) {
+                health.writeMindfulness(
+                    startMillis = call.argument<Number>("startEpochMs")!!.toLong(),
+                    endMillis = call.argument<Number>("endEpochMs")!!.toLong(),
+                    title = call.argument<String>("title") ?: "",
+                )
             }
             "supportsBackgroundReads" -> launchSafely(result) { health.supportsBackgroundReads() }
             "hasBackgroundReadPermission" -> launchSafely(result) { health.hasBackgroundReadPermission() }
@@ -144,6 +179,14 @@ class MainActivity : FlutterFragmentActivity() {
                 result.success(pendingLaunchAction)
                 pendingLaunchAction = null
             }
+            "deviceModel" -> result.success("${Build.MANUFACTURER} ${Build.MODEL}")
+            "dial" -> result.success(
+                startSafely(Intent(Intent.ACTION_DIAL, Uri.parse("tel:" + call.argument<String>("number")!!))),
+            )
+            "vibrate" -> {
+                vibrate(call.argument<List<Number>>("pattern")?.map { it.toLong() } ?: emptyList())
+                result.success(true)
+            }
             "isOnDeviceSpeechAvailable" -> result.success(
                 Build.VERSION.SDK_INT >= 31 && SpeechRecognizer.isOnDeviceRecognitionAvailable(this),
             )
@@ -170,6 +213,7 @@ class MainActivity : FlutterFragmentActivity() {
                 ReminderScheduler(applicationContext).replaceAll(specs)
                 result.success(true)
             }
+            "consumeReminderActions" -> result.success(ReminderActionReceiver.consume(applicationContext))
             "setMovementNudges" -> {
                 if (call.argument<Boolean>("enabled") == true) {
                     MovementNudgeWorker.enable(
@@ -194,6 +238,26 @@ class MainActivity : FlutterFragmentActivity() {
             } catch (error: Exception) {
                 result.error("health_connect_error", error.message, null)
             }
+        }
+    }
+
+    /** Patrón de vibración en milisegundos: espera, vibra, espera, vibra… */
+    private fun vibrate(pattern: List<Long>) {
+        if (pattern.isEmpty()) return
+        val vibrator: Vibrator? = if (Build.VERSION.SDK_INT >= 31) {
+            getSystemService(VibratorManager::class.java)?.defaultVibrator
+        } else {
+            @Suppress("DEPRECATION")
+            getSystemService(Vibrator::class.java)
+        }
+        if (vibrator?.hasVibrator() != true) return
+        val effect = VibrationEffect.createWaveform(pattern.toLongArray(), -1)
+        // Como "multimedia" y no como "táctil": la guía del suelo pélvico se nota
+        // aunque la vibración al tocar esté desactivada en el sistema.
+        if (Build.VERSION.SDK_INT >= 33) {
+            vibrator.vibrate(effect, VibrationAttributes.createForUsage(VibrationAttributes.USAGE_MEDIA))
+        } else {
+            vibrator.vibrate(effect)
         }
     }
 

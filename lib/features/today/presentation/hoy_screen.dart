@@ -18,6 +18,7 @@ import '../application/today_overview.dart';
 import '../domain/hoy_widget_config.dart';
 import 'today_actions.dart';
 import 'widgets/cards/body_card.dart';
+import 'widgets/cards/care_card.dart';
 import 'widgets/cards/fasting_card.dart';
 import 'widgets/cards/hydration_card.dart';
 import 'widgets/cards/nibi_card.dart';
@@ -270,6 +271,7 @@ class _HoyScreenState extends ConsumerState<HoyScreen> {
         activeFast: data.activeFast,
         now: data.now,
       ),
+      HoyWidgetId.careToday => HoyCareBentoCard(size: item.size, dateKey: data.dateKey),
       HoyWidgetId.dailyJournal => HoyJournal4x4Widget(dateKey: data.dateKey),
     };
   }

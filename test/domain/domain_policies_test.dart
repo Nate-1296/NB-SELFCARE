@@ -39,6 +39,12 @@ UserProfile _profile({
     hasImpedanceContraindication: false,
     hasEatingDisorderHistory: edHistory,
     takesHypoglycemicMedication: false,
+    hasEinkScreen: false,
+    hasSmartScale: true,
+    vitalDevicesJson: '[]',
+    careModulesJson: '["treatments","pelvic_floor","active_breaks","symptoms","checkups","habits"]',
+    discreetNotifications: true,
+    targetBedtimeMinutes: 1380,
     createdAt: DateTime(2026, 1, 1),
   );
 }
@@ -50,17 +56,29 @@ void main() {
     test('El multiplicador 1.5× exige cumplir la meta de sueño del perfil', () {
       expect(
         RewardPolicy.sleepMultiplier(
-            sleepMinutes: 420, deepMinutes: 0, remMinutes: 0, sleepGoalHours: 7.5),
+          sleepMinutes: 420,
+          deepMinutes: 0,
+          remMinutes: 0,
+          sleepGoalHours: 7.5,
+        ),
         1.0,
       );
       expect(
         RewardPolicy.sleepMultiplier(
-            sleepMinutes: 450, deepMinutes: 0, remMinutes: 0, sleepGoalHours: 7.5),
+          sleepMinutes: 450,
+          deepMinutes: 0,
+          remMinutes: 0,
+          sleepGoalHours: 7.5,
+        ),
         1.5,
       );
       expect(
         RewardPolicy.sleepMultiplier(
-            sleepMinutes: 400, deepMinutes: 50, remMinutes: 45, sleepGoalHours: 8),
+          sleepMinutes: 400,
+          deepMinutes: 50,
+          remMinutes: 45,
+          sleepGoalHours: 8,
+        ),
         1.5,
         reason: 'REM + profundo ≥ 90 min también cuenta como reparador',
       );
@@ -81,11 +99,11 @@ void main() {
   group('DietPhasePolicy', () {
     test('Reverse diet suma 75 kcal por semana completa hasta llegar a mantenimiento', () {
       int adjustment(int days) => DietPhasePolicy.dailyAdjustmentKcal(
-            phase: DietPhase.reverseDiet,
-            weeklyGoalRateKg: -0.5,
-            phaseStartedAt: now.subtract(Duration(days: days)),
-            now: now,
-          );
+        phase: DietPhase.reverseDiet,
+        weeklyGoalRateKg: -0.5,
+        phaseStartedAt: now.subtract(Duration(days: days)),
+        now: now,
+      );
       expect(adjustment(0), -550);
       expect(adjustment(7), -475);
       expect(adjustment(20), -400);
@@ -167,8 +185,11 @@ void main() {
     });
 
     test('La compensación lútea y el ejercicio suman a la meta del día', () {
-      final DailyMacroTargets base =
-          DailyTargetsCalculator.compute(profile: _profile(), now: now, currentWeightKg: 64);
+      final DailyMacroTargets base = DailyTargetsCalculator.compute(
+        profile: _profile(),
+        now: now,
+        currentWeightKg: 64,
+      );
       final DailyMacroTargets adjusted = DailyTargetsCalculator.compute(
         profile: _profile(),
         now: now,
@@ -183,10 +204,10 @@ void main() {
   group('CyclePhaseCalculator', () {
     final DateTime start = DateTime(2026, 10, 1);
     FemaleCyclePhase phaseOn(int day, int length) => CyclePhaseCalculator.phaseFor(
-          cycleStart: start,
-          cycleLengthDays: length,
-          date: start.add(Duration(days: day - 1)),
-        ).phase;
+      cycleStart: start,
+      cycleLengthDays: length,
+      date: start.add(Duration(days: day - 1)),
+    ).phase;
 
     test('Ciclo de 28 días', () {
       expect(phaseOn(3, 28), FemaleCyclePhase.menstrual);
@@ -243,12 +264,18 @@ void main() {
         weight: 64.8,
         context: const RetentionContext(isLutealPhase: true, takesWaterRetainingSupplement: true),
       );
-      expect(a.retentionCauses, <RetentionCause>[RetentionCause.lutealPhase, RetentionCause.creatine]);
+      expect(a.retentionCauses, <RetentionCause>[
+        RetentionCause.lutealPhase,
+        RetentionCause.creatine,
+      ]);
       expect(a.spikeExplanation, contains('No es grasa'));
     });
 
     test('Sin causa fisiológica una subida no se etiqueta como retención', () {
-      expect(analyze(weight: 64.8, context: const RetentionContext()).isWaterRetentionSpike, isFalse);
+      expect(
+        analyze(weight: 64.8, context: const RetentionContext()).isWaterRetentionSpike,
+        isFalse,
+      );
     });
 
     test('El salto de agua BIA exige impedancia en ambos pesajes', () {

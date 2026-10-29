@@ -88,3 +88,32 @@
   * Ninguna imagen, código escaneado ni dato del usuario sale del dispositivo por ML Kit; solo métricas técnicas de la API.
   * Ningún otro SDK de Google o de terceros puede añadirse amparándose en esta excepción.
   * Si aparece una alternativa sin telemetría con calidad equivalente, se reabre esta decisión.
+
+---
+
+### ADR-14: Equipos declarados: lo que no se tiene, no aparece
+* **Contexto:** la 1.0 daba por hecho el hardware de referencia (TCL NXTPAPER y Mi Scale 2). Para cualquier otra persona, los modos de papel y la estación de báscula eran ruido.
+* **Decisión:** el perfil guarda los equipos (`has_eink_screen`, `has_smart_scale`, `vital_devices_json`), preguntados en la bienvenida (el modelo del teléfono solo propone la respuesta) y editables en Ajustes → Tus equipos. Sin papel no se ofrecen esos temas (y se sale de uno si estaba activo); sin báscula, Cuerpo usa peso a mano, IMC, metabolismo basal y cinta; sin aparato, no hay signos vitales.
+* **Consecuencias:** la migración 6 → 7 marca báscula y papel en perfiles existentes para no quitarle nada a quien ya usaba la app.
+
+---
+
+### ADR-15: Sexta pestaña "Cuidado" en vez de sobrecargar las existentes
+* **Contexto:** ocho apartados nuevos (tratamientos, hábitos, suelo pélvico, pausas, signos vitales, síntomas, chequeos, alcohol y tabaco) no caben en Inicio, Cuerpo ni Perfil sin romper "una acción principal por bloque".
+* **Decisión:** una pestaña propia entre Cuerpo y Nibi. Cada apartado se activa o desactiva (Ajustes → Módulos); Inicio solo recibe una tarjeta resumen. Suplementos y digestión salen de Perfil y viven aquí.
+* **Consecuencias:** la barra inferior pasa a seis destinos (indicador algo más estrecho, etiquetas que se ajustan). Si una persona apaga todos los apartados, la pestaña lo dice y enlaza a Ajustes.
+
+---
+
+### ADR-16: Health Connect: leer signos vitales, escribir solo respiración
+* **Contexto:** tensiómetros, glucómetros y oxímetros escriben en Health Connect. Pedir todos los permisos a todo el mundo contradice la mínima exposición.
+* **Decisión:** se pide la lectura de cada signo vital solo al declarar su aparato, aparte del permiso base. Las lecturas se guardan con su id de Health Connect (sin duplicados) y se validan (rango plausible). Las sesiones de respiración se escriben como `MindfulnessSession` solo si el proveedor lo soporta. Las mediciones manuales no se exportan.
+* **Consecuencias:** sin Health Connect todo funciona a mano (degradación elegante). Rangos orientativos (AHA 2017, ADA, OMS), nunca diagnóstico.
+
+---
+
+### ADR-17: Medicamentos sin monedas, avisos discretos y "Hecho" desde la notificación
+* **Contexto:** un aviso de medicación en la pantalla de bloqueo revela datos de salud; gamificar un tratamiento puede hacer sentir culpa por una toma olvidada.
+* **Decisión:** los avisos de tomas son discretos por defecto (sin nombre) y privados en la pantalla de bloqueo; llevan un botón "Hecho" que guarda la acción en el teléfono y se aplica al abrir la app. Las tomas no dan monedas; los hábitos, el suelo pélvico, las pausas y los chequeos sí. Las bebidas alcohólicas se registran también en Comida para que su energía cuente en el balance y en el gasto adaptativo.
+* **Consecuencias:** marcar una toma desde la notificación no requiere abrir la app ni red; la reserva se descuenta al marcar y se devuelve al deshacer.
+

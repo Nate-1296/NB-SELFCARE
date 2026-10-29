@@ -76,6 +76,13 @@ void main() {
               hasImpedanceContraindication: false,
               hasEatingDisorderHistory: false,
               takesHypoglycemicMedication: false,
+              hasEinkScreen: false,
+              hasSmartScale: true,
+              vitalDevicesJson: '[]',
+              careModulesJson:
+                  '["treatments","pelvic_floor","active_breaks","symptoms","checkups","habits"]',
+              discreetNotifications: true,
+              targetBedtimeMinutes: 1380,
               createdAt: DateTime.now(),
             ),
           ),
@@ -175,12 +182,13 @@ void main() {
     expect(colorPaper.protein, isNot(equals(colorPaper.fat)));
   });
 
-  test('branchKeys contiene las 5 claves correspondientes a las 5 pestañas', () {
-    expect(branchKeys.length, 5);
+  test('branchKeys contiene las 6 claves correspondientes a las 6 pestañas', () {
+    expect(branchKeys.length, 6);
     expect(branchKeys[0], equals(branchHoyKey));
     expect(branchKeys[1], equals(branchComerKey));
     expect(branchKeys[2], equals(branchCuerpoKey));
-    expect(branchKeys[3], equals(branchNibiKey));
-    expect(branchKeys[4], equals(branchPerfilKey));
+    expect(branchKeys[3], equals(branchCuidadoKey));
+    expect(branchKeys[4], equals(branchNibiKey));
+    expect(branchKeys[5], equals(branchPerfilKey));
   });
 }

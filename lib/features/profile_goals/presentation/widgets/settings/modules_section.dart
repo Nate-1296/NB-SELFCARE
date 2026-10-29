@@ -5,13 +5,17 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../../core/database/app_database.dart';
+import '../../../../../core/domain/care_enums.dart';
 import '../../../../../core/domain/enums.dart';
 import '../../../../../core/l10n/l10n.dart';
 import '../../../../../shared/theme/sc_colors.dart';
 import '../../../../../shared/theme/sc_theme.dart';
+import '../../../../../shared/theme/sc_tokens.dart';
 import '../../../../../shared/widgets/app_icons.dart';
 import '../../../../../shared/widgets/health_card.dart';
 import '../../../../../shared/widgets/section_head.dart';
+import '../../../../care/application/care_preferences_service.dart';
+import '../../../../care/presentation/care_l10n.dart';
 import '../../../application/profile_service.dart';
 
 /// Secciones que el usuario puede mostrar u ocultar.
@@ -148,10 +152,43 @@ class ModulesSection extends ConsumerWidget {
           ),
         ),
 
+        const SizedBox(height: 12),
+        HealthCard(
+          margin: EdgeInsets.zero,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: <Widget>[
+              const SizedBox(height: 6),
+              Text(context.l10n.settingsCareModules, style: context.text.titleSmall),
+              Text(
+                context.l10n.settingsCareModulesHint,
+                style: TextStyle(fontFamily: ScFonts.ui, fontSize: 11.5, color: c.text2),
+              ),
+              for (final CareModule module in CareModule.values)
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  dense: true,
+                  title: Text(module.label(context.l10n)),
+                  value: _modules.contains(module),
+                  onChanged: (bool v) {
+                    unawaited(HapticFeedback.selectionClick());
+                    unawaited(
+                      ref.read(carePreferencesServiceProvider).setCareModule(module, enabled: v),
+                    );
+                  },
+                ),
+            ],
+          ),
+        ),
+
         const SizedBox(height: 24),
 
         // ==========================================
       ],
     );
   }
+
+  Set<CareModule> get _modules =>
+      profile == null ? CareModule.defaults : ProfileSets.careModules(profile!.careModulesJson);
 }

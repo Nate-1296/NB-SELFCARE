@@ -12,14 +12,17 @@ import '../../../shared/widgets/entrance.dart';
 import '../../../shared/widgets/quick_action_button.dart';
 import '../../../shared/widgets/section_head.dart';
 import '../../../shared/widgets/top_bar.dart';
+import '../../care/application/care_session_service.dart';
 import '../application/nibi_overview.dart';
 import '../application/pet_service.dart';
 import '../application/reward_service.dart';
+import '../domain/breathing.dart';
 import '../domain/nibi_activity.dart';
 import '../domain/pet_catalog.dart';
 import 'nibi/nibi_view.dart';
 import 'pet_l10n.dart';
 import 'shop_modal.dart';
+import 'widgets/breathing.dart';
 import 'widgets/nibi_stage.dart';
 import 'widgets/nibi_status.dart';
 import 'widgets/nibi_wardrobe.dart';
@@ -87,10 +90,18 @@ class _NibiScreenState extends ConsumerState<NibiScreen> {
     }
   }
 
-  Future<void> _breathingDone(String petName) async {
+  Future<void> _breathingDone(String petName, BreathingSession session) async {
     final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
     final AppLocalizations l10n = context.l10n;
-    final RewardGrant grant = await ref.read(petServiceProvider).completeBreathing();
+    // Se guarda como sesión de cuidado (y en Health Connect, si está conectado).
+    final RewardGrant grant = await ref
+        .read(careSessionServiceProvider)
+        .complete(
+          kind: CareSessionKind.breathing,
+          variant: session.pattern.id,
+          durationSeconds: session.totalSeconds,
+          healthTitle: session.pattern.title(l10n),
+        );
     if (grant.granted && mounted) {
       messenger
         ..hideCurrentSnackBar()
@@ -117,7 +128,10 @@ class _NibiScreenState extends ConsumerState<NibiScreen> {
     final AppLocalizations l10n = context.l10n;
 
     // Lo que registras en la app le llega a Nibi.
-    ref.listen<AsyncValue<NibiOverview?>>(nibiOverviewProvider, (AsyncValue<NibiOverview?>? prev, AsyncValue<NibiOverview?> next) {
+    ref.listen<AsyncValue<NibiOverview?>>(nibiOverviewProvider, (
+      AsyncValue<NibiOverview?>? prev,
+      AsyncValue<NibiOverview?> next,
+    ) {
       final NibiOverview? a = prev?.value;
       final NibiOverview? b = next.value;
       if (a == null || b == null) return;
@@ -130,7 +144,10 @@ class _NibiScreenState extends ConsumerState<NibiScreen> {
 
     final NibiOverview? data = ref.watch(nibiOverviewProvider).value;
     if (data == null) {
-      return Scaffold(backgroundColor: c.bg, body: const Center(child: CircularProgressIndicator()));
+      return Scaffold(
+        backgroundColor: c.bg,
+        body: const Center(child: CircularProgressIndicator()),
+      );
     }
     final NibiActivity activity = _reaction ?? data.mood.activity;
     final String speech = _speech ?? data.mood.activity.speech(l10n);
@@ -169,13 +186,19 @@ class _NibiScreenState extends ConsumerState<NibiScreen> {
                       semanticsLabel: l10n.nibiPetSemantics(data.pet.petName),
                       onReaction: (NibiReaction r) => _react(null, r.speech(l10n)),
                       onCare: _care,
-                      onBreathingDone: () => unawaited(_breathingDone(data.pet.petName)),
+                      onBreathingDone: (BreathingSession session) =>
+                          unawaited(_breathingDone(data.pet.petName, session)),
                     ),
                   ),
                   SectionHead(
                     title: l10n.nibiTodayTitle,
                     subtitle: l10n.nibiTodaySubtitle,
-                    padding: const EdgeInsets.fromLTRB(ScSpace.xs, ScSpace.sectionGap, ScSpace.xs, ScSpace.m),
+                    padding: const EdgeInsets.fromLTRB(
+                      ScSpace.xs,
+                      ScSpace.sectionGap,
+                      ScSpace.xs,
+                      ScSpace.m,
+                    ),
                   ),
                   NibiTodayCard(overview: data),
                   SectionHead(
@@ -183,7 +206,12 @@ class _NibiScreenState extends ConsumerState<NibiScreen> {
                     subtitle: l10n.nibiWardrobeSubtitle,
                     actionLabel: l10n.nibiShop,
                     onAction: _openShop,
-                    padding: const EdgeInsets.fromLTRB(ScSpace.xs, ScSpace.sectionGap, 0, ScSpace.m),
+                    padding: const EdgeInsets.fromLTRB(
+                      ScSpace.xs,
+                      ScSpace.sectionGap,
+                      0,
+                      ScSpace.m,
+                    ),
                   ),
                   NibiWardrobe(
                     overview: data,
@@ -197,7 +225,12 @@ class _NibiScreenState extends ConsumerState<NibiScreen> {
                     },
                     onShop: _openShop,
                   ),
-                  QuickActionButton(label: l10n.nibiShop, icon: AppIcons.tienda, tone: c.warning, onPressed: _openShop),
+                  QuickActionButton(
+                    label: l10n.nibiShop,
+                    icon: AppIcons.tienda,
+                    tone: c.warning,
+                    onPressed: _openShop,
+                  ),
                 ],
               ),
             ),
@@ -243,7 +276,10 @@ class _RenameDialogState extends State<_RenameDialog> {
       ),
       actions: <Widget>[
         TextButton(onPressed: () => Navigator.of(context).pop(), child: Text(l10n.commonCancel)),
-        FilledButton(onPressed: () => Navigator.of(context).pop(_ctrl.text), child: Text(l10n.commonSave)),
+        FilledButton(
+          onPressed: () => Navigator.of(context).pop(_ctrl.text),
+          child: Text(l10n.commonSave),
+        ),
       ],
     );
   }

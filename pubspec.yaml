@@ -1,7 +1,7 @@
 name: nb_selfcare
 description: "NB Selfcare — autocuidado 100% offline: nutrición, cuerpo, ayuno, descanso y Nibi."
 publish_to: "none"
-version: 1.0.0+2
+version: 1.1.0+3
 
 # Toolchain fijado: Flutter 3.47.x (Dart 3.13.x). Ver .fvmrc.
 environment:

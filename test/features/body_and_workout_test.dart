@@ -35,6 +35,7 @@ void main() {
         dailyStepsGoal: const drift.Value(8000),
         dailySleepGoalHours: const drift.Value(7.5),
         themeMode: const drift.Value('material_you'),
+        hasSmartScale: const drift.Value(true),
       ),
     );
 
@@ -48,6 +49,40 @@ void main() {
 
   tearDown(() async {
     await db.close();
+  });
+
+  testWidgets('Sin báscula: pesaje a mano, IMC, metabolismo basal y cinta', (tester) async {
+    tester.view.physicalSize = const Size(1080, 2400);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    await tester.runAsync(
+      () => UserProfileDao(db).updateProfile(const UserProfilesCompanion(hasSmartScale: drift.Value(false))),
+    );
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [appDatabaseProvider.overrideWithValue(db)],
+        child: MaterialApp(
+          locale: const Locale('es'),
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          theme: ScTheme.build('samsung_dark'),
+          home: const CuerpoScreen(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Registrar peso'), findsOneWidget);
+    expect(find.text('Manual'), findsNothing, reason: 'Sin estación de báscula');
+    expect(find.text('Lo que se calcula con tu peso, tu estatura y la cinta métrica.'), findsOneWidget);
+
+    await tester.tap(find.text('Registrar peso'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('mpedancia'), findsNothing, reason: 'Sin campo de impedancia');
+
+    await tester.pumpWidget(const SizedBox());
+    await tester.pump(const Duration(milliseconds: 100));
   });
 
   testWidgets('Laboratorio Corporal y pesaje manual con derivación de 13 métricas', (tester) async {

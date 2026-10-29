@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/database/app_database.dart';
 import '../../features/body_metrics/presentation/cuerpo_screen.dart';
+import '../../features/care/presentation/cuidado_screen.dart';
 import '../../features/fasting/presentation/fasting_screen.dart';
 import '../../features/nutrition_hydration/presentation/nutricion_screen.dart';
 import '../../features/pet_gamification/presentation/nibi_screen.dart';
@@ -20,19 +21,15 @@ import '../app_shell.dart';
 /// Notificador de estado de onboarding para GoRouter.
 class RouterNotifier extends ChangeNotifier {
   RouterNotifier(this._ref) {
-    _ref.listen<AsyncValue<UserProfile?>>(
-      userProfileStreamProvider,
-      (previous, next) {
-        final bool prevHasProfile = previous?.value != null;
-        final bool nextHasProfile = next.value != null;
-        final bool loadingEnded =
-            (previous == null || previous.isLoading) && !next.isLoading;
+    _ref.listen<AsyncValue<UserProfile?>>(userProfileStreamProvider, (previous, next) {
+      final bool prevHasProfile = previous?.value != null;
+      final bool nextHasProfile = next.value != null;
+      final bool loadingEnded = (previous == null || previous.isLoading) && !next.isLoading;
 
-        if (loadingEnded || (prevHasProfile != nextHasProfile)) {
-          notifyListeners();
-        }
-      },
-    );
+      if (loadingEnded || (prevHasProfile != nextHasProfile)) {
+        notifyListeners();
+      }
+    });
   }
 
   final Ref _ref;
@@ -47,24 +44,30 @@ final routerNotifierProvider = Provider<RouterNotifier>((ref) {
 });
 
 /// Clave global del navegador raíz para gestionar navegación y retroceso desde cualquier punto.
-final GlobalKey<NavigatorState> rootNavigatorKey =
-    GlobalKey<NavigatorState>(debugLabel: 'root');
+final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'root');
 
-final GlobalKey<NavigatorState> branchHoyKey =
-    GlobalKey<NavigatorState>(debugLabel: 'branch_hoy');
-final GlobalKey<NavigatorState> branchComerKey =
-    GlobalKey<NavigatorState>(debugLabel: 'branch_comer');
-final GlobalKey<NavigatorState> branchCuerpoKey =
-    GlobalKey<NavigatorState>(debugLabel: 'branch_cuerpo');
-final GlobalKey<NavigatorState> branchNibiKey =
-    GlobalKey<NavigatorState>(debugLabel: 'branch_nibi');
-final GlobalKey<NavigatorState> branchPerfilKey =
-    GlobalKey<NavigatorState>(debugLabel: 'branch_perfil');
+final GlobalKey<NavigatorState> branchHoyKey = GlobalKey<NavigatorState>(debugLabel: 'branch_hoy');
+final GlobalKey<NavigatorState> branchComerKey = GlobalKey<NavigatorState>(
+  debugLabel: 'branch_comer',
+);
+final GlobalKey<NavigatorState> branchCuerpoKey = GlobalKey<NavigatorState>(
+  debugLabel: 'branch_cuerpo',
+);
+final GlobalKey<NavigatorState> branchCuidadoKey = GlobalKey<NavigatorState>(
+  debugLabel: 'branch_cuidado',
+);
+final GlobalKey<NavigatorState> branchNibiKey = GlobalKey<NavigatorState>(
+  debugLabel: 'branch_nibi',
+);
+final GlobalKey<NavigatorState> branchPerfilKey = GlobalKey<NavigatorState>(
+  debugLabel: 'branch_perfil',
+);
 
 final List<GlobalKey<NavigatorState>> branchKeys = <GlobalKey<NavigatorState>>[
   branchHoyKey,
   branchComerKey,
   branchCuerpoKey,
+  branchCuidadoKey,
   branchNibiKey,
   branchPerfilKey,
 ];
@@ -94,13 +97,10 @@ final Provider<GoRouter> appRouterProvider = Provider<GoRouter>((Ref ref) {
     routes: <RouteBase>[
       StatefulShellRoute.indexedStack(
         parentNavigatorKey: rootNavigatorKey,
-        builder: (
-          BuildContext context,
-          GoRouterState state,
-          StatefulNavigationShell navigationShell,
-        ) {
-          return AppShell(navigationShell: navigationShell);
-        },
+        builder:
+            (BuildContext context, GoRouterState state, StatefulNavigationShell navigationShell) {
+              return AppShell(navigationShell: navigationShell);
+            },
         branches: <StatefulShellBranch>[
           // Pestaña 1: Hoy
           StatefulShellBranch(
@@ -135,7 +135,18 @@ final Provider<GoRouter> appRouterProvider = Provider<GoRouter>((Ref ref) {
               ),
             ],
           ),
-          // Pestaña 4: Nibi (Mascota Reactiva, Tienda y Armario)
+          // Pestaña 4: Cuidado (tratamientos, suelo pélvico, pausas, síntomas, chequeos…)
+          StatefulShellBranch(
+            navigatorKey: branchCuidadoKey,
+            routes: <RouteBase>[
+              GoRoute(
+                path: '/cuidado',
+                pageBuilder: (BuildContext context, GoRouterState state) =>
+                    const NoTransitionPage(child: CuidadoScreen()),
+              ),
+            ],
+          ),
+          // Pestaña 5: Nibi (Mascota Reactiva, Tienda y Armario)
           StatefulShellBranch(
             navigatorKey: branchNibiKey,
             routes: <RouteBase>[
@@ -146,7 +157,7 @@ final Provider<GoRouter> appRouterProvider = Provider<GoRouter>((Ref ref) {
               ),
             ],
           ),
-          // Pestaña 5: Perfil / Yo (Identidad, Metas, Analítica Cruzada y Respaldo)
+          // Pestaña 6: Perfil / Yo (Identidad, Metas, Analítica Cruzada y Respaldo)
           StatefulShellBranch(
             navigatorKey: branchPerfilKey,
             routes: <RouteBase>[
@@ -164,8 +175,7 @@ final Provider<GoRouter> appRouterProvider = Provider<GoRouter>((Ref ref) {
       GoRoute(
         parentNavigatorKey: rootNavigatorKey,
         path: '/ayuno',
-        pageBuilder: (BuildContext context, GoRouterState state) =>
-            CustomTransitionPage<void>(
+        pageBuilder: (BuildContext context, GoRouterState state) => CustomTransitionPage<void>(
           key: state.pageKey,
           child: const FastingScreen(),
           transitionsBuilder: (context, animation, secondaryAnimation, child) {
@@ -174,10 +184,7 @@ final Provider<GoRouter> appRouterProvider = Provider<GoRouter>((Ref ref) {
             }
             const begin = Offset(0.0, 1.0);
             const end = Offset.zero;
-            final curve = CurvedAnimation(
-              parent: animation,
-              curve: Curves.easeOutCubic,
-            );
+            final curve = CurvedAnimation(parent: animation, curve: Curves.easeOutCubic);
             final tween = Tween(begin: begin, end: end);
             return SlideTransition(position: tween.animate(curve), child: child);
           },

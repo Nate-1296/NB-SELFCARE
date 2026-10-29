@@ -10,6 +10,7 @@
 1. **100% Offline-First & Cero Telemetría:**
    * **PROHIBIDO:** Añadir dependencias de Firebase, Supabase, Google Analytics, Sentry remoto, Crashlytics o cualquier backend en la nube.
    * Única excepción documentada: ML Kit on-device para escáner y OCR (ADR-13). No ampara ningún otro SDK.
+   * Lo que depende de un aparato (pantalla de papel, báscula, signos vitales) solo aparece si la persona lo declara en "Tus equipos" (ADR-14).
    * La única llamada HTTP permitida es a la API pública de **Open Food Facts** para resolver códigos de barras no cacheados. Todo resultado debe guardarse inmediatamente en SQLite local.
    * `android:allowBackup="false"` debe permanecer siempre en `AndroidManifest.xml`.
 2. **Cero Placeholders y Código Completo:**
@@ -39,7 +40,7 @@ Antes de tocar una funcionalidad, lee su documento:
 
 * [`docs/01_PRODUCT.md`](docs/01_PRODUCT.md): pantallas, principios, presupuesto de fricción (< 15 s) y alcance.
 * [`docs/02_ARCHITECTURE.md`](docs/02_ARCHITECTURE.md): capas, estructura, flujo de datos, canales nativos y guardrails.
-* [`docs/03_DATABASE.md`](docs/03_DATABASE.md): las 26 tablas (esquema v6), FTS5, migraciones y copias de seguridad.
+* [`docs/03_DATABASE.md`](docs/03_DATABASE.md): las 35 tablas (esquema v7), FTS5, migraciones y copias de seguridad.
 * [`docs/04_BIOMETRICS_AND_SCALE.md`](docs/04_BIOMETRICS_AND_SCALE.md): trama BLE de la Mi Scale 2, 13 métricas, EMA, falsa subida y TDEE adaptativo.
 * [`docs/05_NUTRITION.md`](docs/05_NUTRITION.md): Open Food Facts, semilla USDA, combos, texto y dictado, electrolitos, agua.
 * [`docs/06_WORKOUT_AND_NEAT.md`](docs/06_WORKOUT_AND_NEAT.md): entrenamientos en 5 s y gasto neto por METs.
@@ -47,7 +48,8 @@ Antes de tocar una funcionalidad, lee su documento:
 * [`docs/08_NIBI_AND_REWARDS.md`](docs/08_NIBI_AND_REWARDS.md): Nibi (ánimo, animación, respiración, cosméticos) y monedas.
 * [`docs/09_FASTING_JOURNAL_ANALYTICS.md`](docs/09_FASTING_JOURNAL_ANALYTICS.md): ayuno y sus fases, diario, cafeína y correlaciones.
 * [`docs/10_PRIVACY_AND_TESTING.md`](docs/10_PRIVACY_AND_TESTING.md): privacidad y estrategia de pruebas.
-* [`docs/11_DECISIONS.md`](docs/11_DECISIONS.md): decisiones de arquitectura (ADR-01 a ADR-13).
+* [`docs/11_DECISIONS.md`](docs/11_DECISIONS.md): decisiones de arquitectura (ADR-01 a ADR-17).
+* [`docs/12_CARE.md`](docs/12_CARE.md): pestaña Cuidado (tratamientos, hábitos, suelo pélvico, pausas, signos vitales, síntomas, chequeos, alcohol y tabaco) y equipos declarados.
 
 El historial de versiones está en [`CHANGELOG.md`](CHANGELOG.md).
 

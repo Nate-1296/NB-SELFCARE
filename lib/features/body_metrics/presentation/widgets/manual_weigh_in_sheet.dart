@@ -53,8 +53,9 @@ class _ManualWeighInSheetState extends State<ManualWeighInSheet> {
   @override
   void initState() {
     super.initState();
-    _weightCtrl = TextEditingController(text: NumberFormats.input(widget.initialWeightKg, maxDigits: 1))
-      ..addListener(_onChanged);
+    _weightCtrl = TextEditingController(
+      text: NumberFormats.input(widget.initialWeightKg, maxDigits: 1),
+    )..addListener(_onChanged);
     _impedanceCtrl = TextEditingController()..addListener(_onChanged);
   }
 
@@ -194,15 +195,17 @@ class _ManualWeighInSheetState extends State<ManualWeighInSheet> {
           ),
           const SizedBox(height: 12),
 
-          TextField(
-            controller: _impedanceCtrl,
-            keyboardType: TextInputType.number,
-            decoration: InputDecoration(
-              labelText: context.l10n.bodyImpedanciaBiaOpcional1003000,
-              hintText: context.l10n.bodyVacioSiTuBasculaSolo,
-              suffixText: 'Ω',
+          // La impedancia solo tiene sentido con una báscula de bioimpedancia.
+          if (widget.profile.hasSmartScale)
+            TextField(
+              controller: _impedanceCtrl,
+              keyboardType: TextInputType.number,
+              decoration: InputDecoration(
+                labelText: context.l10n.bodyImpedanciaBiaOpcional1003000,
+                hintText: context.l10n.bodyVacioSiTuBasculaSolo,
+                suffixText: 'Ω',
+              ),
             ),
-          ),
 
           if (weight != null) ...[
             const SizedBox(height: 14),

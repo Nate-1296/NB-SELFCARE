@@ -104,10 +104,10 @@ enum RpeIntensity implements DbEnum {
 
   /// Valor central de la escala RPE 1–10 de cada bloque (docs/06 §1).
   double get representativeRpe => switch (this) {
-        RpeIntensity.light => 3,
-        RpeIntensity.moderate => 6,
-        RpeIntensity.intense => 9,
-      };
+    RpeIntensity.light => 3,
+    RpeIntensity.moderate => 6,
+    RpeIntensity.intense => 9,
+  };
 }
 
 /// Origen de una fila de `body_measurements`.
@@ -149,7 +149,16 @@ enum ReminderType implements DbEnum {
   fastingClose('fasting_close'),
   morningWeighIn('morning_weigh_in'),
   tapeMeasure('tape_measure'),
-  journal('journal');
+  journal('journal'),
+
+  /// Media hora antes de dormir: bajar luces y pantallas (v7).
+  windDown('wind_down'),
+
+  /// Ejercicios de suelo pélvico, con texto siempre discreto (v7).
+  pelvicFloor('pelvic_floor'),
+
+  /// Descanso visual 20-20-20, repetido dentro de la jornada (v7).
+  eyeRest('eye_rest');
 
   const ReminderType(this.dbValue);
 

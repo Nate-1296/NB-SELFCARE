@@ -13,6 +13,7 @@ import '../../../../shared/theme/sc_theme.dart';
 import '../../../../shared/utils/number_formats.dart';
 import '../../../../shared/widgets/app_icons.dart';
 import '../../application/food_catalog_service.dart';
+import '../../domain/food_units.dart';
 import 'meal_slot_selector.dart';
 
 /// Hoja interactiva para editar gramos, cambiar momento del día o eliminar un alimento registrado.
@@ -197,7 +198,7 @@ class _EditFoodLogSheetState extends ConsumerState<EditFoodLogSheet> {
                     color: c.text,
                   ),
                   decoration: InputDecoration(
-                    suffixText: 'g',
+                    suffixText: widget.entry.foodItem.isMeasuredInMl ? 'ml' : 'g',
                     filled: true,
                     fillColor: c.bg3,
                     contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
@@ -232,7 +233,9 @@ class _EditFoodLogSheetState extends ConsumerState<EditFoodLogSheet> {
               min: 5.0,
               max: 600.0,
               divisions: 119,
-              label: context.l10n.foodG10(NumberFormats.group(_grams)),
+              label: widget.entry.foodItem.isMeasuredInMl
+                  ? context.l10n.foodMl10(NumberFormats.group(_grams))
+                  : context.l10n.foodG10(NumberFormats.group(_grams)),
               onChanged: _setGrams,
             ),
           ] else

@@ -98,13 +98,13 @@ class NutrientOracleSheet extends ConsumerWidget {
           ),
           const SizedBox(height: 4),
           Text(
-            context.l10n.foodTeFaltanKcalPG(NumberFormats.group(remainingKcal), NumberFormats.group(remainingProteinG), NumberFormats.group(remainingCarbsG), NumberFormats.group(remainingFatG)),
-            style: TextStyle(
-              fontFamily: ScFonts.ui,
-              fontSize: 12,
-              color: c.text2,
-              height: 1.35,
+            context.l10n.foodTeFaltanKcalPG(
+              NumberFormats.group(remainingKcal),
+              NumberFormats.group(remainingProteinG),
+              NumberFormats.group(remainingCarbsG),
+              NumberFormats.group(remainingFatG),
             ),
+            style: TextStyle(fontFamily: ScFonts.ui, fontSize: 12, color: c.text2, height: 1.35),
           ),
           const SizedBox(height: 14),
           Expanded(
@@ -115,13 +115,11 @@ class NutrientOracleSheet extends ConsumerWidget {
                 remainingCarbsG: remainingCarbsG,
                 remainingFatG: remainingFatG,
               ),
-              builder: (BuildContext ctx,
-                  AsyncSnapshot<List<SuggestedMealItem>> snap) {
+              builder: (BuildContext ctx, AsyncSnapshot<List<SuggestedMealItem>> snap) {
                 if (snap.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator());
                 }
-                final List<SuggestedMealItem> recs =
-                    snap.data ?? <SuggestedMealItem>[];
+                final List<SuggestedMealItem> recs = snap.data ?? <SuggestedMealItem>[];
                 if (recs.isEmpty) {
                   return Center(
                     child: Text(
@@ -148,11 +146,7 @@ class NutrientOracleSheet extends ConsumerWidget {
                               color: c.isFlat ? c.bg3 : c.soft,
                               shape: BoxShape.circle,
                             ),
-                            child: Icon(
-                              Icons.restaurant_rounded,
-                              size: 18,
-                              color: c.accent,
-                            ),
+                            child: Icon(Icons.restaurant_rounded, size: 18, color: c.accent),
                           ),
                           const SizedBox(width: 12),
                           Expanded(
@@ -170,7 +164,10 @@ class NutrientOracleSheet extends ConsumerWidget {
                                 ),
                                 const SizedBox(height: 2),
                                 Text(
-                                  context.l10n.foodServirGKcal(NumberFormats.group(item.grams), NumberFormats.group(item.kcal)),
+                                  context.l10n.foodServirGKcal(
+                                    NumberFormats.group(item.grams),
+                                    NumberFormats.group(item.kcal),
+                                  ),
                                   style: TextStyle(
                                     fontFamily: ScFonts.ui,
                                     fontSize: 11.5,
@@ -180,7 +177,11 @@ class NutrientOracleSheet extends ConsumerWidget {
                                 ),
                                 const SizedBox(height: 2),
                                 Text(
-                                  context.l10n.foodPGCGG4(NumberFormats.group(item.proteinG), NumberFormats.group(item.carbsG), NumberFormats.group(item.fatG)),
+                                  context.l10n.foodPGCGG4(
+                                    NumberFormats.group(item.proteinG),
+                                    NumberFormats.group(item.carbsG),
+                                    NumberFormats.group(item.fatG),
+                                  ),
                                   style: TextStyle(
                                     fontFamily: ScFonts.ui,
                                     fontSize: 11,
@@ -191,25 +192,30 @@ class NutrientOracleSheet extends ConsumerWidget {
                             ),
                           ),
                           FilledButton.tonal(
-                            style: FilledButton.styleFrom(
-                              visualDensity: VisualDensity.compact,
-                            ),
+                            style: FilledButton.styleFrom(visualDensity: VisualDensity.compact),
                             onPressed: () async {
                               unawaited(HapticFeedback.mediumImpact());
-                              await ref.read(foodLoggingServiceProvider).logPortion(
+                              await ref
+                                  .read(foodLoggingServiceProvider)
+                                  .logPortion(
                                     food: item.food,
                                     grams: item.grams,
                                     mealType: mealType,
                                     dateKey: targetDateKey,
                                   );
                               if (context.mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text(
-                                      context.l10n.foodGDeRegistrados(NumberFormats.group(item.grams), item.food.name.toString()),
+                                ScaffoldMessenger.of(context)
+                                  ..hideCurrentSnackBar()
+                                  ..showSnackBar(
+                                    SnackBar(
+                                      content: Text(
+                                        context.l10n.foodGDeRegistrados(
+                                          NumberFormats.group(item.grams),
+                                          item.food.name.toString(),
+                                        ),
+                                      ),
                                     ),
-                                  ),
-                                );
+                                  );
                                 Navigator.of(context).pop();
                               }
                             },

@@ -251,9 +251,9 @@ void main() {
       expect(find.byType(AppSettingsScreen), findsOneWidget);
       expect(find.text('Apariencia'), findsOneWidget);
 
-      // Limpiar timers reactivos de Drift
+      // Limpiar timers reactivos de Drift y la espera de 300 ms del permiso Bluetooth
       await tester.pumpWidget(const SizedBox());
-      await tester.pump(const Duration(milliseconds: 100));
+      await tester.pump(const Duration(milliseconds: 400));
     });
 
     testWidgets('HoyScreen aloja el único widget gigante 4×4 de Diario Personal y guarda entrada (+10 🪙)', (tester) async {

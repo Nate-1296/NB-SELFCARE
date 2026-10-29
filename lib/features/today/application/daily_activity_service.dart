@@ -39,6 +39,7 @@ class DailyActivityService {
     required String dateKey,
     required int steps,
     required int sleepMinutes,
+    int? wakeMinutes,
   }) {
     final int safeSteps = steps.clamp(0, DailyActivitySnapshot.maxDailySteps);
     final int safeSleep = sleepMinutes.clamp(0, 24 * 60);
@@ -51,6 +52,9 @@ class DailyActivityService {
           sleepDurationMinutes: Value(safeSleep),
           sleepDeepMinutes: const Value(0),
           sleepRemMinutes: const Value(0),
+          wakeTimeMinutes: wakeMinutes == null
+              ? const Value.absent()
+              : Value(wakeMinutes.clamp(0, 24 * 60 - 1)),
         ),
       );
 

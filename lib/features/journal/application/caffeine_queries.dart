@@ -22,15 +22,19 @@ class CaffeineDay {
   final DateTime now;
 }
 
-final _caffeineLogsProvider =
-    StreamProvider.family<List<CaffeineLog>, String>((Ref ref, String dateKey) {
+final _caffeineLogsProvider = StreamProvider.family<List<CaffeineLog>, String>((
+  Ref ref,
+  String dateKey,
+) {
   return ref.watch(caffeineDaoProvider).watchLogsForDate(dateKey);
 });
 
 /// Estado de la cafeína del día con la hora límite que eligió el usuario
 /// (`caffeineBedtimeCutoffHours`, 8 h antes de dormir por defecto).
-final caffeineDayProvider =
-    Provider.family<AsyncValue<CaffeineDay>, String>((Ref ref, String dateKey) {
+final caffeineDayProvider = Provider.family<AsyncValue<CaffeineDay>, String>((
+  Ref ref,
+  String dateKey,
+) {
   final AsyncValue<List<CaffeineLog>> logs = ref.watch(_caffeineLogsProvider(dateKey));
   if (logs.hasError) return AsyncValue<CaffeineDay>.error(logs.error!, logs.stackTrace!);
   final List<CaffeineLog>? entries = logs.value;
@@ -38,14 +42,25 @@ final caffeineDayProvider =
 
   final DateTime now = ref.watch(clockProvider).now();
   final DateTime day = DateTime.parse(dateKey);
-  final DateTime bedtime = DateTime(day.year, day.month, day.day, AppConstants.defaultBedtimeHour);
-  final double? cutoffHours = ref.watch(userProfileStreamProvider).value?.caffeineBedtimeCutoffHours;
+  final UserProfile? profile = ref.watch(userProfileStreamProvider).value;
+  // Dormir después de medianoche (p. ej. 00:30) cuenta para la noche de este día.
+  final int bedMinutes = profile?.targetBedtimeMinutes ?? AppConstants.defaultBedtimeHour * 60;
+  final DateTime bedtime = DateTime(
+    day.year,
+    day.month,
+    day.day + (bedMinutes < 12 * 60 ? 1 : 0),
+    bedMinutes ~/ 60,
+    bedMinutes % 60,
+  );
+  final double? cutoffHours = profile?.caffeineBedtimeCutoffHours;
   return AsyncValue<CaffeineDay>.data(
     CaffeineDay(
       logs: entries,
       targetBedtime: bedtime,
       now: now,
-      status: ref.watch(caffeinePharmacokineticsServiceProvider).evaluateStatus(
+      status: ref
+          .watch(caffeinePharmacokineticsServiceProvider)
+          .evaluateStatus(
             logs: entries,
             targetBedtime: bedtime,
             currentTime: now,
@@ -61,8 +76,9 @@ class CaffeineService {
 
   final Ref _ref;
 
-  Future<int> log({required String dateKey, required String sourceName, required double mg}) =>
-      _ref.read(caffeineDaoProvider).logCaffeine(dateKey: dateKey, sourceName: sourceName, caffeineMg: mg);
+  Future<int> log({required String dateKey, required String sourceName, required double mg}) => _ref
+      .read(caffeineDaoProvider)
+      .logCaffeine(dateKey: dateKey, sourceName: sourceName, caffeineMg: mg);
 
   Future<int> delete(int id) => _ref.read(caffeineDaoProvider).deleteLog(id);
 

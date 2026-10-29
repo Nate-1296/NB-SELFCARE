@@ -5,7 +5,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../core/clock/clock.dart';
 import '../../../core/database/app_database.dart';
 import '../../../core/domain/enums.dart';
 import '../../../core/l10n/l10n.dart';
@@ -13,16 +12,15 @@ import '../../../core/services/smart_meal_suggester.dart';
 import '../../../shared/theme/sc_colors.dart';
 import '../../../shared/theme/sc_theme.dart';
 import '../../../shared/theme/sc_tokens.dart';
-import '../../../shared/utils/date_time_extensions.dart';
 import '../../../shared/widgets/app_icons.dart';
 import '../../../shared/widgets/card_header.dart';
 import '../../../shared/widgets/health_card.dart';
 import '../../../shared/widgets/top_bar.dart';
 import '../../../shared/widgets/undo_snackbar.dart';
+import '../../care/presentation/widgets/treatment_sheets.dart';
 import '../../nutrition_hydration/presentation/widgets/diet_archetype_sheets.dart';
 import '../../profile_goals/application/profile_queries.dart';
 import '../../profile_goals/application/supplement_service.dart';
-import '../../profile_goals/presentation/widgets/supplement_tracker_sheet.dart';
 import '../application/protocol_service.dart';
 import '../domain/weekly_protocol.dart';
 
@@ -214,12 +212,7 @@ class _ProtocolPlannerScreenState extends ConsumerState<ProtocolPlannerScreen> {
                     icon: Icons.medication_rounded,
                     title: l10n.protocolSupplementsTitle(supplements.length),
                     trailing: TextButton(
-                      onPressed: () => unawaited(
-                        SupplementTrackerSheet.show(
-                          context,
-                          dateKey: ref.read(clockProvider).now().dateKey,
-                        ),
-                      ),
+                      onPressed: () => unawaited(TreatmentsManageSheet.show(context)),
                       child: Text(l10n.commonEdit),
                     ),
                   ),

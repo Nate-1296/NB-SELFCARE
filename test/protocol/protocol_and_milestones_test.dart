@@ -124,6 +124,13 @@ void main() {
         hasImpedanceContraindication: false,
         hasEatingDisorderHistory: false,
         takesHypoglycemicMedication: false,
+        hasEinkScreen: false,
+        hasSmartScale: true,
+        vitalDevicesJson: '[]',
+        careModulesJson:
+            '["treatments","pelvic_floor","active_breaks","symptoms","checkups","habits"]',
+        discreetNotifications: true,
+        targetBedtimeMinutes: 1380,
         createdAt: DateTime.now(),
       );
 
@@ -146,7 +153,8 @@ void main() {
         profile: dummyProfile,
         latestMeasurement: dummyMeasurement,
         recentMeasurements: <BodyMeasurement>[dummyMeasurement],
-        averageDailyKcal: 2120, foodDays: 7,
+        averageDailyKcal: 2120,
+        foodDays: 7,
         averageProteinG: 155.0,
         averageCarbsG: 210.0,
         averageFatG: 62.0,

@@ -881,11 +881,15 @@ abstract final class ScTheme {
         backgroundColor: flat ? c.bg2 : c.bg3,
         selectedColor: flat ? c.text : tonal,
         disabledColor: c.bg3,
+        // Seleccionado en papel: tinta invertida (texto del color del papel).
         labelStyle: TextStyle(
           fontFamily: ScFonts.ui,
           fontSize: 13,
           fontWeight: FontWeight.w600,
-          color: c.text,
+          color: WidgetStateColor.resolveWith(
+            (Set<WidgetState> states) =>
+                states.contains(WidgetState.selected) ? (flat ? c.bg : onTonal) : c.text,
+          ),
         ),
         secondaryLabelStyle: TextStyle(
           fontFamily: ScFonts.ui,

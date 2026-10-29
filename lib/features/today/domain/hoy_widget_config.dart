@@ -1,46 +1,17 @@
 /// Identificadores únicos de los widgets modulares del tablero "Hoy".
 enum HoyWidgetId {
-  nibiCompanion(
-    key: 'nibi_companion',
-    defaultSize: HoyWidgetSize.w4x2,
-  ),
-  nutritionEnergy(
-    key: 'nutrition_energy',
-    defaultSize: HoyWidgetSize.w4x2,
-  ),
-  hydration(
-    key: 'hydration',
-    defaultSize: HoyWidgetSize.w2x2,
-  ),
-  bodyWeight(
-    key: 'body_weight',
-    defaultSize: HoyWidgetSize.w2x2,
-  ),
-  stepsNeat(
-    key: 'steps_neat',
-    defaultSize: HoyWidgetSize.w2x2,
-  ),
-  sleepRecovery(
-    key: 'sleep_recovery',
-    defaultSize: HoyWidgetSize.w2x2,
-  ),
-  workoutRpe(
-    key: 'workout_rpe',
-    defaultSize: HoyWidgetSize.w2x2,
-  ),
-  fastingMetabolic(
-    key: 'fasting_metabolic',
-    defaultSize: HoyWidgetSize.w2x2,
-  ),
-  dailyJournal(
-    key: 'daily_journal',
-    defaultSize: HoyWidgetSize.w4x4,
-  );
+  nibiCompanion(key: 'nibi_companion', defaultSize: HoyWidgetSize.w4x2),
+  nutritionEnergy(key: 'nutrition_energy', defaultSize: HoyWidgetSize.w4x2),
+  hydration(key: 'hydration', defaultSize: HoyWidgetSize.w2x2),
+  bodyWeight(key: 'body_weight', defaultSize: HoyWidgetSize.w2x2),
+  stepsNeat(key: 'steps_neat', defaultSize: HoyWidgetSize.w2x2),
+  sleepRecovery(key: 'sleep_recovery', defaultSize: HoyWidgetSize.w2x2),
+  workoutRpe(key: 'workout_rpe', defaultSize: HoyWidgetSize.w2x2),
+  fastingMetabolic(key: 'fasting_metabolic', defaultSize: HoyWidgetSize.w2x2),
+  careToday(key: 'care_today', defaultSize: HoyWidgetSize.w2x2),
+  dailyJournal(key: 'daily_journal', defaultSize: HoyWidgetSize.w4x4);
 
-  const HoyWidgetId({
-    required this.key,
-    required this.defaultSize,
-  });
+  const HoyWidgetId({required this.key, required this.defaultSize});
 
   final String key;
   final HoyWidgetSize defaultSize;
@@ -90,11 +61,7 @@ enum HoyWidgetSize {
 
 /// Estado persistible de un widget individual dentro de la vista "Hoy".
 class HoyWidgetItemConfig {
-  const HoyWidgetItemConfig({
-    required this.id,
-    required this.size,
-    required this.visible,
-  });
+  const HoyWidgetItemConfig({required this.id, required this.size, required this.visible});
 
   factory HoyWidgetItemConfig.fromJson(Map<String, dynamic> json) {
     final String rawId = json['id'] as String? ?? '';
@@ -102,39 +69,25 @@ class HoyWidgetItemConfig {
     if (parsedId == null) {
       throw const FormatException('Widget ID desconocido');
     }
-    final HoyWidgetSize resolvedSize = HoyWidgetSize.fromStorage(
-      json['size'] as String?,
-      parsedId,
-    );
+    final HoyWidgetSize resolvedSize = HoyWidgetSize.fromStorage(json['size'] as String?, parsedId);
     final bool isVisible = json['visible'] as bool? ?? true;
-    return HoyWidgetItemConfig(
-      id: parsedId,
-      size: resolvedSize,
-      visible: isVisible,
-    );
+    return HoyWidgetItemConfig(id: parsedId, size: resolvedSize, visible: isVisible);
   }
 
   final HoyWidgetId id;
   final HoyWidgetSize size;
   final bool visible;
 
-  HoyWidgetItemConfig copyWith({
-    HoyWidgetSize? size,
-    bool? visible,
-  }) {
+  HoyWidgetItemConfig copyWith({HoyWidgetSize? size, bool? visible}) {
     final HoyWidgetSize enforcedSize = id == HoyWidgetId.dailyJournal
         ? HoyWidgetSize.w4x4
         : (size ?? this.size);
-    return HoyWidgetItemConfig(
-      id: id,
-      size: enforcedSize,
-      visible: visible ?? this.visible,
-    );
+    return HoyWidgetItemConfig(id: id, size: enforcedSize, visible: visible ?? this.visible);
   }
 
   Map<String, dynamic> toJson() => <String, dynamic>{
-        'id': id.key,
-        'size': size.storageKey,
-        'visible': visible,
-      };
+    'id': id.key,
+    'size': size.storageKey,
+    'visible': visible,
+  };
 }

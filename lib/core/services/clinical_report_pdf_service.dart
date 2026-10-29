@@ -32,11 +32,10 @@ class ClinicalReportPdfService {
     required double averageSleepHours,
     required List<SupplementsTrackerData> activeSupplements,
     required int? readinessScore,
+    List<String> vitalsSummary = const <String>[],
+    List<String> symptomsSummary = const <String>[],
   }) async {
-    final pw.Document pdf = pw.Document(
-      title: 'Informe de salud personal',
-      author: 'NB Selfcare',
-    );
+    final pw.Document pdf = pw.Document(title: 'Informe de salud personal', author: 'NB Selfcare');
 
     final DateTime now = _clock.now();
     // Años cumplidos (24, no "25,0" a una semana del cumpleaños).
@@ -69,19 +68,13 @@ class ClinicalReportPdfService {
                       pw.SizedBox(height: 2),
                       pw.Text(
                         'Generado en el teléfono con NB Selfcare. Ningún dato sale del dispositivo.',
-                        style: const pw.TextStyle(
-                          fontSize: 9,
-                          color: PdfColors.blueGrey600,
-                        ),
+                        style: const pw.TextStyle(fontSize: 9, color: PdfColors.blueGrey600),
                       ),
                     ],
                   ),
                   pw.Text(
                     dateStr,
-                    style: const pw.TextStyle(
-                      fontSize: 10,
-                      color: PdfColors.blueGrey700,
-                    ),
+                    style: const pw.TextStyle(fontSize: 10, color: PdfColors.blueGrey700),
                   ),
                 ],
               ),
@@ -101,7 +94,10 @@ class ClinicalReportPdfService {
                   children: <pw.Widget>[
                     _pdfField('Nombre', profile.name),
                     _pdfField('Edad', '$age años'),
-                    _pdfField('Sexo biológico', profile.biologicalSex == BiologicalSex.female ? 'Femenino' : 'Masculino'),
+                    _pdfField(
+                      'Sexo biológico',
+                      profile.biologicalSex == BiologicalSex.female ? 'Femenino' : 'Masculino',
+                    ),
                     _pdfField('Estatura', '${NumberFormats.fixed(profile.heightCm, 0)} cm'),
                     _pdfField('Peso meta', '${NumberFormats.fixed(profile.targetWeightKg, 1)} kg'),
                   ],
@@ -129,31 +125,43 @@ class ClinicalReportPdfService {
                   ),
                   _tableRow(
                     'Peso',
-                    latestMeasurement != null ? '${NumberFormats.fixed(latestMeasurement.weightKg, 1)} kg' : 'N/D',
-                    latestMeasurement != null ? '${NumberFormats.fixed(latestMeasurement.trendWeightKg, 1)} kg' : 'N/D',
+                    latestMeasurement != null
+                        ? '${NumberFormats.fixed(latestMeasurement.weightKg, 1)} kg'
+                        : 'N/D',
+                    latestMeasurement != null
+                        ? '${NumberFormats.fixed(latestMeasurement.trendWeightKg, 1)} kg'
+                        : 'N/D',
                     'IMC: ${latestMeasurement == null ? "N/D" : NumberFormats.fixed(latestMeasurement.bmi, 1)}',
                   ),
                   _tableRow(
                     'Grasa corporal',
-                    latestMeasurement?.bodyFatPercentage != null ? '${NumberFormats.fixed(latestMeasurement!.bodyFatPercentage!, 1)} %' : 'N/D',
+                    latestMeasurement?.bodyFatPercentage != null
+                        ? '${NumberFormats.fixed(latestMeasurement!.bodyFatPercentage!, 1)} %'
+                        : 'N/D',
                     '-',
                     'Grasa visceral: ${latestMeasurement?.visceralFatIndex ?? "N/D"}',
                   ),
                   _tableRow(
                     'Masa muscular',
-                    latestMeasurement?.muscleMassKg != null ? '${NumberFormats.fixed(latestMeasurement!.muscleMassKg!, 1)} kg' : 'N/D',
+                    latestMeasurement?.muscleMassKg != null
+                        ? '${NumberFormats.fixed(latestMeasurement!.muscleMassKg!, 1)} kg'
+                        : 'N/D',
                     '-',
                     'Masa libre de grasa: ${latestMeasurement?.leanBodyMassKg == null ? "N/D" : NumberFormats.fixed(latestMeasurement!.leanBodyMassKg!, 1)} kg',
                   ),
                   _tableRow(
                     'Agua corporal',
-                    latestMeasurement?.waterPercentage != null ? '${NumberFormats.fixed(latestMeasurement!.waterPercentage!, 1)} %' : 'N/D',
+                    latestMeasurement?.waterPercentage != null
+                        ? '${NumberFormats.fixed(latestMeasurement!.waterPercentage!, 1)} %'
+                        : 'N/D',
                     '-',
                     'Rango habitual: 50–65 %',
                   ),
                   _tableRow(
                     'Metabolismo basal',
-                    latestMeasurement?.basalMetabolicRateKcal != null ? '${NumberFormats.group(latestMeasurement!.basalMetabolicRateKcal!)} kcal' : 'N/D',
+                    latestMeasurement?.basalMetabolicRateKcal != null
+                        ? '${NumberFormats.group(latestMeasurement!.basalMetabolicRateKcal!)} kcal'
+                        : 'N/D',
                     '-',
                     'Edad metabólica: ${latestMeasurement?.metabolicAge ?? "N/D"} años',
                   ),
@@ -180,7 +188,10 @@ class ClinicalReportPdfService {
                     _pdfField('Proteína', '${NumberFormats.fixed(averageProteinG, 0)} g/día'),
                     _pdfField('Carbohidratos', '${NumberFormats.fixed(averageCarbsG, 0)} g/día'),
                     _pdfField('Grasas', '${NumberFormats.fixed(averageFatG, 0)} g/día'),
-                    _pdfField('Estilo', DietArchetypeInfo.getById(profile.activeDietArchetype).name),
+                    _pdfField(
+                      'Estilo',
+                      DietArchetypeInfo.getById(profile.activeDietArchetype).name,
+                    ),
                     _pdfField('Días con registro', '$foodDays de 7'),
                   ],
                 ),
@@ -205,15 +216,26 @@ class ClinicalReportPdfService {
                     pw.Row(
                       mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                       children: <pw.Widget>[
-                        _pdfField('Sueño medio', averageSleepHours > 0 ? '${NumberFormats.fixed(averageSleepHours, 1)} h/noche' : 'Sin registros'),
-                        _pdfField('Disposición de hoy', readinessScore == null ? 'Sin sueño registrado' : '$readinessScore / 100'),
+                        _pdfField(
+                          'Sueño medio',
+                          averageSleepHours > 0
+                              ? '${NumberFormats.fixed(averageSleepHours, 1)} h/noche'
+                              : 'Sin registros',
+                        ),
+                        _pdfField(
+                          'Disposición de hoy',
+                          readinessScore == null ? 'Sin sueño registrado' : '$readinessScore / 100',
+                        ),
                         if (profile.biologicalSex == BiologicalSex.female)
-                          _pdfField('Seguimiento del ciclo', profile.isCycleTrackingEnabled ? 'Activo' : 'Inactivo'),
+                          _pdfField(
+                            'Seguimiento del ciclo',
+                            profile.isCycleTrackingEnabled ? 'Activo' : 'Inactivo',
+                          ),
                       ],
                     ),
                     pw.SizedBox(height: 8),
                     pw.Text(
-                      'Suplementos activos',
+                      'Medicamentos y suplementos',
                       style: const pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold),
                     ),
                     pw.SizedBox(height: 2),
@@ -223,6 +245,30 @@ class ClinicalReportPdfService {
                           : activeSupplements.map((s) => '- ${s.name} (${s.dosage})').join('   '),
                       style: const pw.TextStyle(fontSize: 9.5, color: PdfColors.blueGrey800),
                     ),
+                    if (vitalsSummary.isNotEmpty) ...<pw.Widget>[
+                      pw.SizedBox(height: 8),
+                      pw.Text(
+                        'Signos vitales (últimos 30 días)',
+                        style: const pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold),
+                      ),
+                      pw.SizedBox(height: 2),
+                      pw.Text(
+                        vitalsSummary.join('\n'),
+                        style: const pw.TextStyle(fontSize: 9.5, color: PdfColors.blueGrey800),
+                      ),
+                    ],
+                    if (symptomsSummary.isNotEmpty) ...<pw.Widget>[
+                      pw.SizedBox(height: 8),
+                      pw.Text(
+                        'Síntomas más frecuentes (últimos 30 días)',
+                        style: const pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold),
+                      ),
+                      pw.SizedBox(height: 2),
+                      pw.Text(
+                        symptomsSummary.join('   '),
+                        style: const pw.TextStyle(fontSize: 9.5, color: PdfColors.blueGrey800),
+                      ),
+                    ],
                   ],
                 ),
               ),
@@ -255,12 +301,48 @@ class ClinicalReportPdfService {
     return pdf.save();
   }
 
+  /// Una línea por signo vital: media, rango y número de mediciones.
+  static List<String> summarizeVitals(List<VitalReading> readings) {
+    const Map<String, (String, String)> names = <String, (String, String)>{
+      'blood_pressure': ('Tensión arterial', 'mmHg'),
+      'glucose': ('Glucosa', 'mg/dL'),
+      'oxygen': ('Oxígeno en sangre', '%'),
+      'temperature': ('Temperatura', '°C'),
+    };
+    final List<String> lines = <String>[];
+    for (final MapEntry<String, (String, String)> e in names.entries) {
+      final List<VitalReading> rows = readings.where((VitalReading r) => r.kind == e.key).toList();
+      if (rows.isEmpty) continue;
+      double mean(Iterable<double> v) => v.reduce((double a, double b) => a + b) / v.length;
+      final double p = mean(rows.map((VitalReading r) => r.primaryValue));
+      final List<double> secondary = rows
+          .map((VitalReading r) => r.secondaryValue)
+          .whereType<double>()
+          .toList();
+      final String value = e.key == 'blood_pressure' && secondary.isNotEmpty
+          ? '${p.round()}/${mean(secondary).round()}'
+          : (e.key == 'temperature' ? NumberFormats.fixed(p, 1) : '${p.round()}');
+      lines.add('- ${e.value.$1}: media $value ${e.value.$2} (${rows.length} mediciones)');
+    }
+    return lines;
+  }
+
   /// "28 de octubre de 2026" sin depender de los datos de idioma de intl
   /// (el servicio también se usa fuera de la app, en pruebas).
   static String _longDate(DateTime d) {
     const List<String> months = <String>[
-      'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
-      'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre',
+      'enero',
+      'febrero',
+      'marzo',
+      'abril',
+      'mayo',
+      'junio',
+      'julio',
+      'agosto',
+      'septiembre',
+      'octubre',
+      'noviembre',
+      'diciembre',
     ];
     return '${d.day} de ${months[d.month - 1]} de ${d.year}';
   }
@@ -278,6 +360,8 @@ class ClinicalReportPdfService {
     required double averageSleepHours,
     required List<SupplementsTrackerData> activeSupplements,
     required int? readinessScore,
+    List<String> vitalsSummary = const <String>[],
+    List<String> symptomsSummary = const <String>[],
   }) async {
     final Uint8List pdfBytes = await generateReportBytes(
       profile: profile,
@@ -291,11 +375,14 @@ class ClinicalReportPdfService {
       averageSleepHours: averageSleepHours,
       activeSupplements: activeSupplements,
       readinessScore: readinessScore,
+      vitalsSummary: vitalsSummary,
+      symptomsSummary: symptomsSummary,
     );
 
     await Printing.sharePdf(
       bytes: pdfBytes,
-      filename: 'reporte_clinico_${profile.name.replaceAll(" ", "_").toLowerCase()}_${_clock.now().toIso8601String().split("T").first}.pdf',
+      filename:
+          'reporte_clinico_${profile.name.replaceAll(" ", "_").toLowerCase()}_${_clock.now().toIso8601String().split("T").first}.pdf',
     );
   }
 
@@ -313,10 +400,7 @@ class ClinicalReportPdfService {
   static pw.Widget _tableHeader(String text) {
     return pw.Padding(
       padding: const pw.EdgeInsets.all(5),
-      child: pw.Text(
-        text,
-        style: const pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold),
-      ),
+      child: pw.Text(text, style: const pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold)),
     );
   }
 
@@ -329,7 +413,10 @@ class ClinicalReportPdfService {
         ),
         pw.Padding(
           padding: const pw.EdgeInsets.all(5),
-          child: pw.Text(current, style: const pw.TextStyle(fontSize: 8.5, fontWeight: pw.FontWeight.bold)),
+          child: pw.Text(
+            current,
+            style: const pw.TextStyle(fontSize: 8.5, fontWeight: pw.FontWeight.bold),
+          ),
         ),
         pw.Padding(
           padding: const pw.EdgeInsets.all(5),
@@ -337,7 +424,10 @@ class ClinicalReportPdfService {
         ),
         pw.Padding(
           padding: const pw.EdgeInsets.all(5),
-          child: pw.Text(reference, style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey700)),
+          child: pw.Text(
+            reference,
+            style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey700),
+          ),
         ),
       ],
     );
@@ -345,7 +435,6 @@ class ClinicalReportPdfService {
 }
 
 /// Provider de Riverpod para ClinicalReportPdfService.
-final clinicalReportPdfServiceProvider =
-    Provider<ClinicalReportPdfService>((ref) {
+final clinicalReportPdfServiceProvider = Provider<ClinicalReportPdfService>((ref) {
   return ClinicalReportPdfService(clock: ref.watch(clockProvider));
 });

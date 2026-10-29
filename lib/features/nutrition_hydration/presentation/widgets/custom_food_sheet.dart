@@ -62,7 +62,9 @@ class _CustomFoodSheetState extends ConsumerState<CustomFoodSheet> {
     _nameController = TextEditingController(text: widget.initialName ?? '');
     _barcodeController = TextEditingController(text: widget.initialBarcode ?? '');
     _servingGramsController = TextEditingController(
-      text: ocr?.servingGrams != null ? NumberFormats.input(ocr!.servingGrams!, maxDigits: 0) : '100',
+      text: ocr?.servingGrams != null
+          ? NumberFormats.input(ocr!.servingGrams!, maxDigits: 0)
+          : '100',
     );
 
     _kcalController = TextEditingController(
@@ -112,7 +114,8 @@ class _CustomFoodSheetState extends ConsumerState<CustomFoodSheet> {
 
       if (!mounted) return;
       ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(context.l10n.foodAnalizandoTablaNutricionalConOcr)));
+        ..hideCurrentSnackBar()
+        ..showSnackBar(SnackBar(content: Text(context.l10n.foodAnalizandoTablaNutricionalConOcr)));
 
       final OcrNutritionData data = await ref
           .read(nutritionLabelOcrServiceProvider)
@@ -146,18 +149,21 @@ class _CustomFoodSheetState extends ConsumerState<CustomFoodSheet> {
           _servingGramsController.text = NumberFormats.input(data.servingGrams!, maxDigits: 0);
         }
         setState(() {});
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(context.l10n.foodMacronutrientesDetectadosYRellenados)),
-        );
+        ScaffoldMessenger.of(context)
+          ..hideCurrentSnackBar()
+          ..showSnackBar(
+            SnackBar(content: Text(context.l10n.foodMacronutrientesDetectadosYRellenados)),
+          );
       } else {
         ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(context.l10n.foodNoSeDetectaronValoresClaros)));
+          ..hideCurrentSnackBar()
+          ..showSnackBar(SnackBar(content: Text(context.l10n.foodNoSeDetectaronValoresClaros)));
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(context.l10n.foodErrorAlEscanear((e).toString()))));
+        ScaffoldMessenger.of(context)
+          ..hideCurrentSnackBar()
+          ..showSnackBar(SnackBar(content: Text(context.l10n.foodErrorAlEscanear((e).toString()))));
       }
     } finally {
       if (mounted) {
@@ -270,9 +276,9 @@ class _CustomFoodSheetState extends ConsumerState<CustomFoodSheet> {
       Navigator.of(context).pop(created);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(context.l10n.foodNoSePudoGuardarEl((e).toString()))));
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(SnackBar(content: Text(context.l10n.foodNoSePudoGuardarEl((e).toString()))));
     } finally {
       if (mounted) {
         setState(() => _isSaving = false);

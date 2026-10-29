@@ -46,14 +46,20 @@ void main() {
       addTearDown(c.dispose);
       final WeighInService service = c.read(weighInServiceProvider);
 
-      final WeighInResult first =
-          await service.record(weightKg: 64.0, impedanceOhms: 520, source: MeasurementSource.miScale2Ble);
+      final WeighInResult first = await service.record(
+        weightKg: 64.0,
+        impedanceOhms: 520,
+        source: MeasurementSource.miScale2Ble,
+      );
       expect(first.analysis.trendWeightKg, 64.0);
       expect(first.analysis.hasImpedance, isTrue);
       expect(first.reward.coins, 15);
 
-      final WeighInResult second =
-          await service.record(weightKg: 64.2, impedanceOhms: null, source: MeasurementSource.manual);
+      final WeighInResult second = await service.record(
+        weightKg: 64.2,
+        impedanceOhms: null,
+        source: MeasurementSource.manual,
+      );
       expect(second.reward.granted, isFalse);
       expect(await coins(), 15);
 
@@ -82,16 +88,17 @@ void main() {
       final WeighInService service = c.read(weighInServiceProvider);
       await service.record(weightKg: 64.0, impedanceOhms: null, source: MeasurementSource.manual);
 
-      final ProviderContainer nextDay =
-          createTestContainer(db, now: now.add(const Duration(days: 1)));
+      final ProviderContainer nextDay = createTestContainer(
+        db,
+        now: now.add(const Duration(days: 1)),
+      );
       addTearDown(nextDay.dispose);
       final WeighInResult result = await nextDay
           .read(weighInServiceProvider)
           .record(weightKg: 64.9, impedanceOhms: null, source: MeasurementSource.manual);
 
       expect(result.analysis.retentionCauses, contains(RetentionCause.creatine));
-      final BodyMeasurement latest =
-          (await db.select(db.bodyMeasurements).get()).last;
+      final BodyMeasurement latest = (await db.select(db.bodyMeasurements).get()).last;
       expect(latest.isWaterRetentionSpike, isTrue);
       expect(latest.spikeExplanation, contains('creatina'));
     });
@@ -100,7 +107,9 @@ void main() {
       final ProviderContainer c = createTestContainer(db, now: now);
       addTearDown(c.dispose);
       await MilestoneDao(db).generateMilestones(currentWeightKg: 66, targetWeightKg: 60);
-      await db.into(db.bodyMeasurements).insert(
+      await db
+          .into(db.bodyMeasurements)
+          .insert(
             BodyMeasurementsCompanion.insert(
               dateKey: '2026-10-22',
               measuredAt: Value(now.subtract(const Duration(days: 1))),
@@ -147,6 +156,13 @@ void main() {
         hasImpedanceContraindication: false,
         hasEatingDisorderHistory: false,
         takesHypoglycemicMedication: false,
+        hasEinkScreen: false,
+        hasSmartScale: true,
+        vitalDevicesJson: '[]',
+        careModulesJson:
+            '["treatments","pelvic_floor","active_breaks","symptoms","checkups","habits"]',
+        discreetNotifications: true,
+        targetBedtimeMinutes: 1380,
         createdAt: DateTime(2026, 1, 1),
       );
       expect(TdeeCalibrationService.isDue(base, now), isFalse);
@@ -169,7 +185,9 @@ void main() {
 
   group('FoodLoggingService', () {
     Future<FoodItem> oats() async {
-      final int id = await db.into(db.foodItems).insert(
+      final int id = await db
+          .into(db.foodItems)
+          .insert(
             FoodItemsCompanion.insert(
               name: 'Avena',
               source: FoodSource.usdaSeed,
@@ -189,11 +207,23 @@ void main() {
       final FoodItem food = await oats();
 
       final FoodLogResult first = await service.logPortion(
-          food: food, grams: 40, mealType: MealType.breakfast, dateKey: '2026-10-23');
+        food: food,
+        grams: 40,
+        mealType: MealType.breakfast,
+        dateKey: '2026-10-23',
+      );
       final FoodLogResult second = await service.logPortion(
-          food: food, grams: 40, mealType: MealType.breakfast, dateKey: '2026-10-23');
+        food: food,
+        grams: 40,
+        mealType: MealType.breakfast,
+        dateKey: '2026-10-23',
+      );
       final FoodLogResult snack = await service.logPortion(
-          food: food, grams: 30, mealType: MealType.snack, dateKey: '2026-10-23');
+        food: food,
+        grams: 30,
+        mealType: MealType.snack,
+        dateKey: '2026-10-23',
+      );
 
       expect(first.coins, 10);
       expect(second.coins, 0);
@@ -217,9 +247,9 @@ void main() {
       expect(await coins(), before + 20);
 
       await service.deleteLogs(result.logIds);
-      final List<FoodLog> today = await (db.select(db.foodLogs)
-            ..where((t) => t.dateKey.equals('2026-10-23')))
-          .get();
+      final List<FoodLog> today = await (db.select(
+        db.foodLogs,
+      )..where((t) => t.dateKey.equals('2026-10-23'))).get();
       expect(today, isEmpty);
     });
   });

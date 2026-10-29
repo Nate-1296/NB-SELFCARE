@@ -1,5 +1,43 @@
 # Historial de cambios
 
+## 1.1.0 — 2026-10-28
+
+Cuidado: todo lo que también es cuidarse y no cabía en Comida, Cuerpo ni Nibi. Y la app deja de suponer que tienes un NXTPAPER y una Mi Scale 2.
+
+### Nueva pestaña Cuidado
+- **Medicamentos y suplementos**: varias horas al día, días de la semana, toma "tomada" u "omitida" con Deshacer, reserva con aviso cuando queda para una semana, avisos con botón **Hecho** que funciona con la app cerrada. "Puede bajar el azúcar" activa el aviso antes de ayunar. Los medicamentos no dan monedas.
+- **Mis hábitos**: los tuyos (hilo dental, protector solar…), con icono y días; un toque para marcarlos.
+- **Suelo pélvico**: programa en 5 niveles (lentas, rápidas y relajación final), "Solo relajar" para quien nota tensión y guía por vibración para hacerlo con los ojos cerrados. Para cualquier sexo.
+- **Pausas activas y descanso visual**: cinco rutinas de 1 a 3 minutos con una figura que muestra cada movimiento; regla 20-20-20.
+- **Signos vitales**: tensión, glucosa, oxígeno y temperatura, solo si tienes el aparato; a mano o desde Health Connect, con lectura orientativa y sin diagnósticos.
+- **Síntomas**: un toque e intensidad; con ciclo, cólicos y similares; desde los 40, síntomas de perimenopausia. Entran en las correlaciones y en el informe.
+- **Chequeos preventivos** según edad y sexo (odontología, tensión, citología, mamografía, próstata, colon, vacunas…), con intervalos editables y chequeos propios.
+- **Alcohol y tabaco** (apagado por defecto): un toque por bebida o cigarrillo, semana en bebidas estándar y comparación en positivo. Las bebidas suman sus calorías en Comida.
+- Cada apartado tiene su **Saber más** con fuentes, y todos se pueden ocultar.
+
+### Tus equipos
+- La bienvenida y Ajustes preguntan si tienes pantalla de papel, báscula Mi Scale 2 y aparatos de signos vitales. Lo que no tienes no aparece: sin papel no hay temas de papel; sin báscula, Cuerpo muestra "Tu peso", el IMC, el metabolismo basal y la cinta métrica. Quien ya usaba la app lo conserva todo.
+
+### También
+- **Bienestar OMS-5** opcional en la revisión del domingo; si sale bajo, se muestran líneas de apoyo (192 opción 4, 106, 123) que abren el marcador sin llamar. También en Cuidado y Ajustes.
+- **Sueño**: hora de despertar y regularidad del horario de las dos últimas semanas. "Tu hora de dormir" ajusta la hora límite de la cafeína y un nuevo aviso para desconectar.
+- **Ciclo**: en fase lútea o menstrual, Cuerpo recuerda que retener agua es normal.
+- Nuevas correlaciones: sueño ↔ síntomas y alcohol ↔ sueño.
+- La respiración con Nibi se guarda y, si está conectado, va a Health Connect.
+- Tarjeta **Cuidado de hoy** en Inicio. Avisos discretos y privados en la pantalla de bloqueo.
+- El informe PDF incluye medicamentos, signos vitales y síntomas frecuentes.
+
+### Probado en el teléfono
+- Las horas se eligen siempre en formato de 24 h: con el teléfono en 12 h, el selector en modo texto rechazaba las horas de la tarde (afectaba también a los recordatorios).
+- La vibración del suelo pélvico se nota aunque la vibración al tocar esté desactivada en el sistema.
+- Los avisos con "Deshacer" se quitan solos a los pocos segundos y un aviso nuevo reemplaza al anterior en vez de quedarse uno escondido debajo de otro.
+- Las bebidas aparecen en Comida en mililitros ("330 ml"), no en gramos.
+- Los siete días de la semana caben en una fila; la figura de las pausas tiene cuello; un aviso pendiente ya no tapa los botones de una sesión guiada; etiquetas de la tensión más cortas.
+
+### Técnico
+- Esquema v7 (35 tablas) con migración paso a paso; suplementos pasan a tratamientos sin perder datos.
+- ADR-14 a ADR-17; documentación nueva en `docs/12_CARE.md`.
+
 ## 1.0.0 — 2026-10-28
 
 Primera versión completa, resultado de una auditoría de calidad (documentación frente a código real) y siete fases de trabajo. Probada a fondo en el TCL 50 Pro NXTPAPER.

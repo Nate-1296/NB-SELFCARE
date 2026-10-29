@@ -13,6 +13,8 @@ class ScheduledReminder {
     required this.daysMask,
     this.intervalMinutes,
     this.windowEndMinutes = 21 * 60,
+    this.actionKey,
+    this.actionLabel,
   });
 
   final int id;
@@ -29,6 +31,10 @@ class ScheduledReminder {
   final int? intervalMinutes;
   final int windowEndMinutes;
 
+  /// Botón de la notificación ("Hecho"): la app recibe [actionKey] al abrirse.
+  final String? actionKey;
+  final String? actionLabel;
+
   Map<String, Object?> toMap() => <String, Object?>{
     'id': id,
     'title': title,
@@ -37,7 +43,17 @@ class ScheduledReminder {
     'daysMask': daysMask,
     'intervalMinutes': intervalMinutes,
     'windowEndMinutes': windowEndMinutes,
+    'actionKey': actionKey,
+    'actionLabel': actionLabel,
   };
+}
+
+/// Acción pulsada en una notificación mientras la app estaba cerrada.
+class ReminderActionEvent {
+  const ReminderActionEvent({required this.key, required this.at});
+
+  final String key;
+  final DateTime at;
 }
 
 /// Notificaciones 100 % locales: cronómetro de ayuno, recordatorios y pausas activas.
@@ -58,6 +74,9 @@ abstract interface class NotificationGateway {
     int startMinutes = 9 * 60,
     int endMinutes = 21 * 60,
   });
+
+  /// Acciones pulsadas en notificaciones desde la última vez (y las borra).
+  Future<List<ReminderActionEvent>> consumeReminderActions();
 }
 
 class MethodChannelNotificationGateway implements NotificationGateway {
@@ -103,6 +122,20 @@ class MethodChannelNotificationGateway implements NotificationGateway {
       'startMinutes': startMinutes,
       'endMinutes': endMinutes,
     });
+  }
+
+  @override
+  Future<List<ReminderActionEvent>> consumeReminderActions() async {
+    final List<Object?>? raw = await callNative<List<Object?>>(_channel, 'consumeReminderActions');
+    if (raw == null) return const <ReminderActionEvent>[];
+    return <ReminderActionEvent>[
+      for (final Map<Object?, Object?> item in raw.whereType<Map<Object?, Object?>>())
+        if (item['key'] is String && item['at'] is num)
+          ReminderActionEvent(
+            key: item['key']! as String,
+            at: DateTime.fromMillisecondsSinceEpoch((item['at']! as num).toInt()),
+          ),
+    ];
   }
 }
 

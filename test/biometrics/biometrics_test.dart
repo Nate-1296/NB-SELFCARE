@@ -27,7 +27,11 @@ void main() {
         0xA4, 0x38, // 14500 (72.5 kg)
       ]);
 
-      final event = XiaomiMiScale2Driver.parseRawAdvertisement(rawBytes, 'AA:BB:CC:DD:EE:FF', receivedAt: DateTime(2026, 10, 26));
+      final event = XiaomiMiScale2Driver.parseRawAdvertisement(
+        rawBytes,
+        'AA:BB:CC:DD:EE:FF',
+        receivedAt: DateTime(2026, 10, 26),
+      );
 
       expect(event, isNotNull);
       expect(event!.weightKg, closeTo(72.5, 0.01));
@@ -51,17 +55,40 @@ void main() {
         0xA4, 0x38,
       ]);
 
-      final event = XiaomiMiScale2Driver.parseRawAdvertisement(historicalBytes, 'AA:BB:CC:DD:EE:FF', receivedAt: DateTime(2026, 10, 26));
+      final event = XiaomiMiScale2Driver.parseRawAdvertisement(
+        historicalBytes,
+        'AA:BB:CC:DD:EE:FF',
+        receivedAt: DateTime(2026, 10, 26),
+      );
       expect(event, isNull);
 
       // Trama truncada (< 13 bytes)
       final truncatedBytes = Uint8List.fromList([0x02, 0x22, 0xEA]);
-      expect(XiaomiMiScale2Driver.parseRawAdvertisement(truncatedBytes, 'AA:BB:CC:DD:EE:FF', receivedAt: DateTime(2026, 10, 26)), isNull);
+      expect(
+        XiaomiMiScale2Driver.parseRawAdvertisement(
+          truncatedBytes,
+          'AA:BB:CC:DD:EE:FF',
+          receivedAt: DateTime(2026, 10, 26),
+        ),
+        isNull,
+      );
     });
 
     test('Filtra estrictamente periféricos BLE ajenos y acepta 0x181B / 0x181D / Huami 0x0157', () {
       final validFrame = Uint8List.fromList([
-        0x02, 0x22, 0xEA, 0x07, 10, 23, 8, 30, 15, 0xF4, 0x01, 0xA4, 0x38,
+        0x02,
+        0x22,
+        0xEA,
+        0x07,
+        10,
+        23,
+        8,
+        30,
+        15,
+        0xF4,
+        0x01,
+        0xA4,
+        0x38,
       ]);
 
       // 1. Dispositivo ajeno (ej. auriculares o TV con 15 bytes de ManufacturerData Apple 0x004C) -> RECHAZADO
@@ -72,18 +99,13 @@ void main() {
           ManufacturerData(0x004C, Uint8List.fromList([...validFrame, 0x99, 0x88])),
         ],
       );
-      expect(
-        XiaomiMiScale2Driver.extractScalePayloadForDevice(unrelatedBeacon),
-        isNull,
-      );
+      expect(XiaomiMiScale2Driver.extractScalePayloadForDevice(unrelatedBeacon), isNull);
 
       // 2. Báscula transmitiendo en Service Data oficial 0x181B -> ACEPTADA
       final scaleService181b = BleDevice(
         deviceId: 'AA:BB:CC:DD:EE:01',
         name: null,
-        serviceData: {
-          '0000181b-0000-1000-8000-00805f9b34fb': validFrame,
-        },
+        serviceData: {'0000181b-0000-1000-8000-00805f9b34fb': validFrame},
       );
       expect(
         XiaomiMiScale2Driver.extractScalePayloadForDevice(scaleService181b),
@@ -94,14 +116,9 @@ void main() {
       final scaleHuamiMfg = BleDevice(
         deviceId: 'AA:BB:CC:DD:EE:02',
         name: 'MIBFS',
-        manufacturerDataList: [
-          ManufacturerData(XiaomiMiScale2Driver.huamiCompanyId, validFrame),
-        ],
+        manufacturerDataList: [ManufacturerData(XiaomiMiScale2Driver.huamiCompanyId, validFrame)],
       );
-      expect(
-        XiaomiMiScale2Driver.extractScalePayloadForDevice(scaleHuamiMfg),
-        equals(validFrame),
-      );
+      expect(XiaomiMiScale2Driver.extractScalePayloadForDevice(scaleHuamiMfg), equals(validFrame));
 
       // 4. Si el usuario fijó una MAC distinta, ignora otras básculas cercanas
       expect(
@@ -151,6 +168,13 @@ void main() {
         hasImpedanceContraindication: false,
         hasEatingDisorderHistory: false,
         takesHypoglycemicMedication: false,
+        hasEinkScreen: false,
+        hasSmartScale: true,
+        vitalDevicesJson: '[]',
+        careModulesJson:
+            '["treatments","pelvic_floor","active_breaks","symptoms","checkups","habits"]',
+        discreetNotifications: true,
+        targetBedtimeMinutes: 1380,
         createdAt: DateTime(2026, 1, 1),
       );
 
@@ -167,7 +191,10 @@ void main() {
         netWorkoutKcal: 300,
       );
 
-      expect(workoutDay.effectiveCalorieTargetKcal, equals(restDay.effectiveCalorieTargetKcal + 300));
+      expect(
+        workoutDay.effectiveCalorieTargetKcal,
+        equals(restDay.effectiveCalorieTargetKcal + 300),
+      );
       expect(workoutDay.proteinTargetG, equals(144.0)); // 72.0 * 2.0 g/kg
       expect(workoutDay.carbsTargetG, greaterThan(restDay.carbsTargetG));
     });
@@ -218,17 +245,11 @@ void main() {
     });
 
     test('Peso Tendencia (EMA alpha = 0.1)', () {
-      final ema1 = BiometricFormulas.calculateWeightEma(
-        currentWeightKg: 75.0,
-        previousEmaKg: null,
-      );
+      final ema1 = BiometricFormulas.calculateWeightEma(currentWeightKg: 75.0, previousEmaKg: null);
       expect(ema1, equals(75.0));
 
       // Segundo pesaje sube a 76.0 kg: EMA = 75.0 + 0.1 * (76.0 - 75.0) = 75.10
-      final ema2 = BiometricFormulas.calculateWeightEma(
-        currentWeightKg: 76.0,
-        previousEmaKg: 75.0,
-      );
+      final ema2 = BiometricFormulas.calculateWeightEma(currentWeightKg: 76.0, previousEmaKg: 75.0);
       expect(ema2, equals(75.10));
     });
 
@@ -308,7 +329,11 @@ void main() {
           isMale: true,
           impedanceOhms: ohms,
         );
-        expect(metrics.proteinPercentage, inInclusiveRange(14.0, 22.0), reason: 'impedancia: $ohms');
+        expect(
+          metrics.proteinPercentage,
+          inInclusiveRange(14.0, 22.0),
+          reason: 'impedancia: $ohms',
+        );
       }
     });
 

@@ -16,6 +16,9 @@
 | `health.READ_*` (peso, grasa, sueño, pasos, FC en reposo, hidratación, lectura en segundo plano) y `health.WRITE_*` (peso, grasa, hidratación) | Health Connect. | Al conectar Health Connect en Ajustes. |
 | `POST_NOTIFICATIONS` | Cronómetro del ayuno, recordatorios, pausas activas. | Al empezar un ayuno o activar un recordatorio. |
 | `POST_PROMOTED_NOTIFICATIONS` | Live Update del ayuno en Android 16. | Con el anterior. |
+| Health Connect: lectura de tensión, glucosa, oxígeno y temperatura | Signos vitales de los aparatos declarados (ADR-16). | Al marcar el aparato en Tus equipos, o al conectar Health Connect. |
+| `health.WRITE_MINDFULNESS` | Guardar las sesiones de respiración. | Con el permiso base de Health Connect, si el proveedor lo soporta. |
+| `VIBRATE` | Guiar el suelo pélvico sin mirar la pantalla. | Permiso normal (no se pregunta). |
 | `SCHEDULE_EXACT_ALARM` | Recordatorios a la hora exacta (sin él, ventana de hasta una hora). | Desde Ajustes → Permisos. |
 | `RECEIVE_BOOT_COMPLETED` | Reprogramar recordatorios y el ayuno tras reiniciar. | — |
 | `CAMERA` | Escáner y lectura de etiquetas. | Al abrir el escáner. |
@@ -28,10 +31,11 @@
 
 | Clase | Qué hace |
 | :-- | :-- |
-| `MainActivity` | Canales de Flutter, permisos en tiempo de ejecución, ajustes, disponibilidad del dictado sin conexión. |
-| `health/HealthConnectBridge` | SDK oficial de Health Connect: permisos, lecturas diarias (pasos, sueño con fases, FC en reposo) y escrituras (peso, grasa, hidratación). |
+| `MainActivity` | Canales de Flutter, permisos en tiempo de ejecución, ajustes, disponibilidad del dictado sin conexión, modelo del teléfono, marcador (líneas de apoyo) y vibración. |
+| `health/HealthConnectBridge` | SDK oficial de Health Connect: permisos, lecturas diarias (pasos, sueño con fases y hora de despertar, FC en reposo), signos vitales declarados y escrituras (peso, grasa, hidratación, sesiones de respiración). |
 | `notifications/FastingNotifier` | Notificación del ayuno con `setUsesChronometer` (el sistema cuenta los segundos sin la app viva), promovida a Live Update en Android 16; cambia el texto en cada fase y a medianoche con alarmas inexactas. Sin servicio en primer plano (ADR-06). |
-| `notifications/ReminderScheduler` + `ReminderReceiver` | Recordatorios con `AlarmManager` (exactos si hay permiso). |
+| `notifications/ReminderScheduler` + `ReminderReceiver` | Recordatorios con `AlarmManager` (exactos si hay permiso), privados en la pantalla de bloqueo. |
+| `notifications/ReminderActionReceiver` | Botón "Hecho" de las tomas: guarda la acción (sin abrir la app) y Flutter la aplica al volver (`consumeReminderActions`). |
 | `notifications/RescheduleReceiver` | Reprograma todo al reiniciar, al cambiar la hora o al conceder alarmas exactas. |
 | `notifications/MovementNudgeWorker` | Pausas activas: si Health Connect no registra pasos en una hora (entre 09:00 y 21:00), una invitación amable a moverse. |
 
@@ -54,7 +58,7 @@ El **TCL 50 Pro NXTPAPER** tiene una tecla física que cambia la pantalla a pape
 Hay **un catálogo de temas** (`lib/shared/theme/sc_theme.dart`) y cada tema declara si es de papel (`isFlat`). Todo componente lee los tokens con `context.sc`, `context.type` y `ScRadius`/`ScMotion`.
 
 ### 3.1 Catálogo
-* **Papel (NXTPAPER):** Papel en color, Papel claro, Papel oscuro y **Papel sepia** (tinta marrón sobre crema, menos luz azul de noche).
+* **Papel (NXTPAPER):** solo se ofrecen si en Tus equipos está marcada la pantalla de papel (ADR-14). Papel en color, Papel claro, Papel oscuro y **Papel sepia** (tinta marrón sobre crema, menos luz azul de noche).
 * **Color:** 20 temas oscuros y claros, entre ellos **Salvia y Lino** (claro cálido con verde salvia) y "Colores de tu fondo" (Material You dinámico).
 * Todos cumplen contraste AA: `test/design_system/theme_catalog_test.dart` falla si un tema nuevo no lo cumple (texto ≥ 7:1, secundario y terciario ≥ 4,5:1, texto de botón sobre acento ≥ 4,5:1, acento ≥ 3:1).
 * En tinta, carbohidratos y grasas se distinguen por intensidad: se calculan como tinta diluida sobre el papel del propio tema (también en sepia).

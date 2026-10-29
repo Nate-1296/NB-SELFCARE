@@ -15,8 +15,13 @@ import 'package:nb_selfcare/core/clock/clock.dart';
 import 'package:nb_selfcare/core/database/app_database.dart';
 import 'package:nb_selfcare/core/database/daos/health_sync_dao.dart';
 import 'package:nb_selfcare/core/database/seeder/database_seeder.dart';
+import 'package:nb_selfcare/core/domain/care_enums.dart';
 import 'package:nb_selfcare/core/domain/enums.dart';
 import 'package:nb_selfcare/features/body_metrics/application/weigh_in_service.dart';
+import 'package:nb_selfcare/features/care/application/checkup_service.dart';
+import 'package:nb_selfcare/features/care/application/habit_service.dart';
+import 'package:nb_selfcare/features/care/application/health_log_services.dart';
+import 'package:nb_selfcare/features/care/application/treatment_service.dart';
 import 'package:nb_selfcare/features/fasting/application/fasting_service.dart';
 import 'package:nb_selfcare/features/journal/application/journal_service.dart';
 import 'package:nb_selfcare/features/nutrition_hydration/application/food_logging_service.dart';
@@ -53,6 +58,9 @@ Future<void> _seed(AppDatabase db, String themeKey) async {
           dailyStepsGoal: 8000,
           dailySleepGoalHours: 7.5,
           themeKey: themeKey,
+          hasEinkScreen: true,
+          hasSmartScale: true,
+          vitalDevices: <VitalKind>{VitalKind.bloodPressure, VitalKind.glucose},
         ),
       );
   first.dispose();
@@ -141,6 +149,43 @@ Future<void> _seed(AppDatabase db, String themeKey) async {
           stressLevel: const Value(2),
         ),
       );
+  final TreatmentService treatments = today.read(treatmentServiceProvider);
+  final int losartan = (await treatments.save(
+    const TreatmentDraft(
+      name: 'Losartán',
+      dosage: '50 mg',
+      kind: TreatmentKind.medication,
+      times: <int>[480, 1200],
+      stockUnits: 9,
+      remindersEnabled: true,
+    ),
+  ))!;
+  await treatments.save(
+    const TreatmentDraft(
+      name: 'Creatina',
+      dosage: '5 g',
+      kind: TreatmentKind.supplement,
+      times: <int>[780],
+    ),
+  );
+  await treatments.markDose(
+    dateKey: '2026-10-26',
+    treatmentId: losartan,
+    slotMinutes: 480,
+    taken: true,
+  );
+  final HabitService habits = today.read(habitServiceProvider);
+  final int floss = (await habits.add(name: 'Hilo dental', iconKey: 'tooth'))!;
+  await habits.add(name: 'Protector solar', iconKey: 'sun');
+  await habits.setDone(habitId: floss, dateKey: '2026-10-26', done: true);
+  await today.read(symptomServiceProvider).log(symptom: 'headache', intensity: 2);
+  await today
+      .read(vitalServiceProvider)
+      .addManual(kind: VitalKind.bloodPressure, primary: 124, secondary: 79);
+  await today
+      .read(vitalServiceProvider)
+      .addManual(kind: VitalKind.glucose, primary: 92, context: 'fasting');
+  await today.read(checkupServiceProvider).seedIfEmpty();
   today.dispose();
 }
 
@@ -158,6 +203,7 @@ void main() {
       '/hoy',
       '/comer',
       '/cuerpo',
+      '/cuidado',
       '/nibi',
       '/nibi#respirar',
       '/nibi#sesion',
@@ -228,7 +274,8 @@ void main() {
             await tapText('Tienda');
         }
 
-        final String name = '${themeKey}_${route.substring(1).replaceAll('#', '_')}${fullPage ? '_full' : ''}';
+        final String name =
+            '${themeKey}_${route.substring(1).replaceAll('#', '_')}${fullPage ? '_full' : ''}';
         await expectLater(find.byType(MaterialApp), matchesGoldenFile('goldens/$name.png'));
 
         await tester.pumpWidget(const SizedBox.shrink());

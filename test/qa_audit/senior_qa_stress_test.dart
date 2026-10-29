@@ -36,12 +36,18 @@ void main() {
         final OcrNutritionData data = ocr.parseText(massiveString);
         sw.stop();
 
-        expect(sw.elapsedMilliseconds, lessThan(3000), reason: 'OCR parse must execute within 3 seconds even on massive string');
+        expect(
+          sw.elapsedMilliseconds,
+          lessThan(3000),
+          reason: 'OCR parse must execute within 3 seconds even on massive string',
+        );
         expect(data.hasAnyData, isFalse);
       });
 
-      test('Chaos: Broken punctuation, multiple dots, commas, negative and scientific notations', () {
-        const String brokenText = '''
+      test(
+        'Chaos: Broken punctuation, multiple dots, commas, negative and scientific notations',
+        () {
+          const String brokenText = '''
         Información Nutricional por 100g
         Calorías: -250 kcal
         Proteínas: 12..5 g
@@ -50,11 +56,12 @@ void main() {
         Sal: 1,5 g
         ''';
 
-        final OcrNutritionData data = ocr.parseText(brokenText);
-        // Debe ignorar valores negativos o no parseables y capturar correctamente los válidos
-        expect(data.fatG, equals(8.7));
-        expect(data.sodiumMg, equals(600.0)); // 1.5g sal * 400 = 600mg sodio
-      });
+          final OcrNutritionData data = ocr.parseText(brokenText);
+          // Debe ignorar valores negativos o no parseables y capturar correctamente los válidos
+          expect(data.fatG, equals(8.7));
+          expect(data.sodiumMg, equals(600.0)); // 1.5g sal * 400 = 600mg sodio
+        },
+      );
 
       test('Chaos: Mixed languages, uppercase, symbols, emojis', () {
         const String mixedText = '''
@@ -128,10 +135,7 @@ void main() {
           ),
         ];
 
-        final double res = caffeine.computeResidualCaffeineAt(
-          logs: extremeLogs,
-          targetTime: now,
-        );
+        final double res = caffeine.computeResidualCaffeineAt(logs: extremeLogs, targetTime: now);
         // After 1 half-life (5.5h), 5000 mg should be exactly ~2500 mg
         expect(res, closeTo(2500.0, 1.0));
       });
@@ -146,16 +150,19 @@ void main() {
         expect(cutoff, equals(bedtime));
       });
 
-      test('Boundary: Bedtime cutoff with invalid maxResidual (<= 0) falls back safely without NaN', () {
-        final DateTime bedtime = DateTime(2026, 10, 26, 23, 0);
-        final DateTime cutoff = caffeine.computeBedtimeCutoff(
-          targetBedtime: bedtime,
-          typicalDoseMg: 100.0,
-          maxResidual: -10.0, // negativo inválido
-        );
-        expect(cutoff.isBefore(bedtime), isTrue);
-        expect(cutoff.year, equals(2026));
-      });
+      test(
+        'Boundary: Bedtime cutoff with invalid maxResidual (<= 0) falls back safely without NaN',
+        () {
+          final DateTime bedtime = DateTime(2026, 10, 26, 23, 0);
+          final DateTime cutoff = caffeine.computeBedtimeCutoff(
+            targetBedtime: bedtime,
+            typicalDoseMg: 100.0,
+            maxResidual: -10.0, // negativo inválido
+          );
+          expect(cutoff.isBefore(bedtime), isTrue);
+          expect(cutoff.year, equals(2026));
+        },
+      );
 
       test('Boundary: Decay curve generation with reversed dates or 0 intervalMinutes', () {
         final List<CaffeineLog> logs = <CaffeineLog>[
@@ -306,16 +313,16 @@ void main() {
         await db.close();
       });
 
-      test('Zero difference (current == target): creates 1 single milestone without division error', () async {
-        await milestoneDao.generateMilestones(
-          currentWeightKg: 75.0,
-          targetWeightKg: 75.0,
-        );
+      test(
+        'Zero difference (current == target): creates 1 single milestone without division error',
+        () async {
+          await milestoneDao.generateMilestones(currentWeightKg: 75.0, targetWeightKg: 75.0);
 
-        final List<MilestoneGoal> milestones = await milestoneDao.getMilestones();
-        expect(milestones, hasLength(1));
-        expect(milestones.first.targetWeightKg, equals(75.0));
-      });
+          final List<MilestoneGoal> milestones = await milestoneDao.getMilestones();
+          expect(milestones, hasLength(1));
+          expect(milestones.first.targetWeightKg, equals(75.0));
+        },
+      );
 
       test('Invalid stepKg (0 or negative) safely defaults to 1.5 kg step', () async {
         await milestoneDao.generateMilestones(
@@ -360,18 +367,12 @@ void main() {
       });
 
       test('BMI with 0 height or 0 weight does not produce NaN or Infinity', () {
-        final double bmiZeroHeight = BiometricFormulas.calculateBmi(
-          weightKg: 70.0,
-          heightCm: 0.0,
-        );
+        final double bmiZeroHeight = BiometricFormulas.calculateBmi(weightKg: 70.0, heightCm: 0.0);
         expect(bmiZeroHeight.isNaN, isFalse);
         expect(bmiZeroHeight.isInfinite, isFalse);
         expect(bmiZeroHeight, equals(0.0));
 
-        final double bmiZeroWeight = BiometricFormulas.calculateBmi(
-          weightKg: 0.0,
-          heightCm: 175.0,
-        );
+        final double bmiZeroWeight = BiometricFormulas.calculateBmi(weightKg: 0.0, heightCm: 175.0);
         expect(bmiZeroWeight, equals(0.0));
       });
 
@@ -401,50 +402,65 @@ void main() {
     group('ClinicalReportPdfService - Stress & Empty State Document', () {
       final ClinicalReportPdfService pdfService = ClinicalReportPdfService();
 
-      test('Generates valid PDF byte payload even with completely empty history & null measurements', () async {
-        final UserProfile emptyProfile = UserProfile(
-          id: 1,
-          name: 'Paciente Test',
-          birthDate: DateTime(1995, 5, 10),
-          biologicalSex: BiologicalSex.male,
-          heightCm: 178.0,
-          targetWeightKg: 72.0,
-          weeklyGoalRateKg: 0.5,
-          dailyWaterGoalMl: 2500,
-          dailyStepsGoal: 10000,
-          dailySleepGoalHours: 8.0,
-          currentAdaptiveTdeeKcal: 2200,
-          themeMode: 'system',
-          isLocalAiEnabled: true,
-          isCycleTrackingEnabled: false,
-          isFastingEnabled: true,
-          isManualMacroMode: false,
-          activeDietArchetype: DietArchetype.mediterranean,
-          activeDietPhase: DietPhase.maintenance,
-          calorieCyclingScheduleJson: '',
-          caffeineBedtimeCutoffHours: 8.0,
-          hasImpedanceContraindication: false,
-          hasEatingDisorderHistory: false,
-          takesHypoglycemicMedication: false,
-          createdAt: DateTime.now(),
-        );
+      test(
+        'Generates valid PDF byte payload even with completely empty history & null measurements',
+        () async {
+          final UserProfile emptyProfile = UserProfile(
+            id: 1,
+            name: 'Paciente Test',
+            birthDate: DateTime(1995, 5, 10),
+            biologicalSex: BiologicalSex.male,
+            heightCm: 178.0,
+            targetWeightKg: 72.0,
+            weeklyGoalRateKg: 0.5,
+            dailyWaterGoalMl: 2500,
+            dailyStepsGoal: 10000,
+            dailySleepGoalHours: 8.0,
+            currentAdaptiveTdeeKcal: 2200,
+            themeMode: 'system',
+            isLocalAiEnabled: true,
+            isCycleTrackingEnabled: false,
+            isFastingEnabled: true,
+            isManualMacroMode: false,
+            activeDietArchetype: DietArchetype.mediterranean,
+            activeDietPhase: DietPhase.maintenance,
+            calorieCyclingScheduleJson: '',
+            caffeineBedtimeCutoffHours: 8.0,
+            hasImpedanceContraindication: false,
+            hasEatingDisorderHistory: false,
+            takesHypoglycemicMedication: false,
+            hasEinkScreen: false,
+            hasSmartScale: true,
+            vitalDevicesJson: '[]',
+            careModulesJson:
+                '["treatments","pelvic_floor","active_breaks","symptoms","checkups","habits"]',
+            discreetNotifications: true,
+            targetBedtimeMinutes: 1380,
+            createdAt: DateTime.now(),
+          );
 
-        final Uint8List pdfBytes = await pdfService.generateReportBytes(
-          profile: emptyProfile,
-          latestMeasurement: null, // null measurement
-          recentMeasurements: <BodyMeasurement>[], // empty list
-          averageDailyKcal: 0, foodDays: 7,
-          averageProteinG: 0.0,
-          averageCarbsG: 0.0,
-          averageFatG: 0.0,
-          averageSleepHours: 0.0,
-          activeSupplements: <SupplementsTrackerData>[], // empty supplements
-          readinessScore: 0,
-        );
+          final Uint8List pdfBytes = await pdfService.generateReportBytes(
+            profile: emptyProfile,
+            latestMeasurement: null, // null measurement
+            recentMeasurements: <BodyMeasurement>[], // empty list
+            averageDailyKcal: 0,
+            foodDays: 7,
+            averageProteinG: 0.0,
+            averageCarbsG: 0.0,
+            averageFatG: 0.0,
+            averageSleepHours: 0.0,
+            activeSupplements: <SupplementsTrackerData>[], // empty supplements
+            readinessScore: 0,
+          );
 
-        expect(pdfBytes, isNotEmpty);
-        expect(pdfBytes.length, greaterThan(1000), reason: 'Valid PDF document must be at least 1 KB');
-      });
+          expect(pdfBytes, isNotEmpty);
+          expect(
+            pdfBytes.length,
+            greaterThan(1000),
+            reason: 'Valid PDF document must be at least 1 KB',
+          );
+        },
+      );
     });
   });
 }

@@ -1,3 +1,4 @@
+import 'package:drift/drift.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/clock/clock.dart';
@@ -52,7 +53,8 @@ class FastingService {
       final FastingSafetyVerdict personal = FastingDosageAdvisor.evaluatePersonalSafety(
         proposedTargetHours: targetHours,
         hasEatingDisorderHistory: profile.hasEatingDisorderHistory,
-        takesHypoglycemicMedication: profile.takesHypoglycemicMedication,
+        takesHypoglycemicMedication:
+            profile.takesHypoglycemicMedication || await _hasGlucoseLoweringTreatment(),
       );
       if (!personal.isSafe) return personal;
     }
@@ -61,6 +63,17 @@ class FastingService {
       recentSessions: await _fastingDao.getRecentSessions(limit: 10),
       now: _clock.now(),
     );
+  }
+
+  /// Un tratamiento activo marcado como "puede bajar la glucosa" activa el mismo
+  /// aviso que la respuesta de la bienvenida.
+  Future<bool> _hasGlucoseLoweringTreatment() async {
+    final List<SupplementsTrackerData> rows =
+        await (_db.select(_db.supplementsTracker)
+              ..where((tbl) => tbl.lowersGlucose.equals(true) & tbl.isEnabled.equals(true))
+              ..limit(1))
+            .get();
+    return rows.isNotEmpty;
   }
 
   /// Inicia un ayuno. Si ya hay uno en curso (doble toque, otra pantalla) lo

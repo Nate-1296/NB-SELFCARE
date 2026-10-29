@@ -4071,5 +4071,691 @@
     }
   },
   "cuerpoScaleNotFound": "No encontramos la báscula. Súbete un momento para despertarla y vuelve a pulsar «Pesarme».",
-  "commonAccept": "Aceptar"
+  "commonAccept": "Aceptar",
+  "careTitle": "Cuidado",
+  "careLearnMore": "Saber más",
+  "careChooseModules": "Elegir qué ver en Cuidado",
+  "careEmptyAll": "No tienes ningún apartado activo. Elige los que quieras ver.",
+  "careWeekdaysShort": "L,M,X,J,V,S,D",
+  "careEveryDay": "Todos los días",
+  "careTreatmentsTitle": "Medicamentos y suplementos",
+  "careTreatmentsEmpty": "Añade lo que tomas y, si quieres, te avisamos a la hora.",
+  "careTreatmentsAdd": "Añadir",
+  "careTreatmentsManage": "Gestionar",
+  "careDoseAnytime": "Cuando quieras",
+  "careDoseTaken": "Tomada",
+  "careDoseSkipped": "Omitida",
+  "careDoseSkip": "Omitir esta toma",
+  "careDoseUndo": "Quitar la marca",
+  "careDoseTakenSnack": "{name}: tomada",
+  "@careDoseTakenSnack": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "careDoseSkippedSnack": "{name}: omitida",
+  "@careDoseSkippedSnack": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "careDosesAllDone": "Todo listo por hoy.",
+  "careDosesNoneToday": "Hoy no te toca nada.",
+  "careLowStock": "Quedan pocas de {name}: unos {days} días",
+  "@careLowStock": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "days": {
+        "type": "String"
+      }
+    }
+  },
+  "careRefill": "Repuse",
+  "careRefillTitle": "¿Cuántas unidades compraste?",
+  "careRefillDone": "Reserva de {name} actualizada",
+  "@careRefillDone": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "careTreatmentNew": "Nuevo tratamiento",
+  "careTreatmentEdit": "Editar tratamiento",
+  "careTreatmentName": "Nombre",
+  "careTreatmentNameHint": "Ej.: Losartán, vitamina D3, creatina",
+  "careTreatmentDosage": "Dosis",
+  "careTreatmentDosageHint": "Ej.: 50 mg, 1 cápsula, 5 g",
+  "careTreatmentKindMedication": "Medicamento",
+  "careTreatmentKindSupplement": "Suplemento",
+  "careTreatmentTimes": "Horas de toma",
+  "careTreatmentTimesHint": "Sin hora, aparece como «cuando quieras».",
+  "careTreatmentAddTime": "Añadir hora",
+  "careTreatmentDays": "Días",
+  "careTreatmentReminders": "Avisarme a la hora de cada toma",
+  "careTreatmentRemindersHint": "El aviso trae un botón «Hecho». Con los avisos discretos no se ve el nombre.",
+  "careTreatmentStock": "Llevar la cuenta de la reserva",
+  "careTreatmentStockHint": "Te avisamos cuando quede para una semana.",
+  "careTreatmentStockUnits": "Unidades que tienes",
+  "careTreatmentUnitsPerDose": "Unidades por toma",
+  "careTreatmentLowersGlucose": "Puede bajar el azúcar en sangre",
+  "careTreatmentLowersGlucoseHint": "Insulina, sulfonilureas… Te avisaremos antes de ayunar.",
+  "careTreatmentWater": "Retiene agua (creatina)",
+  "careTreatmentWaterHint": "Evita que un pesaje lo confunda con grasa.",
+  "careTreatmentNotes": "Notas (opcional)",
+  "careTreatmentPause": "Pausar",
+  "careTreatmentResume": "Reanudar",
+  "careTreatmentPaused": "En pausa",
+  "careTreatmentDeleted": "{name} borrado",
+  "@careTreatmentDeleted": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "careTreatmentSaved": "{name} guardado",
+  "@careTreatmentSaved": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "careTreatmentsListTitle": "Tus tratamientos",
+  "careTreatmentDisclaimer": "Esto no sustituye las indicaciones de tu médico ni las del prospecto.",
+  "careTreatmentStockLeft": "Quedan {units} · unos {days} días",
+  "@careTreatmentStockLeft": {
+    "placeholders": {
+      "units": {
+        "type": "String"
+      },
+      "days": {
+        "type": "String"
+      }
+    }
+  },
+  "careHabitsTitle": "Mis hábitos",
+  "careHabitsEmpty": "Hilo dental, protector solar, leer diez páginas… Crea los tuyos.",
+  "careHabitsAdd": "Nuevo hábito",
+  "careHabitName": "¿Qué quieres hacer?",
+  "careHabitNameHint": "Ej.: Hilo dental",
+  "careHabitIcon": "Icono",
+  "careHabitsDoneCount": "{done} de {total} hoy",
+  "@careHabitsDoneCount": {
+    "placeholders": {
+      "done": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "careHabitsAllDone": "¡Todo hecho hoy!",
+  "careHabitArchive": "Quitar",
+  "careHabitArchived": "«{name}» quitado",
+  "@careHabitArchived": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "careHabitsNoneToday": "Hoy no tienes hábitos programados.",
+  "careHabitsAllDoneCoins": "¡Todos tus hábitos de hoy! +{coins} monedas",
+  "@careHabitsAllDoneCoins": {
+    "placeholders": {
+      "coins": {
+        "type": "String"
+      }
+    }
+  },
+  "carePelvicTitle": "Suelo pélvico",
+  "carePelvicSubtitle": "Nivel {level} · {count} esta semana",
+  "@carePelvicSubtitle": {
+    "placeholders": {
+      "level": {
+        "type": "String"
+      },
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "carePelvicStart": "Empezar · {minutes} min",
+  "@carePelvicStart": {
+    "placeholders": {
+      "minutes": {
+        "type": "String"
+      }
+    }
+  },
+  "carePelvicRelax": "Solo relajar",
+  "carePelvicLevelUp": "Llevas {count} sesiones en el nivel {level}. ¿Probamos el {next}?",
+  "@carePelvicLevelUp": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      },
+      "level": {
+        "type": "String"
+      },
+      "next": {
+        "type": "String"
+      }
+    }
+  },
+  "carePelvicLevelUpYes": "Subir de nivel",
+  "carePelvicLevel": "Nivel {level}",
+  "@carePelvicLevel": {
+    "placeholders": {
+      "level": {
+        "type": "String"
+      }
+    }
+  },
+  "carePelvicHint": "Como si aguantaras el pis y un gas a la vez, sin apretar glúteos ni abdomen. Respira con normalidad.",
+  "careCueSqueeze": "Aprieta y sube",
+  "careCueRelease": "Suelta del todo",
+  "careCueQuickSqueeze": "¡Aprieta!",
+  "careCueQuickRelease": "Suelta",
+  "careCueLengthenInhale": "Inhala y deja que baje",
+  "careCueLengthenExhale": "Exhala sin apretar",
+  "careCueRest": "Descansa",
+  "careVibration": "Guiar con vibración",
+  "carePelvicScienceTitle": "Suelo pélvico",
+  "carePelvicScienceBadge": "Fisioterapia",
+  "carePelvicScienceQuick": "Los músculos del suelo pélvico sostienen la vejiga, el intestino y, en las mujeres, el útero. Entrenarlos ayuda a controlar los escapes de orina, a recuperarse tras un parto o una cirugía de próstata y mejora la función sexual, en cualquier sexo y a cualquier edad.",
+  "carePelvicScienceHow": "Cada sesión tiene tres partes: contracciones lentas (fuerza y resistencia), contracciones rápidas (para la tos, el estornudo o la risa) y una relajación final igual de importante, porque un músculo que solo se aprieta se tensa. Descansa siempre al menos lo mismo que aprietas. Para encontrarlos, imagina que aguantas el pis y un gas a la vez; no aprietes glúteos, muslos ni abdomen y no contengas la respiración.",
+  "carePelvicScienceAdvice": "Con una a tres sesiones al día, la mayoría nota cambios en 8 a 12 semanas. Si sientes dolor, molestias al apretar o que no puedes soltar, usa «Solo relajar» y consulta con fisioterapia de suelo pélvico. No practiques cortando el chorro al orinar.",
+  "carePelvicScienceRefs": "Dumoulin C et al. (2018). Pelvic floor muscle training versus no treatment for urinary incontinence in women. Cochrane.\nNICE NG123 (2019). Urinary incontinence and pelvic organ prolapse in women.\nAnderson CA et al. (2015). Conservative management for postprostatectomy urinary incontinence. Cochrane.",
+  "careBreaksTitle": "Pausas activas",
+  "careBreaksSubtitle": "{count} hoy · de 1 a 3 minutos",
+  "@careBreaksSubtitle": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "careBreaksNoneToday": "Una pausa cada hora o dos cuida tu espalda y tu vista.",
+  "careRoutineNeckShoulders": "Cuello y hombros",
+  "careRoutineBack": "Espalda",
+  "careRoutineWrists": "Muñecas y manos",
+  "careRoutineHipsLegs": "Caderas y piernas",
+  "careRoutineEyes": "Descanso visual",
+  "careMoveNeckTiltRight": "Inclina la cabeza a la derecha, oreja hacia el hombro",
+  "careMoveNeckTiltLeft": "Ahora a la izquierda, sin subir el hombro",
+  "careMoveLookRight": "Gira la cabeza a la derecha, despacio",
+  "careMoveLookLeft": "Gira la cabeza a la izquierda",
+  "careMoveShoulderShrug": "Sube los hombros hacia las orejas y suéltalos",
+  "careMoveShoulderRolls": "Rueda los hombros hacia atrás en círculos",
+  "careMoveArmsOverhead": "Estira los brazos por encima de la cabeza",
+  "careMoveSideBendRight": "Inclínate a la derecha con el brazo izquierdo arriba",
+  "careMoveSideBendLeft": "Inclínate a la izquierda con el brazo derecho arriba",
+  "careMoveChestOpener": "Abre el pecho llevando los brazos hacia atrás",
+  "careMoveTwistRight": "Sentado, gira el tronco a la derecha",
+  "careMoveTwistLeft": "Ahora gira el tronco a la izquierda",
+  "careMoveWristExtensionRight": "Brazo derecho al frente: con la otra mano lleva los dedos hacia atrás",
+  "careMoveWristExtensionLeft": "Ahora con el brazo izquierdo",
+  "careMoveWristFlexionRight": "Brazo derecho al frente: dobla la muñeca hacia abajo",
+  "careMoveWristFlexionLeft": "Ahora la muñeca izquierda",
+  "careMoveFistOpen": "Cierra los puños y abre bien los dedos, varias veces",
+  "careMoveShakeHands": "Sacude las manos, sueltas",
+  "careMoveMarchInPlace": "Marcha en el sitio subiendo las rodillas",
+  "careMoveQuadStretchRight": "Toma el pie derecho por detrás y acércalo al glúteo",
+  "careMoveQuadStretchLeft": "Ahora el pie izquierdo; apóyate si lo necesitas",
+  "careMoveCalfRaises": "Ponte de puntillas y baja despacio",
+  "careMoveHipCircles": "Manos en la cintura: círculos con la cadera",
+  "careMoveLookFar": "Mira algo a seis metros o más (una ventana es ideal)",
+  "careMoveSlowBlinks": "Parpadea despacio y por completo",
+  "careMovePalming": "Frota las manos y cúbrete los ojos sin presionar",
+  "careMoveEyeFigureEight": "Dibuja un ocho grande con la mirada",
+  "careBreakNext": "Luego: {move}",
+  "@careBreakNext": {
+    "placeholders": {
+      "move": {
+        "type": "String"
+      }
+    }
+  },
+  "careBreaksScienceTitle": "Pausas activas y descanso visual",
+  "careBreaksScienceBadge": "Ergonomía",
+  "careBreaksScienceQuick": "Pasar mucho rato sentado sin moverse se asocia a dolor de cuello y espalda, peor circulación y más cansancio. Pausas cortas y frecuentes reducen esas molestias más que una sesión larga al final del día.",
+  "careBreaksScienceHow": "Cada rutina dura de 1 a 3 minutos y se hace en la silla o de pie. Los estiramientos se mantienen sin rebotes y sin llegar al dolor. El descanso visual sigue la regla 20-20-20: cada 20 minutos de pantalla, mira algo a 20 pies (unos seis metros) durante 20 segundos para relajar el enfoque; parpadear despacio repone la lágrima.",
+  "careBreaksScienceAdvice": "Una pausa cada hora o dos es suficiente. Si un movimiento duele, sáltalo. Puedes activar el aviso de descanso visual en Ajustes → Recordatorios.",
+  "careBreaksScienceRefs": "Waongenngarm P et al. (2018). Effects of active break and postural shift interventions on recovery from prolonged sitting. Applied Ergonomics.\nAmerican Academy of Ophthalmology (2021). Computers, digital devices and eye strain.\nOMS (2020). Directrices sobre actividad física y hábitos sedentarios.",
+  "careSessionPause": "Pausar",
+  "careSessionResume": "Seguir",
+  "careSessionStop": "Terminar",
+  "careSessionDone": "¡Hecho!",
+  "careSessionDoneCoins": "+{coins} monedas",
+  "@careSessionDoneCoins": {
+    "placeholders": {
+      "coins": {
+        "type": "String"
+      }
+    }
+  },
+  "careSessionRemaining": "{time} restantes",
+  "@careSessionRemaining": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "careSessionStepOf": "{current} de {total}",
+  "@careSessionStepOf": {
+    "placeholders": {
+      "current": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "careSessionAgain": "Otra vez",
+  "careSymptomsTitle": "Síntomas",
+  "careSymptomsHint": "Regístralos y verás con qué se relacionan: sueño, cafeína, ciclo…",
+  "careSymptomsOther": "Otro…",
+  "careSymptomsOtherHint": "¿Qué notas?",
+  "careSymptomIntensity": "¿Qué tan fuerte?",
+  "careIntensity1": "Leve",
+  "careIntensity2": "Suave",
+  "careIntensity3": "Moderado",
+  "careIntensity4": "Fuerte",
+  "careIntensity5": "Muy fuerte",
+  "careSymptomLogged": "{symptom} registrado",
+  "@careSymptomLogged": {
+    "placeholders": {
+      "symptom": {
+        "type": "String"
+      }
+    }
+  },
+  "careSymptomDeleted": "Registro borrado",
+  "careSymptomsRecent": "Últimos días",
+  "careSymptomNotes": "Nota (opcional)",
+  "careSymptomsSeeDoctor": "Si un síntoma es intenso, nuevo o no mejora, consulta con un profesional.",
+  "careDigestion": "Digestión",
+  "symptomHeadache": "Dolor de cabeza",
+  "symptomMigraine": "Migraña",
+  "symptomBackPain": "Dolor de espalda",
+  "symptomJointPain": "Dolor articular",
+  "symptomMusclePain": "Dolor muscular",
+  "symptomFatigue": "Cansancio",
+  "symptomAnxiety": "Ansiedad",
+  "symptomLowMood": "Ánimo bajo",
+  "symptomInsomnia": "Insomnio",
+  "symptomDizziness": "Mareo",
+  "symptomNausea": "Náuseas",
+  "symptomAllergy": "Alergia",
+  "symptomCongestion": "Congestión",
+  "symptomCramps": "Cólicos",
+  "symptomBreastTenderness": "Sensibilidad en los senos",
+  "symptomBloating": "Hinchazón",
+  "symptomHotFlashes": "Sofocos",
+  "symptomNightSweats": "Sudores nocturnos",
+  "symptomBrainFog": "Niebla mental",
+  "symptomVaginalDryness": "Sequedad vaginal",
+  "careCheckupsTitle": "Chequeos preventivos",
+  "careCheckupsAllGood": "Estás al día.",
+  "careCheckupsSeeAll": "Ver todos",
+  "careCheckupDue": "Toca ya",
+  "careCheckupDueSoon": "En {days} días",
+  "@careCheckupDueSoon": {
+    "placeholders": {
+      "days": {
+        "type": "String"
+      }
+    }
+  },
+  "careCheckupNever": "Sin registrar",
+  "careCheckupNext": "Próximo: {date}",
+  "@careCheckupNext": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "careCheckupLast": "Último: {date}",
+  "@careCheckupLast": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "careCheckupMarkDone": "Ya lo hice",
+  "careCheckupDoneWhen": "¿Cuándo fue?",
+  "careCheckupDoneSnack": "Registrado. ¡Bien hecho!",
+  "careCheckupDoneCoins": "Registrado: +{coins} monedas",
+  "@careCheckupDoneCoins": {
+    "placeholders": {
+      "coins": {
+        "type": "String"
+      }
+    }
+  },
+  "careCheckupEveryMonths": "Cada {months} meses",
+  "@careCheckupEveryMonths": {
+    "placeholders": {
+      "months": {
+        "type": "String"
+      }
+    }
+  },
+  "careCheckupEveryYear": "Cada año",
+  "careCheckupEveryYears": "Cada {years} años",
+  "@careCheckupEveryYears": {
+    "placeholders": {
+      "years": {
+        "type": "String"
+      }
+    }
+  },
+  "careCheckupInterval": "Cada cuántos meses",
+  "careCheckupAddCustom": "Añadir otro chequeo",
+  "careCheckupCustomName": "Nombre del chequeo",
+  "careCheckupDisabled": "Desactivados",
+  "careCheckupEnable": "Activar",
+  "careCheckupDisable": "Desactivar",
+  "careCheckupRemove": "Quitar",
+  "careCheckupHistoryDeleted": "Registro borrado",
+  "checkupDental": "Odontología",
+  "checkupGeneral": "Consulta de medicina general",
+  "checkupVision": "Optometría (vista)",
+  "checkupBloodPressure": "Toma de tensión arterial",
+  "checkupLipidsGlucose": "Colesterol y glucosa en sangre",
+  "checkupCervical": "Citología o prueba de VPH",
+  "checkupMammography": "Mamografía",
+  "checkupProstate": "Próstata (PSA y tacto)",
+  "checkupColorectal": "Sangre oculta en heces (colon)",
+  "checkupBoneDensity": "Densitometría ósea",
+  "checkupFluVaccine": "Vacuna de la influenza",
+  "checkupTetanus": "Refuerzo de tétanos (Td)",
+  "careCheckupsScienceTitle": "Chequeos preventivos",
+  "careCheckupsScienceBadge": "Prevención",
+  "careCheckupsScienceQuick": "Muchas enfermedades frecuentes (hipertensión, diabetes, algunos cánceres) se tratan mejor cuanto antes se detectan, y a menudo no dan síntomas al principio. Esta lista te recuerda qué toca según tu edad y tu sexo.",
+  "careCheckupsScienceHow": "Los intervalos son orientativos y salen de la Ruta de Promoción y Mantenimiento de la Salud de Colombia (Resolución 3280 de 2018) y de las recomendaciones de la OMS. Tu historia personal o familiar puede cambiarlos: ajústalos con lo que te diga tu médico. Nada de esto sale de tu teléfono.",
+  "careCheckupsScienceAdvice": "Marca «Ya lo hice» con la fecha y te diremos cuándo toca el siguiente. Si hay antecedentes en tu familia (cáncer de colon, de mama o de próstata, por ejemplo), pregunta si debes empezar antes.",
+  "careCheckupsScienceRefs": "Ministerio de Salud y Protección Social de Colombia. Resolución 3280 de 2018.\nOMS. Prevención y control de las enfermedades no transmisibles.\nUSPSTF. Recommendations for primary care practice.",
+  "careVitalsTitle": "Signos vitales",
+  "careVitalsHint": "De tus aparatos (por Health Connect) o a mano.",
+  "vitalBloodPressure": "Tensión arterial",
+  "vitalGlucose": "Glucosa",
+  "vitalOxygen": "Oxígeno en sangre",
+  "vitalTemperature": "Temperatura",
+  "vitalUnitBloodPressure": "mmHg",
+  "vitalUnitGlucose": "mg/dL",
+  "vitalUnitOxygen": "%",
+  "vitalUnitTemperature": "°C",
+  "careVitalAdd": "Añadir medición",
+  "careVitalNone": "Sin mediciones aún",
+  "careVitalSystolic": "Sistólica",
+  "careVitalDiastolic": "Diastólica",
+  "careVitalValue": "Valor",
+  "careVitalContextFasting": "En ayunas",
+  "careVitalContextAfterMeal": "Después de comer",
+  "careVitalContextRandom": "En otro momento",
+  "careVitalImplausible": "Ese valor no parece una medición real. Revísalo.",
+  "careVitalSaved": "Medición guardada",
+  "careVitalDeleted": "Medición borrada",
+  "careVitalFromHealthConnect": "Health Connect",
+  "vitalBandLow": "Por debajo de lo habitual",
+  "vitalBandNormal": "En el rango habitual",
+  "vitalBandElevated": "Algo por encima",
+  "vitalBandHigh": "Por encima: coméntalo en tu próxima consulta",
+  "vitalBandConsultSoon": "Conviene consultar pronto",
+  "careVitalsDisclaimer": "Rangos orientativos para adultos. Tu médico define los tuyos.",
+  "careVitalsHistory": "Historial",
+  "careVitalsScienceTitle": "Cómo leer tus signos vitales",
+  "careVitalsScienceBadge": "Referencia",
+  "careVitalsScienceQuick": "Una sola medición dice poco: lo útil es la tendencia, medida siempre en condiciones parecidas.",
+  "careVitalsScienceHow": "Tensión arterial (AHA 2017): normal por debajo de 120/80; algo por encima entre 120 y 129 con la baja por debajo de 80; alta desde 130 o desde 80. Mídela sentado, tras cinco minutos de reposo, con el brazo apoyado a la altura del corazón.\nGlucosa (ADA): en ayunas, normal de 70 a 99 mg/dL; de 100 a 125, por encima; desde 126, alta. Dos horas después de comer, normal por debajo de 140.\nOxígeno: normal desde 95 %; por debajo de 92 % conviene consultar.\nTemperatura: normal de 35,5 a 37,2 °C; febrícula de 37,3 a 37,9; fiebre desde 38.",
+  "careVitalsScienceAdvice": "Si una lectura sale muy alta o muy baja y te encuentras mal (dolor en el pecho, falta de aire, confusión, desmayo), busca atención urgente: línea 123. Lleva el informe PDF a tu consulta para que tu médico vea la tendencia.",
+  "careVitalsScienceRefs": "Whelton PK et al. (2018). 2017 ACC/AHA Guideline for High Blood Pressure in Adults. Hypertension.\nAmerican Diabetes Association (2024). Standards of Care in Diabetes.\nOMS (2011). Pulse Oximetry Training Manual.",
+  "careSubstancesTitle": "Alcohol y tabaco",
+  "careSubstancesHint": "Sin juicios: solo para que veas cómo va tu semana.",
+  "substanceBeer": "Cerveza",
+  "substanceWine": "Vino",
+  "substanceSpirit": "Trago",
+  "substanceCocktail": "Cóctel",
+  "substanceCigarette": "Cigarrillo",
+  "substanceVape": "Vapeo",
+  "careSubstanceLogged": "{item} registrado",
+  "@careSubstanceLogged": {
+    "placeholders": {
+      "item": {
+        "type": "String"
+      }
+    }
+  },
+  "careSubstanceDeleted": "Registro borrado",
+  "careAlcoholWeek": "Alcohol: {drinks} bebidas estándar en 7 días",
+  "@careAlcoholWeek": {
+    "placeholders": {
+      "drinks": {
+        "type": "String"
+      }
+    }
+  },
+  "careTobaccoWeek": "Tabaco: {count} en 7 días",
+  "@careTobaccoWeek": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "careTrendLower": "{percent} % menos que la semana anterior. ¡Bien!",
+  "@careTrendLower": {
+    "placeholders": {
+      "percent": {
+        "type": "String"
+      }
+    }
+  },
+  "careSubstancesToday": "Hoy",
+  "careAlcoholKcalNote": "Las bebidas suman sus calorías en Comida.",
+  "careAlcoholScienceTitle": "La bebida estándar",
+  "careAlcoholScienceBadge": "OMS",
+  "careAlcoholScienceQuick": "Una bebida estándar tiene 10 g de alcohol puro: más o menos una cerveza de 330 ml, una copa de vino de 100 ml o un trago de 30 ml de aguardiente.",
+  "careAlcoholScienceHow": "El alcohol aporta 7 kcal por gramo, empeora el sueño profundo aunque ayude a dormirse, sube la tensión arterial y, a largo plazo, aumenta el riesgo de varios cánceres. No hay una cantidad totalmente segura: menos siempre es mejor.",
+  "careAlcoholScienceAdvice": "Si bebes, deja al menos dos días sin alcohol a la semana y no pases de dos bebidas en un día. Si quieres dejar de fumar o de vapear, tu EPS puede acompañarte; reducir ya cuenta.",
+  "careAlcoholScienceRefs": "OMS (2023). No level of alcohol consumption is safe for our health.\nEbrahim IO et al. (2013). Alcohol and sleep I: effects on normal sleep. Alcoholism: Clinical and Experimental Research.\nOMS (2024). Directrices sobre el abandono del tabaco.",
+  "wellbeingTitle": "¿Cómo has estado estas dos semanas?",
+  "wellbeingOptional": "Índice de bienestar OMS-5 · un minuto, opcional",
+  "wellbeingAnswer": "Responder",
+  "wellbeingQ1": "Me he sentido alegre y de buen ánimo",
+  "wellbeingQ2": "Me he sentido con calma y relajación",
+  "wellbeingQ3": "Me he sentido activo/a y con energía",
+  "wellbeingQ4": "Me he despertado con la sensación de haber descansado",
+  "wellbeingQ5": "Mi día a día ha estado lleno de cosas que me interesan",
+  "wellbeingA0": "Nunca",
+  "wellbeingA1": "A veces",
+  "wellbeingA2": "Menos de la mitad del tiempo",
+  "wellbeingA3": "Más de la mitad del tiempo",
+  "wellbeingA4": "Casi siempre",
+  "wellbeingA5": "Siempre",
+  "wellbeingResult": "Tu bienestar: {score} de 100",
+  "@wellbeingResult": {
+    "placeholders": {
+      "score": {
+        "type": "String"
+      }
+    }
+  },
+  "wellbeingBandFlourishing": "Muy bien: sigue así.",
+  "wellbeingBandGood": "Bien. Tienes una buena base.",
+  "wellbeingBandLow": "Estas semanas han pesado un poco: date espacios para ti.",
+  "wellbeingBandVeryLow": "Ha sido duro. Hablarlo con alguien de confianza o con un profesional puede ayudar mucho.",
+  "wellbeingScienceTitle": "Índice de bienestar OMS-5",
+  "wellbeingScienceBadge": "OMS",
+  "wellbeingScienceQuick": "Cinco frases sobre las últimas dos semanas. Mide bienestar, no enfermedad: es una de las escalas más usadas del mundo y es de uso libre.",
+  "wellbeingScienceHow": "Cada respuesta vale de 0 a 5; la suma por 4 da una puntuación de 0 a 100. Un cambio de 10 puntos o más es un cambio real. Por debajo de 50 suele valer la pena cuidarse un poco más; por debajo de 29 se recomienda hablarlo con un profesional.",
+  "wellbeingScienceAdvice": "Respóndelo cada dos semanas en la revisión del domingo. Si alguna vez piensas en hacerte daño, llama ya: Línea 192, opción 4.",
+  "wellbeingScienceRefs": "Topp CW et al. (2015). The WHO-5 Well-Being Index: a systematic review of the literature. Psychotherapy and Psychosomatics.\nOMS, Oficina Regional para Europa (1998). Wellbeing measures in primary health care.",
+  "wellbeingHistory": "Bienestar OMS-5: {score} de 100",
+  "@wellbeingHistory": {
+    "placeholders": {
+      "score": {
+        "type": "String"
+      }
+    }
+  },
+  "supportTitle": "Si necesitas hablar",
+  "supportBody": "No tienes que pasarlo en soledad. Estas líneas atienden en Colombia, gratis y de forma confidencial.",
+  "supportLine192": "Línea 192, opción 4",
+  "supportLine192Hint": "Salud mental · Ministerio de Salud, todo el país",
+  "supportLine106": "Línea 106",
+  "supportLine106Hint": "Escucha y apoyo emocional · Bogotá",
+  "supportLine123": "Línea 123",
+  "supportLine123Hint": "Emergencias",
+  "supportCall": "Llamar",
+  "supportNote": "Al pulsar se abre el teléfono con el número escrito: tú decides si llamas.",
+  "settingsMyDevicesTitle": "Tus equipos",
+  "settingsMyDevicesSubtitle": "Lo que no tienes no aparece en la app.",
+  "devicesEink": "Pantalla de papel",
+  "devicesEinkHint": "NXTPAPER o tinta electrónica: muestra los modos de papel, sin estelas ni animaciones.",
+  "devicesScale": "Báscula Xiaomi Mi Scale 2",
+  "devicesScaleHint": "Pesaje por Bluetooth con 13 métricas de composición.",
+  "devicesNoScaleHint": "Sin báscula, Cuerpo usa tu peso a mano, el IMC y la cinta métrica.",
+  "devicesVitals": "Aparatos de signos vitales",
+  "devicesVitalsHint": "Marca los que tienes: aparecen en Cuidado y se leen de Health Connect si los conectas.",
+  "devicesBloodPressure": "Tensiómetro",
+  "devicesGlucose": "Glucómetro",
+  "devicesOxygen": "Oxímetro",
+  "devicesTemperature": "Termómetro",
+  "settingsCareModules": "Apartados de Cuidado",
+  "settingsCareModulesHint": "Elige qué quieres ver en la pestaña Cuidado.",
+  "moduleTreatments": "Medicamentos y suplementos",
+  "modulePelvicFloor": "Suelo pélvico",
+  "moduleActiveBreaks": "Pausas activas y descanso visual",
+  "moduleSymptoms": "Síntomas",
+  "moduleCheckups": "Chequeos preventivos",
+  "moduleHabits": "Mis hábitos",
+  "moduleSubstances": "Alcohol y tabaco",
+  "settingsDiscreet": "Avisos discretos",
+  "settingsDiscreetHint": "Los avisos de tomas no muestran el nombre del medicamento.",
+  "settingsBedtime": "Tu hora de dormir",
+  "settingsBedtimeHint": "Para la hora límite de la cafeína y el aviso de desconectar.",
+  "settingsReminderWindDown": "Desconectar antes de dormir",
+  "settingsReminderPelvicFloor": "Suelo pélvico (aviso discreto)",
+  "settingsReminderEyeRest": "Descanso visual cada hora, hasta las 18:30",
+  "onbPaperQuestion": "¿Tu pantalla es de papel?",
+  "onbPaperQuestionBody": "Teléfonos NXTPAPER o con tinta electrónica. Si es así, verás los modos de papel.",
+  "onbYes": "Sí",
+  "onbNo": "No",
+  "onbDevicesTitle": "Tus equipos",
+  "onbDevicesBody": "Nada es obligatorio: la app funciona igual sin aparatos. Puedes cambiarlo cuando quieras en Ajustes.",
+  "cuerpoManualTitle": "Tu peso",
+  "cuerpoManualHint": "Pésate en tu báscula de siempre y apúntalo aquí.",
+  "cuerpoManualLog": "Registrar peso",
+  "cuerpoCompositionSubtitleNoScale": "Lo que se calcula con tu peso, tu estatura y la cinta métrica.",
+  "cuerpoCycleWaterNote": "Fase {phase}: es normal retener entre 0,5 y 2 kg de agua estos días. Mira la tendencia, no el día.",
+  "@cuerpoCycleWaterNote": {
+    "placeholders": {
+      "phase": {
+        "type": "String"
+      }
+    }
+  },
+  "hoyWidgetCare": "Cuidado de hoy",
+  "todayCareDosesPending": "{count} tomas pendientes",
+  "@todayCareDosesPending": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "todayCareOneDosePending": "1 toma pendiente",
+  "todayCareHabits": "Hábitos {done}/{total}",
+  "@todayCareHabits": {
+    "placeholders": {
+      "done": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "todayCareEmpty": "Medicamentos, hábitos y más, en Cuidado.",
+  "todayCareAllDone": "Todo listo por hoy",
+  "todayWakeTime": "Me desperté a las",
+  "todayWakeTimeUnset": "Elegir hora",
+  "sleepRegularityTitle": "Regularidad del horario",
+  "sleepRegularityVeryRegular": "Muy regular: tu horario varía unos {minutes} min.",
+  "@sleepRegularityVeryRegular": {
+    "placeholders": {
+      "minutes": {
+        "type": "String"
+      }
+    }
+  },
+  "sleepRegularityRegular": "Regular: tu horario varía unos {minutes} min.",
+  "@sleepRegularityRegular": {
+    "placeholders": {
+      "minutes": {
+        "type": "String"
+      }
+    }
+  },
+  "sleepRegularityVariable": "Variable: tu horario cambia más de una hora entre días.",
+  "sleepRegularityNeedMore": "Apunta tu hora de despertar unos días para ver tu regularidad.",
+  "sleepRegularityScienceTitle": "Regularidad del sueño",
+  "sleepRegularityScienceBadge": "Cronobiología",
+  "sleepRegularityScienceQuick": "Acostarse y despertarse a horas parecidas importa casi tanto como dormir lo suficiente: un horario estable se asocia a mejor ánimo, metabolismo y rendimiento.",
+  "sleepRegularityScienceHow": "Calculamos el punto medio de cada noche (entre dormirte y despertarte) y cuánto se mueve en las dos últimas semanas. Menos de 30 minutos es muy regular; más de una hora, variable. Los fines de semana suelen ser lo que más mueve el horario.",
+  "sleepRegularityScienceAdvice": "Intenta despertarte a la misma hora todos los días, también los fines de semana (±30 min), y busca luz natural por la mañana.",
+  "sleepRegularityScienceRefs": "Phillips AJK et al. (2017). Irregular sleep/wake patterns are associated with poorer academic performance. Scientific Reports.\nWindred DP et al. (2024). Sleep regularity is a stronger predictor of mortality risk than sleep duration. Sleep.",
+  "settingsThemesCountColor": "{count} temas de color",
+  "@settingsThemesCountColor": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "cyclePhaseMenstrual": "menstrual",
+  "cyclePhaseLuteal": "lútea",
+  "careVitalSystolicHint": "La alta",
+  "careVitalDiastolicHint": "La baja",
+  "comerMlPGCG": "{log} ml  •  P {log2}g · C {log3}g · G {log4}g",
+  "@comerMlPGCG": {
+    "placeholders": {
+      "log": {
+        "type": "String"
+      },
+      "log2": {
+        "type": "String"
+      },
+      "log3": {
+        "type": "String"
+      },
+      "log4": {
+        "type": "String"
+      }
+    }
+  },
+  "foodMl10": "{grams} ml",
+  "@foodMl10": {
+    "placeholders": {
+      "grams": {
+        "type": "String"
+      }
+    }
+  }
 }

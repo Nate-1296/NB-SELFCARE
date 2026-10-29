@@ -31,7 +31,7 @@ lib/
 │   └── widgets/                   # Barra inferior y barra de ayuno persistente
 ├── core/
 │   ├── clock/                     # Clock inyectable (única fuente de la hora)
-│   ├── database/                  # tables.dart, app_database.dart (v6), daos/, seeder/
+│   ├── database/                  # tables.dart, app_database.dart (v7), daos/, seeder/
 │   ├── domain/                    # Enums y reglas compartidas (fases del ayuno, rachas, energía)
 │   ├── hardware/                  # BodyScaleDriver + driver de la Xiaomi Mi Scale 2
 │   ├── l10n/                      # ARB en español y código generado
@@ -41,6 +41,7 @@ lib/
 │   ├── today/                     # Inicio: disposición, tarjetas, diario rápido, domingo
 │   ├── nutrition_hydration/       # Comida y agua
 │   ├── body_metrics/              # Báscula, peso, cinta, entrenamientos, metas, ciclo
+│   ├── care/                      # Cuidado: tratamientos, hábitos, suelo pélvico, pausas, signos vitales…
 │   ├── fasting/                   # Ayuno
 │   ├── journal/                   # Diario, cafeína, digestión
 │   ├── pet_gamification/          # Nibi, monedas, tienda, respiración
@@ -54,7 +55,7 @@ lib/
 
 ## 3. Navegación
 
-Cinco pestañas en un `StatefulShellRoute` (cada una conserva su estado y sus tickers se pausan cuando no está visible): `/hoy`, `/comer`, `/cuerpo`, `/nibi`, `/perfil`. Fuera del armazón: `/ayuno`, `/protocolo`, `/ajustes`, `/privacidad` (exigida por Health Connect) y `/onboarding`. Sin perfil, el router redirige a la bienvenida.
+Seis pestañas en un `StatefulShellRoute` (cada una conserva su estado y sus tickers se pausan cuando no está visible): `/hoy`, `/comer`, `/cuerpo`, `/cuidado`, `/nibi`, `/perfil` (ADR-15). Fuera del armazón: `/ayuno`, `/protocolo`, `/ajustes`, `/privacidad` (exigida por Health Connect) y `/onboarding`. Sin perfil, el router redirige a la bienvenida.
 
 ## 4. Flujo de datos
 
@@ -73,9 +74,9 @@ Tres canales, todos con `callNative` (nunca lanza; un tipo inesperado o un méto
 
 | Canal | Kotlin | Uso |
 | :-- | :-- | :-- |
-| `com.nb.selfcare/health_connect` | `HealthConnectBridge` | Permisos, lectura de pasos, sueño (fases), FC en reposo; escritura de peso, grasa e hidratación. |
-| `com.nb.selfcare/notifications` | `FastingNotifier`, `ReminderScheduler`, `MovementNudgeWorker` | Cronómetro del ayuno en la pantalla de bloqueo, recordatorios con `AlarmManager` (se reprograman al reiniciar), pausas activas. |
-| `com.nb.selfcare/system` | `MainActivity` | Permisos en tiempo de ejecución, ajustes de la app, dictado en el dispositivo disponible, acción de arranque. |
+| `com.nb.selfcare/health_connect` | `HealthConnectBridge` | Permisos, lectura de pasos, sueño (fases y hora de despertar), FC en reposo y signos vitales declarados; escritura de peso, grasa, hidratación y sesiones de respiración. |
+| `com.nb.selfcare/notifications` | `FastingNotifier`, `ReminderScheduler`, `ReminderActionReceiver`, `MovementNudgeWorker` | Cronómetro del ayuno en la pantalla de bloqueo, recordatorios con `AlarmManager` (se reprograman al reiniciar) con botón "Hecho" para las tomas, pausas activas. |
+| `com.nb.selfcare/system` | `MainActivity` | Permisos en tiempo de ejecución, ajustes de la app, dictado en el dispositivo disponible, acción de arranque, modelo del teléfono, marcador y vibración (`DeviceGateway`). |
 
 ## 6. Dependencias
 

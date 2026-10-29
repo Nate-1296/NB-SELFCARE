@@ -5,8 +5,14 @@ import androidx.activity.result.ActivityResultLauncher
 import androidx.health.connect.client.HealthConnectClient
 import androidx.health.connect.client.HealthConnectFeatures
 import androidx.health.connect.client.permission.HealthPermission
+import androidx.health.connect.client.feature.ExperimentalMindfulnessSessionApi
+import androidx.health.connect.client.records.BloodGlucoseRecord
+import androidx.health.connect.client.records.BloodPressureRecord
 import androidx.health.connect.client.records.BodyFatRecord
+import androidx.health.connect.client.records.BodyTemperatureRecord
 import androidx.health.connect.client.records.HydrationRecord
+import androidx.health.connect.client.records.MindfulnessSessionRecord
+import androidx.health.connect.client.records.OxygenSaturationRecord
 import androidx.health.connect.client.records.RestingHeartRateRecord
 import androidx.health.connect.client.records.SleepSessionRecord
 import androidx.health.connect.client.records.StepsRecord
@@ -53,6 +59,17 @@ class HealthConnectBridge(private val context: Context) {
 
         val ALL_PERMISSIONS: Set<String> = READ_PERMISSIONS + WRITE_PERMISSIONS
 
+        /** Lectura de signos vitales: solo se pide la de los aparatos que la persona declara. */
+        val VITAL_PERMISSIONS: Map<String, String> = mapOf(
+            "blood_pressure" to HealthPermission.getReadPermission(BloodPressureRecord::class),
+            "glucose" to HealthPermission.getReadPermission(BloodGlucoseRecord::class),
+            "oxygen" to HealthPermission.getReadPermission(OxygenSaturationRecord::class),
+            "temperature" to HealthPermission.getReadPermission(BodyTemperatureRecord::class),
+        )
+
+        /** Escritura de sesiones de respiración (Android 16 / proveedor actualizado). */
+        const val MINDFULNESS_WRITE_PERMISSION = "android.permission.health.WRITE_MINDFULNESS"
+
         /** Ventana de búsqueda del sueño de una fecha: sesiones que terminan ese día. */
         private val SLEEP_LOOKBACK: Duration = Duration.ofHours(18)
     }
@@ -76,14 +93,118 @@ class HealthConnectBridge(private val context: Context) {
 
     suspend fun hasAllPermissions(): Boolean = grantedPermissions().containsAll(ALL_PERMISSIONS)
 
-    /** Incluye la lectura en segundo plano solo si el proveedor la soporta. */
-    suspend fun requestPermissions(launcher: ActivityResultLauncher<Set<String>>) {
-        val permissions = if (supportsBackgroundReads()) {
-            ALL_PERMISSIONS + HealthPermission.PERMISSION_READ_HEALTH_DATA_IN_BACKGROUND
-        } else {
-            ALL_PERMISSIONS
+    /**
+     * Incluye la lectura en segundo plano y las sesiones de respiración solo si
+     * el proveedor las soporta. Devuelve el conjunto que se considera "concedido".
+     */
+    suspend fun requestPermissions(launcher: ActivityResultLauncher<Set<String>>): Set<String> {
+        val permissions = buildSet {
+            addAll(ALL_PERMISSIONS)
+            if (supportsBackgroundReads()) add(HealthPermission.PERMISSION_READ_HEALTH_DATA_IN_BACKGROUND)
+            if (supportsMindfulness()) add(MINDFULNESS_WRITE_PERMISSION)
         }
         launcher.launch(permissions)
+        return ALL_PERMISSIONS
+    }
+
+    /** Pide la lectura de los signos vitales indicados ("blood_pressure", "glucose"…). */
+    fun requestVitalPermissions(launcher: ActivityResultLauncher<Set<String>>, kinds: List<String>): Set<String> {
+        val permissions = kinds.mapNotNull { VITAL_PERMISSIONS[it] }.toSet()
+        if (permissions.isNotEmpty()) launcher.launch(permissions)
+        return permissions
+    }
+
+    @OptIn(ExperimentalMindfulnessSessionApi::class)
+    suspend fun supportsMindfulness(): Boolean {
+        val client = clientOrNull() ?: return false
+        return client.features.getFeatureStatus(
+            HealthConnectFeatures.FEATURE_MINDFULNESS_SESSION,
+        ) == HealthConnectFeatures.FEATURE_STATUS_AVAILABLE
+    }
+
+    /**
+     * Lecturas de signos vitales desde [sinceMillis] para los tipos concedidos.
+     * Cada lectura lleva su id de Health Connect para no duplicarla.
+     */
+    suspend fun readVitals(kinds: List<String>, sinceMillis: Long): List<Map<String, Any?>> {
+        val client = clientOrNull() ?: return emptyList()
+        val granted = client.permissionController.getGrantedPermissions()
+        val range = TimeRangeFilter.between(Instant.ofEpochMilli(sinceMillis), Instant.now())
+        val readings = mutableListOf<Map<String, Any?>>()
+        fun allowed(kind: String) = kind in kinds && VITAL_PERMISSIONS[kind] in granted
+
+        if (allowed("blood_pressure")) {
+            client.readRecords(ReadRecordsRequest(BloodPressureRecord::class, range)).records.forEach {
+                readings += mapOf(
+                    "id" to it.metadata.id,
+                    "kind" to "blood_pressure",
+                    "time" to it.time.toEpochMilli(),
+                    "primary" to it.systolic.inMillimetersOfMercury,
+                    "secondary" to it.diastolic.inMillimetersOfMercury,
+                )
+            }
+        }
+        if (allowed("glucose")) {
+            client.readRecords(ReadRecordsRequest(BloodGlucoseRecord::class, range)).records.forEach {
+                val context = when (it.relationToMeal) {
+                    BloodGlucoseRecord.RELATION_TO_MEAL_FASTING -> "fasting"
+                    BloodGlucoseRecord.RELATION_TO_MEAL_AFTER_MEAL -> "after_meal"
+                    else -> "random"
+                }
+                readings += mapOf(
+                    "id" to it.metadata.id,
+                    "kind" to "glucose",
+                    "time" to it.time.toEpochMilli(),
+                    "primary" to it.level.inMilligramsPerDeciliter,
+                    "context" to context,
+                )
+            }
+        }
+        if (allowed("oxygen")) {
+            client.readRecords(ReadRecordsRequest(OxygenSaturationRecord::class, range)).records.forEach {
+                readings += mapOf(
+                    "id" to it.metadata.id,
+                    "kind" to "oxygen",
+                    "time" to it.time.toEpochMilli(),
+                    "primary" to it.percentage.value,
+                )
+            }
+        }
+        if (allowed("temperature")) {
+            client.readRecords(ReadRecordsRequest(BodyTemperatureRecord::class, range)).records.forEach {
+                readings += mapOf(
+                    "id" to it.metadata.id,
+                    "kind" to "temperature",
+                    "time" to it.time.toEpochMilli(),
+                    "primary" to it.temperature.inCelsius,
+                )
+            }
+        }
+        return readings
+    }
+
+    /** Guarda una sesión de respiración guiada como sesión de mindfulness. */
+    @OptIn(ExperimentalMindfulnessSessionApi::class)
+    suspend fun writeMindfulness(startMillis: Long, endMillis: Long, title: String): Boolean {
+        val client = clientOrNull() ?: return false
+        if (!supportsMindfulness()) return false
+        if (MINDFULNESS_WRITE_PERMISSION !in client.permissionController.getGrantedPermissions()) return false
+        val start = Instant.ofEpochMilli(startMillis)
+        val end = Instant.ofEpochMilli(endMillis)
+        client.insertRecords(
+            listOf(
+                MindfulnessSessionRecord(
+                    startTime = start,
+                    startZoneOffset = offsetAt(start),
+                    endTime = end,
+                    endZoneOffset = offsetAt(end),
+                    metadata = Metadata.manualEntry(),
+                    mindfulnessSessionType = MindfulnessSessionRecord.MINDFULNESS_SESSION_TYPE_BREATHING,
+                    title = title,
+                ),
+            ),
+        )
+        return true
     }
 
     suspend fun hasBackgroundReadPermission(): Boolean =
@@ -121,6 +242,7 @@ class HealthConnectBridge(private val context: Context) {
         }
 
         var sleepMinutes: Long? = null
+        var wakeMinutes: Int? = null
         var deepMinutes = 0L
         var remMinutes = 0L
         if (HealthPermission.getReadPermission(SleepSessionRecord::class) in granted) {
@@ -132,6 +254,8 @@ class HealthConnectBridge(private val context: Context) {
             ).records.filter { !it.endTime.isBefore(start) && it.endTime.isBefore(end) }
             if (sessions.isNotEmpty()) {
                 sleepMinutes = sessions.sumOf { Duration.between(it.startTime, it.endTime).toMinutes() }
+                val wake = sessions.maxOf { it.endTime }.atZone(zone).toLocalTime()
+                wakeMinutes = wake.hour * 60 + wake.minute
                 for (stage in sessions.flatMap { it.stages }) {
                     val minutes = Duration.between(stage.startTime, stage.endTime).toMinutes()
                     when (stage.stage) {
@@ -158,6 +282,7 @@ class HealthConnectBridge(private val context: Context) {
             "deepMinutes" to deepMinutes,
             "remMinutes" to remMinutes,
             "restingHeartRate" to restingHeartRate,
+            "wakeMinutes" to wakeMinutes,
         )
     }
 

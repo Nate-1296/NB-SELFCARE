@@ -72,6 +72,13 @@ class NbSelfcareApp extends ConsumerWidget {
           localizationsDelegates: AppLocalizations.localizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
           routerConfig: router,
+          // Horas siempre en 24 h, como en el resto de la app ("22:30"). Con el
+          // formato de 12 h del sistema, el selector en modo texto rechazaba
+          // las horas de la tarde porque no mostraba AM/PM.
+          builder: (BuildContext context, Widget? child) => MediaQuery(
+            data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: true),
+            child: child ?? const SizedBox.shrink(),
+          ),
         );
       },
     );

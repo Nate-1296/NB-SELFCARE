@@ -122,22 +122,27 @@ class _FoodSearchModalState extends ConsumerState<FoodSearchModal> {
         setState(() {
           _results = combined;
         });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              context.l10n.foodSeEncontraronEImportaronProductos(offItems.length.toString()),
+        ScaffoldMessenger.of(context)
+          ..hideCurrentSnackBar()
+          ..showSnackBar(
+            SnackBar(
+              content: Text(
+                context.l10n.foodSeEncontraronEImportaronProductos(offItems.length.toString()),
+              ),
             ),
-          ),
-        );
+          );
       } else {
         ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(context.l10n.foodNoSeHallaronResultadosEn)));
+          ..hideCurrentSnackBar()
+          ..showSnackBar(SnackBar(content: Text(context.l10n.foodNoSeHallaronResultadosEn)));
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(context.l10n.foodErrorAlConsultarOpenFood((e).toString()))),
-        );
+        ScaffoldMessenger.of(context)
+          ..hideCurrentSnackBar()
+          ..showSnackBar(
+            SnackBar(content: Text(context.l10n.foodErrorAlConsultarOpenFood((e).toString()))),
+          );
       }
     } finally {
       if (mounted) {

@@ -17,6 +17,21 @@ sealed class RewardAction {
   /// Una sesión de respiración completa con Nibi (la primera del día).
   static const RewardAction mindfulBreath = _SimpleReward('mindful_breath', 10);
 
+  /// Primera sesión del día de suelo pélvico.
+  static const RewardAction pelvicFloor = _SimpleReward('pelvic_floor', 10);
+
+  /// Primera pausa activa o descanso visual del día.
+  static const RewardAction activeBreak = _SimpleReward('active_break', 10);
+
+  /// Todos los hábitos propios del día marcados.
+  static const RewardAction habitsDone = _SimpleReward('habits_done', 10);
+
+  /// Un chequeo preventivo hecho.
+  static const RewardAction checkupDone = _SimpleReward('checkup_done', 20);
+
+  // Los medicamentos no dan monedas a propósito: un tratamiento no es un juego
+  // y una toma olvidada nunca debe sentirse como un fallo.
+
   /// Desayuno, almuerzo y cena dan monedas (máx. 30/día). Los snacks no, para
   /// no premiar picar entre horas (docs/08 §6).
   static RewardAction? mealLogged(MealType meal) =>

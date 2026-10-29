@@ -31,7 +31,7 @@ Unas 510 pruebas que se ejecutan con `flutter test` (≈ 6 min) y deben pasar ta
 | Carpeta | Qué cubre |
 | :-- | :-- |
 | `biometrics/`, `domain/`, `chronobiology/`, `protocol/` | Fórmulas (Katch-McArdle, US Navy, METs, EMA, falsa subida, TDEE adaptativo con su límite semanal), políticas de recompensa y racha, fases del ayuno, cafeína, protocolo semanal. |
-| `database/`, `drift/` | DAOs, búsqueda FTS5 sin tildes, unicidad del libro de monedas, copias de seguridad de ida y vuelta con las 26 tablas, migraciones de cada versión a todas las posteriores. |
+| `database/`, `drift/` | DAOs, búsqueda FTS5 sin tildes, unicidad del libro de monedas, copias de seguridad de ida y vuelta con las 35 tablas, migraciones de cada versión a todas las posteriores. |
 | `application/`, `health/`, `nutrition/` | Casos de uso: pesaje en cascada, comidas, agua, ayuno, informe, suplementos, sincronización con Health Connect. |
 | `features/`, `pet/`, `accessibility/` | Pantallas: Inicio, Comida, Cuerpo, Nibi (coreografías, reacciones, respiración, tienda y armario), Perfil, bienvenida; guías de accesibilidad (tamaño de toque, etiquetas, contraste). |
 | `design_system/` | Contraste AA de los 24 temas, movimiento desactivado en papel. |

@@ -55,7 +55,8 @@ class FemaleCycleCard extends ConsumerWidget {
       await ref.read(cycleServiceProvider).logPeriodStart(picked);
       if (context.mounted) {
         ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(context.l10n.perfilInicioDeCicloRegistradoCon)));
+          ..hideCurrentSnackBar()
+          ..showSnackBar(SnackBar(content: Text(context.l10n.perfilInicioDeCicloRegistradoCon)));
       }
     }
   }

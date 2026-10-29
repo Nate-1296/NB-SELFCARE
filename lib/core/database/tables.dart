@@ -26,7 +26,8 @@ class UserProfiles extends Table {
 
   // Hardware & Preferencias de UI (TCL 50 Pro NXTPAPER + Mi Scale 2 + SLM Local)
   TextColumn get scaleMacAddress => text().nullable()();
-  TextColumn get themeMode => text().withDefault(const Constant('material_you'))(); // 'material_you' | 'nxtpaper_eink'
+  TextColumn get themeMode =>
+      text().withDefault(const Constant('material_you'))(); // 'material_you' | 'nxtpaper_eink'
   TextColumn get localAiModelPath => text().nullable()();
   BoolColumn get isLocalAiEnabled => boolean().withDefault(const Constant(false))();
 
@@ -42,9 +43,12 @@ class UserProfiles extends Table {
       text().map(dietArchetypeConverter).withDefault(const Constant('flexible'))();
   TextColumn get activeDietPhase =>
       text().map(dietPhaseConverter).withDefault(const Constant('deficit'))();
-  TextColumn get calorieCyclingScheduleJson => text().withDefault(const Constant('{}'))(); // JSON con metas por día de la semana
-  RealColumn get caffeineBedtimeCutoffHours => real().withDefault(const Constant(8.0))(); // Horas antes de dormir para corte de cafeína
-  DateTimeColumn get activeDietPhaseStartedAt => dateTime().nullable()(); // Inicio de la fase vigente (reverse diet, diet break)
+  TextColumn get calorieCyclingScheduleJson =>
+      text().withDefault(const Constant('{}'))(); // JSON con metas por día de la semana
+  RealColumn get caffeineBedtimeCutoffHours =>
+      real().withDefault(const Constant(8.0))(); // Horas antes de dormir para corte de cafeína
+  DateTimeColumn get activeDietPhaseStartedAt =>
+      dateTime().nullable()(); // Inicio de la fase vigente (reverse diet, diet break)
 
   // Seguridad clínica declarada en el onboarding (docs/01 §5)
   BoolColumn get hasImpedanceContraindication =>
@@ -53,6 +57,22 @@ class UserProfiles extends Table {
       boolean().withDefault(const Constant(false))(); // Oculta déficit agresivo y ayunos > 16 h
   BoolColumn get takesHypoglycemicMedication =>
       boolean().withDefault(const Constant(false))(); // Aviso antes de ayunar
+
+  // Equipos que la persona declara tener (v7): lo que no tiene, no aparece.
+  BoolColumn get hasEinkScreen => boolean().withDefault(const Constant(false))(); // Modos de papel
+  BoolColumn get hasSmartScale => boolean().withDefault(const Constant(false))(); // Báscula BLE
+  TextColumn get vitalDevicesJson => text().withDefault(
+    const Constant('[]'),
+  )(); // 'blood_pressure' | 'glucose' | 'oxygen' | 'temperature'
+
+  // Módulos de la pestaña Cuidado que se muestran (v7).
+  TextColumn get careModulesJson => text().withDefault(
+    const Constant('["treatments","pelvic_floor","active_breaks","symptoms","checkups","habits"]'),
+  )();
+  BoolColumn get discreetNotifications => boolean().withDefault(const Constant(true))();
+
+  /// Hora habitual de dormir en minutos desde medianoche (v7): corte de cafeína y "desconectar".
+  IntColumn get targetBedtimeMinutes => integer().withDefault(const Constant(23 * 60))();
 
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
 }
@@ -106,6 +126,9 @@ class DailySummaries extends Table {
   IntColumn get sleepDeepMinutes => integer().withDefault(const Constant(0))();
   IntColumn get sleepRemMinutes => integer().withDefault(const Constant(0))();
   IntColumn get restingHeartRateBpm => integer().nullable()();
+
+  /// Hora de despertar en minutos desde medianoche (v7): regularidad del sueño.
+  IntColumn get wakeTimeMinutes => integer().nullable()();
   IntColumn get waterConsumedMl => integer().withDefault(const Constant(0))();
 
   // Snapshot de metas vigentes en ese día
@@ -136,7 +159,8 @@ class FoodItems extends Table {
   TextColumn get brand => text().nullable()();
   TextColumn get source => text().map(foodSourceConverter)();
   TextColumn get nutriScore => text().nullable()(); // 'A'..'E'
-  IntColumn get novaGroup => integer().nullable()(); // 1 a 4 (Clasificación NOVA de ultraprocesados)
+  IntColumn get novaGroup =>
+      integer().nullable()(); // 1 a 4 (Clasificación NOVA de ultraprocesados)
   RealColumn get defaultServingGrams => real().withDefault(const Constant(100.0))();
   TextColumn get servingLabel => text().withDefault(const Constant('100g'))();
 
@@ -296,7 +320,8 @@ class Reminders extends Table {
   IntColumn get id => integer().autoIncrement()();
   TextColumn get reminderType => text().map(reminderTypeConverter)();
   IntColumn get timeOfDayMinutes => integer()(); // Minutos desde medianoche (ej. 480 = 08:00 AM)
-  IntColumn get daysOfWeekBitmask => integer().withDefault(const Constant(127))(); // 7 bits (L-D, 127 = todos)
+  IntColumn get daysOfWeekBitmask =>
+      integer().withDefault(const Constant(127))(); // 7 bits (L-D, 127 = todos)
   BoolColumn get isEnabled => boolean().withDefault(const Constant(true))();
   IntColumn get intervalMinutes => integer().nullable()(); // Para recordatorios de agua recurrentes
 }
@@ -318,7 +343,8 @@ class TdeeCalibrations extends Table {
 // 14. CONTROL DE SINCRONIZACIÓN HEALTH CONNECT (CHECKPOINTS)
 class HealthSyncCheckpoints extends Table {
   IntColumn get id => integer().autoIncrement()();
-  TextColumn get recordType => text().unique()(); // 'steps' | 'sleep' | 'heart_rate' | 'weight' | 'body_fat' | 'hydration'
+  TextColumn get recordType =>
+      text().unique()(); // 'steps' | 'sleep' | 'heart_rate' | 'weight' | 'body_fat' | 'hydration'
   DateTimeColumn get lastSyncTimestamp => dateTime()();
   IntColumn get lastReadCount => integer().withDefault(const Constant(0))();
   IntColumn get lastWriteCount => integer().withDefault(const Constant(0))();
@@ -362,18 +388,35 @@ class SupplementsTracker extends Table {
   TextColumn get name => text()(); // ej. 'Creatina Monohidrato', 'Magnesio', 'Vitamina D3'
   TextColumn get dosage => text()(); // ej. '5g', '400mg', '2000 UI'
   IntColumn get targetTimeOfDayMinutes => integer().nullable()(); // Minutos desde medianoche
-  BoolColumn get affectsWaterRetention => boolean().withDefault(const Constant(false))(); // ej. Creatina -> retención intramuscular
+  BoolColumn get affectsWaterRetention =>
+      boolean().withDefault(const Constant(false))(); // ej. Creatina -> retención intramuscular
   BoolColumn get isEnabled => boolean().withDefault(const Constant(true))();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+
+  // Tratamientos (v7): medicamentos y suplementos con horario, reserva y avisos.
+  TextColumn get kind =>
+      text().withDefault(const Constant('supplement'))(); // 'supplement' | 'medication'
+  TextColumn get scheduleJson => text().withDefault(const Constant('[]'))(); // Minutos de cada toma
+  IntColumn get daysOfWeekBitmask => integer().withDefault(const Constant(127))();
+  RealColumn get stockUnits => real().nullable()(); // Unidades que quedan; null = sin seguimiento
+  RealColumn get unitsPerDose => real().withDefault(const Constant(1.0))();
+  BoolColumn get remindersEnabled => boolean().withDefault(const Constant(false))();
+  BoolColumn get lowersGlucose =>
+      boolean().withDefault(const Constant(false))(); // Aviso antes de ayunar
+  TextColumn get notes => text().nullable()();
 }
 
 @TableIndex(name: 'idx_supplement_logs_date', columns: {#dateKey})
 class SupplementLogs extends Table {
   IntColumn get id => integer().autoIncrement()();
   TextColumn get dateKey => text()(); // 'YYYY-MM-DD'
-  IntColumn get supplementId => integer().references(SupplementsTracker, #id, onDelete: KeyAction.cascade)();
+  IntColumn get supplementId =>
+      integer().references(SupplementsTracker, #id, onDelete: KeyAction.cascade)();
   DateTimeColumn get takenAt => dateTime().withDefault(currentDateAndTime)();
   BoolColumn get wasTaken => boolean().withDefault(const Constant(true))();
+
+  /// Toma del horario a la que corresponde (minutos); null = toma única del día (v7).
+  IntColumn get slotMinutes => integer().nullable()();
 }
 
 // 17. SALUD HORMONAL Y CICLO MENSTRUAL FEMENINO
@@ -381,9 +424,11 @@ class FemaleCycleLogs extends Table {
   IntColumn get id => integer().autoIncrement()();
   DateTimeColumn get cycleStartDate => dateTime()(); // Fecha de inicio del sangrado
   DateTimeColumn get cycleEndDate => dateTime().nullable()();
-  IntColumn get cycleLengthDays => integer().withDefault(const Constant(28))(); // Duración promedio del ciclo
+  IntColumn get cycleLengthDays =>
+      integer().withDefault(const Constant(28))(); // Duración promedio del ciclo
   TextColumn get flowIntensity => text().nullable()(); // 'light', 'medium', 'heavy'
-  TextColumn get symptomsJson => text().withDefault(const Constant('[]'))(); // 'cramps', 'bloating', 'headache', 'mood_swings'
+  TextColumn get symptomsJson =>
+      text().withDefault(const Constant('[]'))(); // 'cramps', 'bloating', 'headache', 'mood_swings'
   TextColumn get notes => text().nullable()();
 }
 
@@ -394,8 +439,10 @@ class DigestiveLogs extends Table {
   TextColumn get dateKey => text()(); // 'YYYY-MM-DD'
   DateTimeColumn get loggedAt => dateTime().withDefault(currentDateAndTime)();
   IntColumn get bristolType => integer()(); // 1 a 7 (Escala de Heces de Bristol)
-  IntColumn get discomfortLevel => integer().withDefault(const Constant(1))(); // 1 (ninguno) a 5 (severo)
-  TextColumn get symptomsJson => text().withDefault(const Constant('[]'))(); // 'bloating', 'gas', 'acid_reflux', 'cramps'
+  IntColumn get discomfortLevel =>
+      integer().withDefault(const Constant(1))(); // 1 (ninguno) a 5 (severo)
+  TextColumn get symptomsJson =>
+      text().withDefault(const Constant('[]'))(); // 'bloating', 'gas', 'acid_reflux', 'cramps'
   TextColumn get notes => text().nullable()();
 }
 
@@ -405,7 +452,8 @@ class CaffeineLogs extends Table {
   IntColumn get id => integer().autoIncrement()();
   TextColumn get dateKey => text()(); // 'YYYY-MM-DD'
   DateTimeColumn get loggedAt => dateTime().withDefault(currentDateAndTime)();
-  TextColumn get sourceName => text()(); // 'espresso', 'filtro', 'energy_drink', 'pre_workout', 'tea'
+  TextColumn get sourceName =>
+      text()(); // 'espresso', 'filtro', 'energy_drink', 'pre_workout', 'tea'
   RealColumn get caffeineMg => real()(); // Miligramos de cafeína
 }
 
@@ -413,8 +461,11 @@ class CaffeineLogs extends Table {
 class ProtocolPlans extends Table {
   IntColumn get id => integer().autoIncrement()();
   TextColumn get planName => text().withDefault(const Constant('Mi Protocolo Semanal'))();
-  TextColumn get fastingDaysBitmask => text().withDefault(const Constant('{"1":16,"2":16,"3":16,"4":16,"5":16,"6":0,"7":0}'))(); // Día semana -> horas ayuno
-  TextColumn get workoutSlotsJson => text().withDefault(const Constant('[]'))(); // Slots de entrenamiento planeados
+  TextColumn get fastingDaysBitmask => text().withDefault(
+    const Constant('{"1":16,"2":16,"3":16,"4":16,"5":16,"6":0,"7":0}'),
+  )(); // Día semana -> horas ayuno
+  TextColumn get workoutSlotsJson =>
+      text().withDefault(const Constant('[]'))(); // Slots de entrenamiento planeados
   TextColumn get dietArchetype => text().withDefault(const Constant('flexible'))();
   BoolColumn get isCurrentActive => boolean().withDefault(const Constant(true))();
   DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
@@ -437,4 +488,104 @@ class UiPreferences extends Table {
 
   @override
   Set<Column> get primaryKey => {prefKey};
+}
+
+// 23. SESIONES GUIADAS DE CUIDADO (v7): suelo pélvico, pausas, descanso visual y respiración
+@TableIndex(name: 'idx_care_sessions_date', columns: {#dateKey})
+class CareSessions extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  TextColumn get dateKey => text()(); // 'YYYY-MM-DD'
+  DateTimeColumn get completedAt => dateTime()();
+  TextColumn get kind => text()(); // 'pelvic_floor' | 'active_break' | 'breathing'
+  TextColumn get variant => text()(); // Nivel, rutina o patrón
+  IntColumn get durationSeconds => integer()();
+}
+
+// 24. HÁBITOS PROPIOS (v7)
+class CustomHabits extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  TextColumn get name => text().withLength(min: 1, max: 40)();
+  TextColumn get iconKey => text().withDefault(const Constant('spark'))();
+  IntColumn get daysOfWeekBitmask => integer().withDefault(const Constant(127))();
+  IntColumn get sortOrder => integer().withDefault(const Constant(0))();
+  BoolColumn get isArchived => boolean().withDefault(const Constant(false))();
+  DateTimeColumn get createdAt => dateTime()();
+}
+
+@TableIndex.sql('CREATE UNIQUE INDEX idx_habit_logs_unique ON habit_logs(habit_id, date_key)')
+class HabitLogs extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  IntColumn get habitId => integer().references(CustomHabits, #id, onDelete: KeyAction.cascade)();
+  TextColumn get dateKey => text()();
+  DateTimeColumn get loggedAt => dateTime()();
+}
+
+// 25. CHEQUEOS PREVENTIVOS (v7)
+class Checkups extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  TextColumn get catalogKey => text()(); // Clave del catálogo o 'custom'
+  TextColumn get customName => text().nullable()();
+  IntColumn get intervalMonths => integer()();
+  BoolColumn get isEnabled => boolean().withDefault(const Constant(true))();
+}
+
+class CheckupLogs extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  IntColumn get checkupId => integer().references(Checkups, #id, onDelete: KeyAction.cascade)();
+  DateTimeColumn get doneAt => dateTime()();
+  TextColumn get notes => text().nullable()();
+}
+
+// 26. SÍNTOMAS (v7)
+@TableIndex(name: 'idx_symptom_logs_date', columns: {#dateKey})
+class SymptomLogs extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  TextColumn get dateKey => text()();
+  DateTimeColumn get loggedAt => dateTime()();
+  TextColumn get symptom => text()(); // Clave del catálogo o texto propio
+  IntColumn get intensity => integer()(); // 1 (leve) a 5 (muy fuerte)
+  TextColumn get notes => text().nullable()();
+}
+
+// 27. SIGNOS VITALES (v7): manuales o leídos de Health Connect
+@TableIndex(name: 'idx_vital_readings_kind', columns: {#kind, #measuredAt})
+class VitalReadings extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  TextColumn get kind => text()(); // 'blood_pressure' | 'glucose' | 'oxygen' | 'temperature'
+  DateTimeColumn get measuredAt => dateTime()();
+  TextColumn get dateKey => text()();
+  RealColumn get primaryValue => real()(); // Sistólica, mg/dL, % o °C
+  RealColumn get secondaryValue => real().nullable()(); // Diastólica
+  TextColumn get context => text().nullable()(); // Glucosa: 'fasting' | 'after_meal' | 'random'
+  TextColumn get source =>
+      text().withDefault(const Constant('manual'))(); // 'manual' | 'health_connect'
+  TextColumn get externalId =>
+      text().nullable().unique()(); // Id de Health Connect (sin duplicados)
+}
+
+// 28. ALCOHOL Y TABACO (v7)
+@TableIndex(name: 'idx_substance_logs_date', columns: {#dateKey})
+class SubstanceLogs extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  TextColumn get dateKey => text()();
+  DateTimeColumn get loggedAt => dateTime()();
+  TextColumn get kind => text()(); // 'alcohol' | 'tobacco'
+  TextColumn get presetKey =>
+      text()(); // 'beer' | 'wine' | 'spirit' | 'cocktail' | 'cigarette' | 'vape'
+  RealColumn get standardDrinks =>
+      real().withDefault(const Constant(0.0))(); // 10 g de alcohol cada una
+  RealColumn get kcal => real().withDefault(const Constant(0.0))();
+  IntColumn get units => integer().withDefault(const Constant(1))();
+
+  /// Registro en Comida con las kcal de la bebida (balance y gasto adaptativo).
+  IntColumn get foodLogId => integer().nullable()();
+}
+
+// 29. ÍNDICE DE BIENESTAR OMS-5 (v7)
+class WellbeingChecks extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  TextColumn get dateKey => text()();
+  DateTimeColumn get createdAt => dateTime()();
+  TextColumn get answersJson => text()(); // Cinco respuestas 0..5
+  IntColumn get percentScore => integer()(); // 0..100
 }

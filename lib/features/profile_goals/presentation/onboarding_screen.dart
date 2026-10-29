@@ -7,8 +7,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../app.dart';
 import '../../../core/clock/clock.dart';
 import '../../../core/constants/app_constants.dart';
+import '../../../core/domain/care_enums.dart';
 import '../../../core/domain/enums.dart';
 import '../../../core/l10n/l10n.dart';
+import '../../../core/platform/device_gateway.dart';
 import '../../../shared/theme/sc_colors.dart';
 import '../../../shared/theme/sc_theme.dart';
 import '../../../shared/theme/sc_tokens.dart';
@@ -18,9 +20,10 @@ import '../../../shared/utils/diet_phase_policy.dart';
 import '../../../shared/utils/number_formats.dart';
 import '../../../shared/widgets/card_header.dart';
 import '../../../shared/widgets/health_card.dart';
+import '../../care/presentation/care_l10n.dart';
 import '../application/onboarding_service.dart';
 
-/// Bienvenida en cuatro pasos cortos: pantalla, sobre ti, metas y seguridad.
+/// Bienvenida en cinco pasos cortos: pantalla, sobre ti, metas, equipos y seguridad.
 class OnboardingScreen extends ConsumerStatefulWidget {
   const OnboardingScreen({super.key});
 
@@ -29,7 +32,7 @@ class OnboardingScreen extends ConsumerStatefulWidget {
 }
 
 class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
-  static const int _stepCount = 4;
+  static const int _stepCount = 5;
 
   final GlobalKey<FormState> _aboutFormKey = GlobalKey<FormState>();
   final TextEditingController _nameController = TextEditingController();
@@ -49,12 +52,28 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   bool _hasImpedanceContraindication = false;
   bool _hasEatingDisorderHistory = false;
   bool _takesHypoglycemicMedication = false;
+  bool _hasEinkScreen = false;
+  bool _hasSmartScale = false;
+  Set<VitalKind> _vitalDevices = <VitalKind>{};
   bool _isSaving = false;
 
   @override
   void initState() {
     super.initState();
     _birthDate = ref.read(clockProvider).now().subtract(const Duration(days: 365 * 25));
+    // Solo propone la respuesta (TCL NXTPAPER): la persona decide.
+    unawaited(
+      ref.read(deviceGatewayProvider).deviceModel().then((String? model) {
+        if (mounted && looksLikePaperScreen(model)) setState(() => _hasEinkScreen = true);
+      }),
+    );
+  }
+
+  void _setEink(bool value) {
+    setState(() => _hasEinkScreen = value);
+    if (!value && ref.read(themeEngineProvider) == 'nxtpaper_eink') {
+      ref.read(themeEngineProvider.notifier).setEngine('material_you');
+    }
   }
 
   @override
@@ -94,6 +113,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       hasImpedanceContraindication: _hasImpedanceContraindication,
       hasEatingDisorderHistory: _hasEatingDisorderHistory,
       takesHypoglycemicMedication: _takesHypoglycemicMedication,
+      hasEinkScreen: _hasEinkScreen,
+      hasSmartScale: _hasSmartScale,
+      vitalDevices: _vitalDevices,
     );
   }
 
@@ -127,7 +149,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     } on Exception catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(context.l10n.onbSaveError(e.toString()))));
+          ..hideCurrentSnackBar()
+          ..showSnackBar(SnackBar(content: Text(context.l10n.onbSaveError(e.toString()))));
       }
     } finally {
       if (mounted) setState(() => _isSaving = false);
@@ -194,9 +217,10 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                 ),
                 children: <Widget>[
                   switch (_step) {
-                    0 => const _WelcomeStep(),
+                    0 => _WelcomeStep(hasEinkScreen: _hasEinkScreen, onEinkChanged: _setEink),
                     1 => _aboutStep(l10n),
                     2 => _goalsStep(l10n),
+                    3 => _devicesStep(l10n),
                     _ => _safetyStep(l10n),
                   },
                 ],
@@ -419,6 +443,46 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     );
   }
 
+  Widget _devicesStep(AppLocalizations l10n) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        Text(l10n.onbDevicesTitle, style: context.text.headlineSmall),
+        const SizedBox(height: ScSpace.xs),
+        Text(l10n.onbDevicesBody, style: context.text.bodySmall),
+        const SizedBox(height: ScSpace.l),
+        SwitchListTile(
+          contentPadding: EdgeInsets.zero,
+          value: _hasSmartScale,
+          onChanged: (bool v) => setState(() => _hasSmartScale = v),
+          title: Text(l10n.devicesScale),
+          subtitle: Text(_hasSmartScale ? l10n.devicesScaleHint : l10n.devicesNoScaleHint),
+        ),
+        const SizedBox(height: ScSpace.m),
+        Text(l10n.devicesVitals, style: context.text.labelLarge),
+        const SizedBox(height: ScSpace.xs),
+        Text(l10n.devicesVitalsHint, style: context.text.bodySmall),
+        const SizedBox(height: ScSpace.s),
+        Wrap(
+          spacing: ScSpace.s,
+          runSpacing: ScSpace.s,
+          children: <Widget>[
+            for (final VitalKind kind in VitalKind.values)
+              FilterChip(
+                avatar: Icon(kind.icon, size: 18),
+                label: Text(kind.device(l10n)),
+                selected: _vitalDevices.contains(kind),
+                onSelected: (bool on) => setState(() {
+                  _vitalDevices = Set<VitalKind>.of(_vitalDevices);
+                  on ? _vitalDevices.add(kind) : _vitalDevices.remove(kind);
+                }),
+              ),
+          ],
+        ),
+      ],
+    );
+  }
+
   Widget _safetyStep(AppLocalizations l10n) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -427,13 +491,15 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         const SizedBox(height: ScSpace.xs),
         Text(l10n.onbSafetyBody, style: context.text.bodySmall),
         const SizedBox(height: ScSpace.l),
-        SwitchListTile(
-          contentPadding: EdgeInsets.zero,
-          value: _hasImpedanceContraindication,
-          onChanged: (bool v) => setState(() => _hasImpedanceContraindication = v),
-          title: Text(l10n.onbImplants),
-          subtitle: Text(l10n.onbImplantsHint),
-        ),
+        // La bioimpedancia solo existe con la báscula.
+        if (_hasSmartScale)
+          SwitchListTile(
+            contentPadding: EdgeInsets.zero,
+            value: _hasImpedanceContraindication,
+            onChanged: (bool v) => setState(() => _hasImpedanceContraindication = v),
+            title: Text(l10n.onbImplants),
+            subtitle: Text(l10n.onbImplantsHint),
+          ),
         SwitchListTile(
           contentPadding: EdgeInsets.zero,
           value: _hasEatingDisorderHistory,
@@ -454,7 +520,10 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
 }
 
 class _WelcomeStep extends ConsumerWidget {
-  const _WelcomeStep();
+  const _WelcomeStep({required this.hasEinkScreen, required this.onEinkChanged});
+
+  final bool hasEinkScreen;
+  final ValueChanged<bool> onEinkChanged;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -496,28 +565,42 @@ class _WelcomeStep extends ConsumerWidget {
             children: <Widget>[
               CardHeader(
                 icon: Icons.display_settings_outlined,
-                title: l10n.onbScreenTitle,
-                subtitle: l10n.onbScreenBody,
+                title: l10n.onbPaperQuestion,
+                subtitle: l10n.onbPaperQuestionBody,
               ),
               const SizedBox(height: ScSpace.m),
-              SegmentedButton<String>(
-                segments: <ButtonSegment<String>>[
-                  ButtonSegment<String>(
-                    value: 'material_you',
-                    icon: const Icon(Icons.palette_outlined),
-                    label: Text(l10n.onbScreenColor),
-                  ),
-                  ButtonSegment<String>(
-                    value: 'nxtpaper_eink',
-                    icon: const Icon(Icons.menu_book_outlined),
-                    label: Text(l10n.onbScreenPaper),
-                  ),
+              SegmentedButton<bool>(
+                segments: <ButtonSegment<bool>>[
+                  ButtonSegment<bool>(value: true, label: Text(l10n.onbYes)),
+                  ButtonSegment<bool>(value: false, label: Text(l10n.onbNo)),
                 ],
-                selected: <String>{engine},
-                onSelectionChanged: (Set<String> s) {
-                  if (s.first != engine) ref.read(themeEngineProvider.notifier).toggle();
-                },
+                selected: <bool>{hasEinkScreen},
+                showSelectedIcon: false,
+                onSelectionChanged: (Set<bool> s) => onEinkChanged(s.first),
               ),
+              if (hasEinkScreen) ...<Widget>[
+                const SizedBox(height: ScSpace.m),
+                Text(l10n.onbScreenBody, style: context.text.bodySmall),
+                const SizedBox(height: ScSpace.s),
+                SegmentedButton<String>(
+                  segments: <ButtonSegment<String>>[
+                    ButtonSegment<String>(
+                      value: 'material_you',
+                      icon: const Icon(Icons.palette_outlined),
+                      label: Text(l10n.onbScreenColor),
+                    ),
+                    ButtonSegment<String>(
+                      value: 'nxtpaper_eink',
+                      icon: const Icon(Icons.menu_book_outlined),
+                      label: Text(l10n.onbScreenPaper),
+                    ),
+                  ],
+                  selected: <String>{engine},
+                  onSelectionChanged: (Set<String> s) {
+                    if (s.first != engine) ref.read(themeEngineProvider.notifier).toggle();
+                  },
+                ),
+              ],
             ],
           ),
         ),

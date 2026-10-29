@@ -23,7 +23,7 @@ import '../../../shared/widgets/sheet.dart';
 import '../../../shared/widgets/top_bar.dart';
 import '../../../shared/widgets/undo_snackbar.dart';
 import '../../body_metrics/application/tdee_calibration_service.dart';
-import '../../journal/presentation/widgets/digestive_tracker_sheet.dart';
+import '../../care/presentation/care_l10n.dart';
 import '../application/clinical_report_service.dart';
 import '../application/daily_targets_provider.dart';
 import '../application/profile_queries.dart';
@@ -34,7 +34,6 @@ import 'widgets/perfil/edit_profile_sheet.dart';
 import 'widgets/perfil/female_cycle_card.dart';
 import 'widgets/perfil/goals_summary_card.dart';
 import 'widgets/perfil/profile_hero_card.dart';
-import 'widgets/supplement_tracker_sheet.dart';
 
 /// Pantalla de Perfil de Usuario ("Perfil").
 ///
@@ -118,7 +117,9 @@ class _PerfilYoScreenState extends ConsumerState<PerfilYoScreen> {
     final AppLocalizations l10n = context.l10n;
     showUndoSnackBar(context, message: l10n.perfilPdfGenerating);
     try {
-      await ref.read(clinicalReportServiceProvider).share(profile);
+      await ref
+          .read(clinicalReportServiceProvider)
+          .share(profile, symptomLabel: (String key) => CareText.symptom(l10n, key));
     } on Exception catch (e) {
       if (mounted) showUndoSnackBar(context, message: l10n.perfilPdfError(e.toString()));
     }
@@ -191,23 +192,6 @@ class _PerfilYoScreenState extends ConsumerState<PerfilYoScreen> {
                   ),
                   _ToolGrid(
                     tiles: <Widget>[
-                      ActionTile(
-                        onPage: true,
-                        icon: Icons.medication_rounded,
-                        title: l10n.perfilSupplements,
-                        subtitle: l10n.perfilSupplementsHint,
-                        onTap: () =>
-                            unawaited(SupplementTrackerSheet.show(context, dateKey: now.dateKey)),
-                      ),
-                      ActionTile(
-                        onPage: true,
-                        icon: Icons.health_and_safety_rounded,
-                        tone: c.water,
-                        title: l10n.perfilDigestion,
-                        subtitle: l10n.perfilDigestionHint,
-                        onTap: () =>
-                            unawaited(DigestiveTrackerSheet.show(context, dateKey: now.dateKey)),
-                      ),
                       ActionTile(
                         onPage: true,
                         icon: Icons.calendar_month_rounded,

@@ -49,7 +49,8 @@ class NibiStage extends StatefulWidget {
   final ValueChanged<NibiCare> onCare;
 
   /// Sesión de respiración completada.
-  final VoidCallback onBreathingDone;
+  /// Sesión de respiración completa (para guardarla y dar las monedas).
+  final ValueChanged<BreathingSession> onBreathingDone;
 
   @override
   State<NibiStage> createState() => _NibiStageState();
@@ -144,7 +145,8 @@ class _NibiStageState extends State<NibiStage> with TickerProviderStateMixin {
   void _breathingFinished() {
     unawaited(HapticFeedback.heavyImpact());
     if (mounted) setState(() {});
-    widget.onBreathingDone();
+    final BreathingSession? session = _clock.session;
+    if (session != null) widget.onBreathingDone(session);
   }
 
   void _closeBreathing() {

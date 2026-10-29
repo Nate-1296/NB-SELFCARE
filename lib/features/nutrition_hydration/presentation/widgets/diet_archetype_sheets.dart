@@ -43,13 +43,13 @@ class _DietArchetypePickerSheetState extends ConsumerState<DietArchetypePickerSh
     unawaited(HapticFeedback.selectionClick());
     await ref.read(profileServiceProvider).setDietArchetype(id);
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            context.l10n.foodEstiloActivado(DietArchetypeInfo.getById(id).name),
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          SnackBar(
+            content: Text(context.l10n.foodEstiloActivado(DietArchetypeInfo.getById(id).name)),
           ),
-        ),
-      );
+        );
     }
   }
 
@@ -126,15 +126,17 @@ class _DietArchetypePickerSheetState extends ConsumerState<DietArchetypePickerSh
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: <Widget>[
-                              Flexible(child: Text(
-                                arch.name,
-                                style: TextStyle(
-                                  fontFamily: ScFonts.display,
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.w700,
-                                  color: isSelected ? c.accent : c.text,
+                              Flexible(
+                                child: Text(
+                                  arch.name,
+                                  style: TextStyle(
+                                    fontFamily: ScFonts.display,
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w700,
+                                    color: isSelected ? c.accent : c.text,
+                                  ),
                                 ),
-                              )),
+                              ),
                               if (isSelected)
                                 Icon(Icons.check_circle_rounded, color: c.accent, size: 18),
                             ],
@@ -148,23 +150,17 @@ class _DietArchetypePickerSheetState extends ConsumerState<DietArchetypePickerSh
                           Row(
                             children: <Widget>[
                               _MacroPill(
-                                label: context.l10n.foodP(
-                                  NumberFormats.fixed(arch.proteinPct, 0),
-                                ),
+                                label: context.l10n.foodP(NumberFormats.fixed(arch.proteinPct, 0)),
                                 color: c.protein,
                               ),
                               const SizedBox(width: 6),
                               _MacroPill(
-                                label: context.l10n.foodC(
-                                  NumberFormats.fixed(arch.carbsPct, 0),
-                                ),
+                                label: context.l10n.foodC(NumberFormats.fixed(arch.carbsPct, 0)),
                                 color: c.carbs,
                               ),
                               const SizedBox(width: 6),
                               _MacroPill(
-                                label: context.l10n.foodG13(
-                                  NumberFormats.fixed(arch.fatPct, 0),
-                                ),
+                                label: context.l10n.foodG13(NumberFormats.fixed(arch.fatPct, 0)),
                                 color: c.fat,
                               ),
                             ],

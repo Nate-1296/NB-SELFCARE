@@ -5,7 +5,10 @@ import '../../../core/clock/clock.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/database/app_database.dart';
 import '../../../core/database/daos/user_profile_dao.dart';
+import '../../../core/domain/care_enums.dart';
 import '../../../core/domain/enums.dart';
+import '../../../shared/theme/sc_theme.dart';
+import '../../../shared/theme/theme_controller.dart';
 import '../../../shared/utils/daily_targets_calculator.dart';
 import '../../body_metrics/application/weigh_in_service.dart';
 import 'reminder_service.dart';
@@ -27,6 +30,9 @@ class OnboardingAnswers {
     this.hasImpedanceContraindication = false,
     this.hasEatingDisorderHistory = false,
     this.takesHypoglycemicMedication = false,
+    this.hasEinkScreen = false,
+    this.hasSmartScale = false,
+    this.vitalDevices = const <VitalKind>{},
   });
 
   final String name;
@@ -49,6 +55,11 @@ class OnboardingAnswers {
 
   /// Medicación que baja la glucosa: aviso antes de cada ayuno.
   final bool takesHypoglycemicMedication;
+
+  /// Equipos declarados: lo que no se tiene no aparece en la app.
+  final bool hasEinkScreen;
+  final bool hasSmartScale;
+  final Set<VitalKind> vitalDevices;
 }
 
 /// Caso de uso "Completar onboarding": crea el perfil, registra el peso actual
@@ -63,13 +74,13 @@ class OnboardingService {
 
   /// TDEE inicial (Mifflin-St Jeor × NEAT) con el peso **actual**, no el de la meta.
   int initialTdee(OnboardingAnswers a) => DailyTargetsCalculator.estimateInitialTdee(
-        weightKg: a.currentWeightKg,
-        heightCm: a.heightCm,
-        birthDate: a.birthDate,
-        biologicalSex: a.sex,
-        now: _clock.now(),
-        dailyStepsGoal: a.dailyStepsGoal,
-      );
+    weightKg: a.currentWeightKg,
+    heightCm: a.heightCm,
+    birthDate: a.birthDate,
+    biologicalSex: a.sex,
+    now: _clock.now(),
+    dailyStepsGoal: a.dailyStepsGoal,
+  );
 
   /// Nombre recortado al límite de la tabla (pegar un texto largo en el campo
   /// no debe impedir terminar la bienvenida).
@@ -93,11 +104,17 @@ class OnboardingService {
         dailyWaterGoalMl: Value(a.dailyWaterGoalMl),
         dailyStepsGoal: Value(a.dailyStepsGoal),
         dailySleepGoalHours: Value(a.dailySleepGoalHours),
-        themeMode: Value(a.themeKey),
-        currentAdaptiveTdeeKcal: Value(initialTdee(a)),
-        activeDietPhase: Value(
-          a.weeklyGoalRateKg == 0 ? DietPhase.maintenance : DietPhase.deficit,
+        // Sin pantalla de papel, nunca se arranca en un tema de papel.
+        themeMode: Value(
+          !a.hasEinkScreen && scThemeByKey(a.themeKey).colors.isFlat
+              ? kDefaultThemeKey
+              : a.themeKey,
         ),
+        hasEinkScreen: Value(a.hasEinkScreen),
+        hasSmartScale: Value(a.hasSmartScale),
+        vitalDevicesJson: Value(ProfileSets.encodeVitals(a.vitalDevices)),
+        currentAdaptiveTdeeKcal: Value(initialTdee(a)),
+        activeDietPhase: Value(a.weeklyGoalRateKg == 0 ? DietPhase.maintenance : DietPhase.deficit),
         activeDietPhaseStartedAt: Value(now),
         // Hora local del reloj de la app (el valor por defecto de SQLite es UTC
         // y su fecha puede ser la de mañana al registrarse por la noche).

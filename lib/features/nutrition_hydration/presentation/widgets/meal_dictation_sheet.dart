@@ -151,16 +151,18 @@ class _AiMealDictationSheetState extends ConsumerState<AiMealDictationSheet> {
       if (!mounted) return;
       final MealSlotMeta slot = MealSlotMeta.of(_selectedMealType);
       Navigator.of(context).pop();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            context.l10n.foodAlimentosAnadidosEn(
-              logged.logIds.length.toString(),
-              slot.title(context.l10n).toString(),
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          SnackBar(
+            content: Text(
+              context.l10n.foodAlimentosAnadidosEn(
+                logged.logIds.length.toString(),
+                slot.title(context.l10n).toString(),
+              ),
             ),
           ),
-        ),
-      );
+        );
     } finally {
       if (mounted) {
         setState(() => _isProcessing = false);

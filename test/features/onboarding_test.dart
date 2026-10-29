@@ -70,13 +70,20 @@ void main() {
     await tester.enterText(nameField, 'Nathan');
     await tester.pump();
 
-    // Sobre ti → Metas → Seguridad → Empezar
+    // Sobre ti → Metas → Equipos → Seguridad → Empezar
     await tester.tap(find.text('Siguiente'));
     await tester.pumpAndSettle();
     expect(find.text('Tus metas'), findsOneWidget);
     await tester.tap(find.text('Siguiente'));
     await tester.pumpAndSettle();
+    expect(find.text('Tus equipos'), findsOneWidget);
+    await tester.tap(find.text('Glucómetro'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Siguiente'));
+    await tester.pumpAndSettle();
     expect(find.text('Tu seguridad primero'), findsOneWidget);
+    // Sin báscula no se pregunta por implantes (solo afecta a la bioimpedancia).
+    expect(find.textContaining('arcapasos'), findsNothing);
     await tester.tap(find.text('Empezar'));
 
     // Esperar a que la transacción termine y el stream reactive la UI
@@ -85,6 +92,9 @@ void main() {
     // Debe mostrar ahora HoyScreen
     expect(find.byType(HoyScreen), findsOneWidget);
     expect(find.textContaining('Nathan'), findsOneWidget);
+    final UserProfile saved = (await tester.runAsync(() => db.select(db.userProfiles).getSingle()))!;
+    expect(saved.hasSmartScale, isFalse);
+    expect(saved.vitalDevicesJson, '["glucose"]');
 
     // Limpiar árbol para vaciar timers pendientes de Drift
     await tester.pumpWidget(const SizedBox());

@@ -36,33 +36,30 @@ class SavedRecipesSheet extends ConsumerWidget {
   }) {
     return mostrarHojaMenu<void>(
       context,
-      builder: (_) => SavedRecipesSheet(
-        targetDateKey: targetDateKey,
-        initialMealType: initialMealType,
-      ),
+      builder: (_) =>
+          SavedRecipesSheet(targetDateKey: targetDateKey, initialMealType: initialMealType),
     );
   }
 
-  Future<void> _logRecipeServing(
-    BuildContext context,
-    WidgetRef ref,
-    Recipe recipe,
-  ) async {
+  Future<void> _logRecipeServing(BuildContext context, WidgetRef ref, Recipe recipe) async {
     unawaited(HapticFeedback.mediumImpact());
-    await ref.read(foodLoggingServiceProvider).logRecipeServing(
-          recipe: recipe,
-          mealType: initialMealType,
-          dateKey: targetDateKey,
-        );
+    await ref
+        .read(foodLoggingServiceProvider)
+        .logRecipeServing(recipe: recipe, mealType: initialMealType, dateKey: targetDateKey);
 
     if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            context.l10n.food1RacionDeRegistradaEn(recipe.name.toString(), MealSlotMeta.of(initialMealType).title(context.l10n).toString()),
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          SnackBar(
+            content: Text(
+              context.l10n.food1RacionDeRegistradaEn(
+                recipe.name.toString(),
+                MealSlotMeta.of(initialMealType).title(context.l10n).toString(),
+              ),
+            ),
           ),
-        ),
-      );
+        );
       Navigator.of(context).pop();
     }
   }
@@ -70,8 +67,7 @@ class SavedRecipesSheet extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final ScColors c = context.sc;
-    final AsyncValue<List<Recipe>> recipesAsync =
-        ref.watch(allRecipesStreamProvider);
+    final AsyncValue<List<Recipe>> recipesAsync = ref.watch(allRecipesStreamProvider);
 
     return Container(
       height: MediaQuery.of(context).size.height * 0.78,
@@ -110,11 +106,7 @@ class SavedRecipesSheet extends ConsumerWidget {
           const SizedBox(height: 6),
           Text(
             context.l10n.foodBatchCookingYRecetasMultiracion,
-            style: TextStyle(
-              fontFamily: ScFonts.ui,
-              fontSize: 12,
-              color: c.text2,
-            ),
+            style: TextStyle(fontFamily: ScFonts.ui, fontSize: 12, color: c.text2),
           ),
           const SizedBox(height: 12),
           SizedBox(
@@ -122,9 +114,7 @@ class SavedRecipesSheet extends ConsumerWidget {
             child: OutlinedButton.icon(
               style: OutlinedButton.styleFrom(
                 side: BorderSide(color: c.isFlat ? c.line2 : c.accent),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14),
-                ),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
               ),
               onPressed: () async {
                 final Recipe? created = await RecipeBuilderSheet.show(
@@ -149,11 +139,7 @@ class SavedRecipesSheet extends ConsumerWidget {
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: <Widget>[
-                        Icon(
-                          Icons.soup_kitchen_outlined,
-                          size: 44,
-                          color: c.text3,
-                        ),
+                        Icon(Icons.soup_kitchen_outlined, size: 44, color: c.text3),
                         const SizedBox(height: 10),
                         Text(
                           context.l10n.foodAunNoHasCreadoRecetas,
@@ -168,11 +154,7 @@ class SavedRecipesSheet extends ConsumerWidget {
                         Text(
                           context.l10n.foodCreaPlatosMultiracionParaPorcionar,
                           textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontFamily: ScFonts.ui,
-                            fontSize: 12,
-                            color: c.text2,
-                          ),
+                          style: TextStyle(fontFamily: ScFonts.ui, fontSize: 12, color: c.text2),
                         ),
                       ],
                     ),
@@ -195,11 +177,7 @@ class SavedRecipesSheet extends ConsumerWidget {
                               color: c.isFlat ? c.bg3 : c.soft,
                               shape: BoxShape.circle,
                             ),
-                            child: Icon(
-                              Icons.restaurant_rounded,
-                              size: 20,
-                              color: c.accent,
-                            ),
+                            child: Icon(Icons.restaurant_rounded, size: 20, color: c.accent),
                           ),
                           const SizedBox(width: 12),
                           Expanded(
@@ -217,7 +195,10 @@ class SavedRecipesSheet extends ConsumerWidget {
                                 ),
                                 const SizedBox(height: 2),
                                 Text(
-                                  context.l10n.foodKcalRindeRaciones(r.kcalPerServing.round().toString(), r.totalYieldServings.toString()),
+                                  context.l10n.foodKcalRindeRaciones(
+                                    r.kcalPerServing.round().toString(),
+                                    r.totalYieldServings.toString(),
+                                  ),
                                   style: TextStyle(
                                     fontFamily: ScFonts.ui,
                                     fontSize: 11.5,
@@ -226,7 +207,11 @@ class SavedRecipesSheet extends ConsumerWidget {
                                 ),
                                 const SizedBox(height: 2),
                                 Text(
-                                  context.l10n.foodPGCGG2(NumberFormats.fixed(r.proteinPerServing, 1), NumberFormats.fixed(r.carbsPerServing, 1), NumberFormats.fixed(r.fatPerServing, 1)),
+                                  context.l10n.foodPGCGG2(
+                                    NumberFormats.fixed(r.proteinPerServing, 1),
+                                    NumberFormats.fixed(r.carbsPerServing, 1),
+                                    NumberFormats.fixed(r.fatPerServing, 1),
+                                  ),
                                   style: TextStyle(
                                     fontFamily: ScFonts.ui,
                                     fontSize: 11,
@@ -239,9 +224,7 @@ class SavedRecipesSheet extends ConsumerWidget {
                           FilledButton.tonal(
                             style: FilledButton.styleFrom(
                               visualDensity: VisualDensity.compact,
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 10,
-                              ),
+                              padding: const EdgeInsets.symmetric(horizontal: 10),
                             ),
                             onPressed: () => _logRecipeServing(ctx, ref, r),
                             child: Text(

@@ -9,6 +9,8 @@ abstract final class AppIcons {
   static const IconData comerFilled = Icons.restaurant_rounded;
   static const IconData cuerpo = Icons.monitor_weight_outlined;
   static const IconData cuerpoFilled = Icons.monitor_weight_rounded;
+  static const IconData cuidado = Icons.spa_outlined;
+  static const IconData cuidadoFilled = Icons.spa_rounded;
   static const IconData nibi = Icons.pets_outlined;
   static const IconData nibiFilled = Icons.pets_rounded;
   static const IconData perfil = Icons.person_outline_rounded;

@@ -11,6 +11,7 @@ import '../../../../../shared/widgets/health_card.dart';
 import '../../../../../shared/widgets/metric_value.dart';
 import '../../../../../shared/widgets/quick_action_button.dart';
 import '../../../../../shared/widgets/tonal_badge.dart';
+import '../../../domain/food_units.dart';
 import '../meal_slot_selector.dart';
 
 /// Bloque horario individual (Desayuno, Almuerzo, Cena, Snacks) con acciones inferiores cómodas.
@@ -208,7 +209,9 @@ class _LoggedFoodRow extends StatelessWidget {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    context.l10n.comerGPGCG(
+                    (entry.foodItem.isMeasuredInMl
+                        ? context.l10n.comerMlPGCG
+                        : context.l10n.comerGPGCG)(
                       NumberFormats.group(log.gramsConsumed),
                       NumberFormats.fixed(log.totalProteinG, 0),
                       NumberFormats.fixed(log.totalCarbsG, 0),

@@ -7,6 +7,7 @@ import 'package:universal_ble/universal_ble.dart';
 
 import '../../../app/app_sync_coordinator.dart';
 import '../../../core/database/app_database.dart';
+import '../../../core/domain/care_enums.dart';
 import '../../../core/l10n/l10n.dart';
 import '../../../core/platform/health_connect_gateway.dart';
 import '../../../core/platform/system_permissions.dart';
@@ -15,8 +16,11 @@ import '../../../shared/theme/sc_colors.dart';
 import '../../../shared/theme/sc_theme.dart';
 import '../../../shared/theme/sc_tokens.dart';
 import '../../../shared/theme/theme_controller.dart';
+import '../../../shared/widgets/health_card.dart';
 import '../../../shared/widgets/section_head.dart';
 import '../../../shared/widgets/top_bar.dart';
+import '../../care/application/health_log_services.dart';
+import '../../care/presentation/widgets/support_lines.dart';
 import '../../today/application/health_sync_service.dart';
 import '../../today/application/movement_nudge_service.dart';
 import '../application/profile_queries.dart';
@@ -124,22 +128,31 @@ class _AppSettingsScreenState extends ConsumerState<AppSettingsScreen> with Widg
     final HealthConnectAvailability availability = await healthConnect.availability();
     if (availability != HealthConnectAvailability.available) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(switch (availability) {
-              HealthConnectAvailability.updateRequired =>
-                context.l10n.settingsActualizaHealthConnectDesdeGoogle,
-              HealthConnectAvailability.notInstalled =>
-                context.l10n.settingsInstalaHealthConnectDesdeGoogle,
-              _ => context.l10n.settingsHealthConnectNoEstaDisponible,
-            }),
-          ),
-        );
+        ScaffoldMessenger.of(context)
+          ..hideCurrentSnackBar()
+          ..showSnackBar(
+            SnackBar(
+              content: Text(switch (availability) {
+                HealthConnectAvailability.updateRequired =>
+                  context.l10n.settingsActualizaHealthConnectDesdeGoogle,
+                HealthConnectAvailability.notInstalled =>
+                  context.l10n.settingsInstalaHealthConnectDesdeGoogle,
+                _ => context.l10n.settingsHealthConnectNoEstaDisponible,
+              }),
+            ),
+          );
       }
       return;
     }
     await healthConnect.requestPermissions();
+    // Los aparatos de signos vitales declarados piden su lectura aparte.
+    final UserProfile? profile = ref.read(userProfileStreamProvider).value;
+    final Set<VitalKind> vitals = profile == null
+        ? const <VitalKind>{}
+        : ProfileSets.vitalDevices(profile.vitalDevicesJson);
+    if (vitals.isNotEmpty) await healthConnect.requestVitalPermissions(vitals);
     await ref.read(healthSyncServiceProvider).syncRecentDays();
+    await ref.read(vitalServiceProvider).syncFromHealthConnect();
     await _evaluateAllPermissions();
   }
 
@@ -185,15 +198,17 @@ class _AppSettingsScreenState extends ConsumerState<AppSettingsScreen> with Widg
       if (!mounted) return;
     }
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          result.restored
-              ? context.l10n.settingsBaseDeDatosRestauradaCon
-              : context.l10n.settingsElArchivoSeleccionadoNoEs,
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text(
+            result.restored
+                ? context.l10n.settingsBaseDeDatosRestauradaCon
+                : context.l10n.settingsElArchivoSeleccionadoNoEs,
+          ),
         ),
-      ),
-    );
+      );
   }
 
   @override
@@ -220,12 +235,22 @@ class _AppSettingsScreenState extends ConsumerState<AppSettingsScreen> with Widg
             // ==========================================
             SectionHead(
               title: context.l10n.settingsAspectoYPantalla,
-              subtitle: context.l10n.settingsThemesCount(kScThemes.length.toString()),
+              subtitle: (profile?.hasEinkScreen ?? false)
+                  ? context.l10n.settingsThemesCount(kScThemes.length.toString())
+                  : context.l10n.settingsThemesCountColor(
+                      kScThemes
+                          .where(
+                            (ScThemeDef d) => !d.colors.isFlat && !d.key.startsWith('nxtpaper'),
+                          )
+                          .length
+                          .toString(),
+                    ),
               padding: const EdgeInsets.symmetric(vertical: 4),
             ),
             const SizedBox(height: 8),
             ThemePicker(
               currentKey: currentThemeKey,
+              showPaper: profile?.hasEinkScreen ?? false,
               onSelect: (String key) {
                 unawaited(HapticFeedback.selectionClick());
                 unawaited(ref.read(themeControllerProvider.notifier).selectTheme(key));
@@ -265,6 +290,8 @@ class _AppSettingsScreenState extends ConsumerState<AppSettingsScreen> with Widg
             ),
             const SizedBox(height: ScSpace.sectionGap),
             BackupSection(onRestore: _handleRestoreBackup),
+            const SizedBox(height: ScSpace.sectionGap),
+            const HealthCard(margin: EdgeInsets.zero, child: SupportLines()),
           ],
         ),
       ),

@@ -129,7 +129,9 @@ class _RecipeBuilderSheetState extends ConsumerState<RecipeBuilderSheet> {
 
   Future<double?> _promptIngredientGrams(FoodItem food) async {
     final TextEditingController gramsCtrl = TextEditingController(
-      text: food.defaultServingGrams > 0 ? NumberFormats.input(food.defaultServingGrams, maxDigits: 0) : '100',
+      text: food.defaultServingGrams > 0
+          ? NumberFormats.input(food.defaultServingGrams, maxDigits: 0)
+          : '100',
     );
     return showDialog<double>(
       context: context,
@@ -166,7 +168,8 @@ class _RecipeBuilderSheetState extends ConsumerState<RecipeBuilderSheet> {
     if (!_formKey.currentState!.validate()) return;
     if (_ingredients.isEmpty) {
       ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(context.l10n.foodAnadeAlMenosUnIngrediente)));
+        ..hideCurrentSnackBar()
+        ..showSnackBar(SnackBar(content: Text(context.l10n.foodAnadeAlMenosUnIngrediente)));
       return;
     }
 
@@ -206,19 +209,23 @@ class _RecipeBuilderSheetState extends ConsumerState<RecipeBuilderSheet> {
 
       if (mounted) {
         Navigator.of(context).pop(createdRecipe);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              context.l10n.foodRecetaGuardadaExitosamente(_nameCtrl.text.trim().toString()),
+        ScaffoldMessenger.of(context)
+          ..hideCurrentSnackBar()
+          ..showSnackBar(
+            SnackBar(
+              content: Text(
+                context.l10n.foodRecetaGuardadaExitosamente(_nameCtrl.text.trim().toString()),
+              ),
             ),
-          ),
-        );
+          );
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(context.l10n.foodErrorAlGuardarLaReceta((e).toString()))),
-        );
+        ScaffoldMessenger.of(context)
+          ..hideCurrentSnackBar()
+          ..showSnackBar(
+            SnackBar(content: Text(context.l10n.foodErrorAlGuardarLaReceta((e).toString()))),
+          );
       }
     } finally {
       if (mounted) {
@@ -244,15 +251,17 @@ class _RecipeBuilderSheetState extends ConsumerState<RecipeBuilderSheet> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: <Widget>[
-                  Flexible(child: Text(
-                    context.l10n.foodNuevaRecetaBatchCooking,
-                    style: TextStyle(
-                      fontFamily: ScFonts.display,
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: c.text,
+                  Flexible(
+                    child: Text(
+                      context.l10n.foodNuevaRecetaBatchCooking,
+                      style: TextStyle(
+                        fontFamily: ScFonts.display,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: c.text,
+                      ),
                     ),
-                  )),
+                  ),
                   IconButton(
                     icon: Icon(AppIcons.close, color: c.text2),
                     onPressed: () => Navigator.of(context).pop(),
@@ -299,15 +308,17 @@ class _RecipeBuilderSheetState extends ConsumerState<RecipeBuilderSheet> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: <Widget>[
-                        Flexible(child: Text(
-                          context.l10n.foodRendimientoYRaciones,
-                          style: TextStyle(
-                            fontFamily: ScFonts.display,
-                            fontSize: 13.5,
-                            fontWeight: FontWeight.bold,
-                            color: c.text,
+                        Flexible(
+                          child: Text(
+                            context.l10n.foodRendimientoYRaciones,
+                            style: TextStyle(
+                              fontFamily: ScFonts.display,
+                              fontSize: 13.5,
+                              fontWeight: FontWeight.bold,
+                              color: c.text,
+                            ),
                           ),
-                        )),
+                        ),
                         Row(
                           children: <Widget>[
                             Text(
@@ -392,15 +403,17 @@ class _RecipeBuilderSheetState extends ConsumerState<RecipeBuilderSheet> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: <Widget>[
-                  Flexible(child: Text(
-                    context.l10n.foodIngredientesCrudos(_ingredients.length.toString()),
-                    style: TextStyle(
-                      fontFamily: ScFonts.display,
-                      fontSize: 14.5,
-                      fontWeight: FontWeight.bold,
-                      color: c.text,
+                  Flexible(
+                    child: Text(
+                      context.l10n.foodIngredientesCrudos(_ingredients.length.toString()),
+                      style: TextStyle(
+                        fontFamily: ScFonts.display,
+                        fontSize: 14.5,
+                        fontWeight: FontWeight.bold,
+                        color: c.text,
+                      ),
                     ),
-                  )),
+                  ),
                   OutlinedButton.icon(
                     onPressed: _pickIngredient,
                     style: OutlinedButton.styleFrom(

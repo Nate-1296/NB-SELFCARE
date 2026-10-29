@@ -78,15 +78,17 @@ class _SmartMealMenuSheetState extends ConsumerState<SmartMealMenuSheet> {
     }
 
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            context.l10n.foodComidaRegistradaEnConPorciones(
-              MealSlotMeta.of(mealSlot).title(context.l10n).toString(),
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          SnackBar(
+            content: Text(
+              context.l10n.foodComidaRegistradaEnConPorciones(
+                MealSlotMeta.of(mealSlot).title(context.l10n).toString(),
+              ),
             ),
           ),
-        ),
-      );
+        );
       Navigator.of(context).pop();
     }
   }
@@ -171,18 +173,20 @@ class _SmartMealMenuSheetState extends ConsumerState<SmartMealMenuSheet> {
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: <Widget>[
-                                Flexible(child: Text(
-                                  context.l10n.foodKcal5(
-                                    (slotTitle).toString(),
-                                    NumberFormats.group(slotKcal),
+                                Flexible(
+                                  child: Text(
+                                    context.l10n.foodKcal5(
+                                      (slotTitle).toString(),
+                                      NumberFormats.group(slotKcal),
+                                    ),
+                                    style: TextStyle(
+                                      fontFamily: ScFonts.display,
+                                      fontSize: 14.5,
+                                      fontWeight: FontWeight.bold,
+                                      color: c.text,
+                                    ),
                                   ),
-                                  style: TextStyle(
-                                    fontFamily: ScFonts.display,
-                                    fontSize: 14.5,
-                                    fontWeight: FontWeight.bold,
-                                    color: c.text,
-                                  ),
-                                )),
+                                ),
                                 TextButton.icon(
                                   style: TextButton.styleFrom(visualDensity: VisualDensity.compact),
                                   onPressed: () => _logMealSlot(slot, items),

@@ -8,10 +8,17 @@ import '../../../../core/clock/clock.dart';
 import '../../../../core/l10n/l10n.dart';
 import '../../../../shared/theme/sc_colors.dart';
 import '../../../../shared/theme/sc_theme.dart';
+import '../../../../shared/theme/sc_tokens.dart';
 import '../../../../shared/utils/date_time_extensions.dart';
 import '../../../../shared/utils/number_formats.dart';
 import '../../../../shared/widgets/app_icons.dart';
+import '../../../../shared/widgets/science_on_demand_sheet.dart';
 import '../../../../shared/widgets/sheet.dart';
+import '../../../care/application/health_log_services.dart';
+import '../../../care/domain/wellbeing_index.dart';
+import '../../../care/presentation/care_l10n.dart';
+import '../../../care/presentation/widgets/support_lines.dart';
+import '../../../care/presentation/widgets/wellbeing_questions.dart';
 import '../../../pet_gamification/application/reward_service.dart';
 import '../../../pet_gamification/domain/reward_policy.dart';
 import '../../application/weekly_review.dart';
@@ -33,6 +40,12 @@ class _SundayCheckInSheetState extends ConsumerState<SundayCheckInSheet> {
   int _satietyRating = 3; // 1 a 5
   int _adherenceRating = 4; // 1 a 5
   bool _isCompleted = false;
+
+  /// OMS-5 opcional: una respuesta 0–5 por frase.
+  bool _showWellbeing = false;
+  final List<int?> _wellbeing = List<int?>.filled(WellbeingIndex.questionCount, null);
+
+  bool get _wellbeingComplete => _wellbeing.every((int? a) => a != null);
 
   @override
   Widget build(BuildContext context) {
@@ -213,6 +226,42 @@ class _SundayCheckInSheetState extends ConsumerState<SundayCheckInSheet> {
 
             const SizedBox(height: 18),
 
+            // Índice de bienestar OMS-5 (opcional)
+            Row(
+              children: <Widget>[
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      Text(context.l10n.wellbeingTitle, style: context.text.titleSmall),
+                      Text(context.l10n.wellbeingOptional, style: context.type.caption),
+                    ],
+                  ),
+                ),
+                IconButton(
+                  tooltip: context.l10n.careLearnMore,
+                  onPressed: () => unawaited(
+                    ScienceOnDemandSheet.show(context, CareScience.wellbeing(context.l10n)),
+                  ),
+                  icon: Icon(Icons.info_outline_rounded, color: c.text3),
+                ),
+                if (!_showWellbeing)
+                  TextButton(
+                    onPressed: () => setState(() => _showWellbeing = true),
+                    child: Text(context.l10n.wellbeingAnswer),
+                  ),
+              ],
+            ),
+            if (_showWellbeing) ...<Widget>[
+              const SizedBox(height: 8),
+              WellbeingQuestions(
+                answers: _wellbeing,
+                onChanged: (int q, int a) => setState(() => _wellbeing[q] = a),
+              ),
+            ],
+
+            const SizedBox(height: 18),
+
             // 3. Recomendación Adaptativa de Nibi
             Container(
               padding: const EdgeInsets.all(14),
@@ -271,19 +320,30 @@ class _SundayCheckInSheetState extends ConsumerState<SundayCheckInSheet> {
                       final RewardGrant grant = await ref
                           .read(rewardServiceProvider)
                           .grant(RewardAction.sundayCheckIn, dateKey: todayKey);
+                      final int? wellbeing = _showWellbeing && _wellbeingComplete
+                          ? await ref
+                                .read(wellbeingServiceProvider)
+                                .save(_wellbeing.map((int? a) => a!).toList())
+                          : null;
                       setState(() => _isCompleted = true);
+                      if (wellbeing != null && context.mounted) {
+                        // Con el resultado delante; si es bajo, también las líneas de apoyo.
+                        await _showWellbeingResult(context, wellbeing);
+                      }
                       if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(
-                              grant.granted
-                                  ? context.l10n.todayCeremoniaDominicalCompletadaMonedas(
-                                      grant.coins.toString(),
-                                    )
-                                  : context.l10n.todayCeremoniaDominicalCompletada,
+                        ScaffoldMessenger.of(context)
+                          ..hideCurrentSnackBar()
+                          ..showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                grant.granted
+                                    ? context.l10n.todayCeremoniaDominicalCompletadaMonedas(
+                                        grant.coins.toString(),
+                                      )
+                                    : context.l10n.todayCeremoniaDominicalCompletada,
+                              ),
                             ),
-                          ),
-                        );
+                          );
                         await Future<void>.delayed(const Duration(milliseconds: 600));
                         if (context.mounted) Navigator.of(context).pop();
                       }
@@ -315,6 +375,32 @@ class _SundayCheckInSheetState extends ConsumerState<SundayCheckInSheet> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Future<void> _showWellbeingResult(BuildContext context, int percent) {
+    final AppLocalizations l10n = context.l10n;
+    return showDialog<void>(
+      context: context,
+      builder: (BuildContext ctx) => AlertDialog(
+        title: Text(l10n.wellbeingResult('$percent')),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: <Widget>[
+              Text(WellbeingIndex.band(percent).label(l10n)),
+              if (WellbeingIndex.suggestsSupport(percent)) ...<Widget>[
+                const SizedBox(height: 12),
+                const SupportLines(),
+              ],
+            ],
+          ),
+        ),
+        actions: <Widget>[
+          TextButton(onPressed: () => Navigator.of(ctx).pop(), child: Text(l10n.commonClose)),
+        ],
       ),
     );
   }
@@ -372,15 +458,17 @@ class _SundayCheckInSheetState extends ConsumerState<SundayCheckInSheet> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: <Widget>[
-              Flexible(child: Text(
-                label,
-                style: TextStyle(
-                  fontFamily: ScFonts.ui,
-                  fontSize: 12.5,
-                  fontWeight: FontWeight.w600,
-                  color: c.text,
+              Flexible(
+                child: Text(
+                  label,
+                  style: TextStyle(
+                    fontFamily: ScFonts.ui,
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w600,
+                    color: c.text,
+                  ),
                 ),
-              )),
+              ),
               Text(
                 context.l10n.today5((value).toString()),
                 style: TextStyle(
@@ -419,10 +507,12 @@ class _SundayCheckInSheetState extends ConsumerState<SundayCheckInSheet> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: <Widget>[
-              Flexible(child: Text(
-                minLabel,
-                style: TextStyle(fontFamily: ScFonts.ui, fontSize: 10, color: c.text3),
-              )),
+              Flexible(
+                child: Text(
+                  minLabel,
+                  style: TextStyle(fontFamily: ScFonts.ui, fontSize: 10, color: c.text3),
+                ),
+              ),
               Text(
                 maxLabel,
                 style: TextStyle(fontFamily: ScFonts.ui, fontSize: 10, color: c.text3),

@@ -12,6 +12,7 @@ import '../../../core/l10n/l10n.dart';
 import '../../../shared/theme/sc_colors.dart';
 import '../../../shared/theme/sc_tokens.dart';
 import '../../../shared/utils/current_date_provider.dart';
+import '../../../shared/utils/cycle_phase_calculator.dart';
 import '../../../shared/utils/date_formats.dart';
 import '../../../shared/utils/number_formats.dart';
 import '../../../shared/widgets/entrance.dart';
@@ -26,6 +27,7 @@ import '../application/tape_measurement_service.dart';
 import '../application/weigh_in_service.dart';
 import '../application/workout_service.dart';
 import 'widgets/cuerpo/body_composition_section.dart';
+import 'widgets/cuerpo/manual_weigh_in_card.dart';
 import 'widgets/cuerpo/movement_section.dart';
 import 'widgets/cuerpo/scale_station_card.dart';
 import 'widgets/cuerpo/weight_hero_card.dart';
@@ -85,7 +87,10 @@ class _CuerpoScreenState extends ConsumerState<CuerpoScreen> {
       builder: (BuildContext ctx) => AlertDialog(
         title: Text(l10n.cuerpoGuestTitle),
         content: Text(
-          l10n.cuerpoGuestBody(NumberFormats.fixed(weightKg, 1), NumberFormats.fixed(deviation * 100, 0)),
+          l10n.cuerpoGuestBody(
+            NumberFormats.fixed(weightKg, 1),
+            NumberFormats.fixed(deviation * 100, 0),
+          ),
         ),
         actions: <Widget>[
           TextButton(
@@ -128,6 +133,8 @@ class _CuerpoScreenState extends ConsumerState<CuerpoScreen> {
                 ? l10n.cuerpoWeighInSavedCoins(kg, result.reward.coins)
                 : l10n.cuerpoWeighInSaved(kg),
           ),
+          // Con acción, Flutter lo dejaría fijo hasta deslizarlo: se va solo.
+          persist: false,
           action: canBindMac
               ? SnackBarAction(
                   label: l10n.cuerpoBindScale,
@@ -222,6 +229,31 @@ class _CuerpoScreenState extends ConsumerState<CuerpoScreen> {
     );
   }
 
+  /// En fase lútea o menstrual se retiene agua: se avisa para leer la
+  /// tendencia y no el número del día (positividad, ADR-08).
+  static String? _cycleWaterNote(
+    AppLocalizations l10n,
+    UserProfile profile,
+    FemaleCycleLog? cycle,
+    DateTime day,
+  ) {
+    if (!profile.isCycleTrackingEnabled ||
+        profile.biologicalSex != BiologicalSex.female ||
+        cycle == null) {
+      return null;
+    }
+    final FemaleCyclePhase phase = CyclePhaseCalculator.phaseFor(
+      cycleStart: cycle.cycleStartDate,
+      cycleLengthDays: cycle.cycleLengthDays,
+      date: day,
+    ).phase;
+    return switch (phase) {
+      FemaleCyclePhase.luteal => l10n.cuerpoCycleWaterNote(l10n.cyclePhaseLuteal),
+      FemaleCyclePhase.menstrual => l10n.cuerpoCycleWaterNote(l10n.cyclePhaseMenstrual),
+      _ => null,
+    };
+  }
+
   @override
   Widget build(BuildContext context) {
     ref.listen<ScaleSessionState>(scaleSessionProvider, (
@@ -248,6 +280,12 @@ class _CuerpoScreenState extends ConsumerState<CuerpoScreen> {
         ref.watch(recentMeasurementsStreamProvider).value ?? const <BodyMeasurement>[];
     final ScaleSessionState scale = ref.watch(scaleSessionProvider);
     final String formattedDate = DateFormats.weekdayDayMonth(currentDay, l10n.localeName);
+    final String? cycleNote = _cycleWaterNote(
+      l10n,
+      profile,
+      ref.watch(latestFemaleCycleStreamProvider).value,
+      currentDay,
+    );
 
     return Scaffold(
       backgroundColor: c.bg,
@@ -270,17 +308,24 @@ class _CuerpoScreenState extends ConsumerState<CuerpoScreen> {
               targetWeightKg: profile.targetWeightKg,
               weeklyGoalRateKg: profile.weeklyGoalRateKg,
             ),
-            ScaleStationCard(
-              session: scale,
-              isBound: profile.scaleMacAddress?.isNotEmpty ?? false,
-              weightOnly: profile.hasImpedanceContraindication,
-              onScan: () => _startScan(profile),
-              onStop: () => unawaited(_scale.stop()),
-              onAcceptWeightOnly: _scale.acceptWeightOnly,
-              onManual: () => _openManualWeighIn(profile, latest),
-              onTape: () => _openTapeMeasure(profile, latest),
-              onConfigure: () => _openScaleSettings(profile),
-            ),
+            if (cycleNote != null) _CycleWaterNote(text: cycleNote),
+            if (profile.hasSmartScale)
+              ScaleStationCard(
+                session: scale,
+                isBound: profile.scaleMacAddress?.isNotEmpty ?? false,
+                weightOnly: profile.hasImpedanceContraindication,
+                onScan: () => _startScan(profile),
+                onStop: () => unawaited(_scale.stop()),
+                onAcceptWeightOnly: _scale.acceptWeightOnly,
+                onManual: () => _openManualWeighIn(profile, latest),
+                onTape: () => _openTapeMeasure(profile, latest),
+                onConfigure: () => _openScaleSettings(profile),
+              )
+            else
+              ManualWeighInCard(
+                onManual: () => _openManualWeighIn(profile, latest),
+                onTape: () => _openTapeMeasure(profile, latest),
+              ),
             WeightTrendChartCard(
               now: ref.read(clockProvider).now(),
               measurements: recent,
@@ -289,9 +334,12 @@ class _CuerpoScreenState extends ConsumerState<CuerpoScreen> {
             ),
             SectionHead(
               title: l10n.cuerpoCompositionTitle,
-              subtitle: l10n.cuerpoCompositionSubtitle,
+              subtitle: profile.hasSmartScale
+                  ? l10n.cuerpoCompositionSubtitle
+                  : l10n.cuerpoCompositionSubtitleNoScale,
             ),
             BodyCompositionSection(
+              hasSmartScale: profile.hasSmartScale,
               profile: profile,
               latest: latest,
               referenceDate: currentDay,
@@ -307,6 +355,35 @@ class _CuerpoScreenState extends ConsumerState<CuerpoScreen> {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _CycleWaterNote extends StatelessWidget {
+  const _CycleWaterNote({required this.text});
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    final ScColors c = context.sc;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        ScSpace.gutter + 4,
+        ScSpace.xs,
+        ScSpace.gutter + 4,
+        ScSpace.xs,
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Icon(Icons.water_drop_outlined, size: 16, color: c.isFlat ? c.text : c.water),
+          const SizedBox(width: ScSpace.s),
+          Expanded(
+            child: Text(text, style: context.type.caption.copyWith(color: c.text2)),
+          ),
+        ],
       ),
     );
   }

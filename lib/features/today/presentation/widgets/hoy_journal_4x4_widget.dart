@@ -104,9 +104,11 @@ class _HoyJournal4x4WidgetState extends ConsumerState<HoyJournal4x4Widget> {
       setState(() => _draftPhoto = bytes);
     } on Exception catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(context.l10n.todayNoSePudoAdjuntarLa(e.toString()))),
-        );
+        ScaffoldMessenger.of(context)
+          ..hideCurrentSnackBar()
+          ..showSnackBar(
+            SnackBar(content: Text(context.l10n.todayNoSePudoAdjuntarLa(e.toString()))),
+          );
       }
     }
   }
@@ -177,6 +179,8 @@ class _HoyJournal4x4WidgetState extends ConsumerState<HoyJournal4x4Widget> {
       ..showSnackBar(
         SnackBar(
           content: Text(context.l10n.todayEntradaDeDiarioEliminada),
+          // Con acción, Flutter lo dejaría fijo hasta deslizarlo: se va solo.
+          persist: false,
           action: SnackBarAction(
             label: context.l10n.commonUndo,
             onPressed: () {

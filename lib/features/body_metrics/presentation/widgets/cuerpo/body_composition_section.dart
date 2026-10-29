@@ -20,7 +20,17 @@ class BodyCompositionSection extends StatelessWidget {
     required this.latest,
     required this.referenceDate,
     required this.onMeasureTape,
+    this.hasSmartScale = true,
   });
+
+  /// Sin báscula solo se muestra lo que sale del peso, la estatura y la cinta.
+  final bool hasSmartScale;
+
+  static const Set<BiometricMetricKind> _withoutScale = <BiometricMetricKind>{
+    BiometricMetricKind.bmi,
+    BiometricMetricKind.bmr,
+    BiometricMetricKind.validatedNavyFat,
+  };
 
   final UserProfile profile;
   final BodyMeasurement? latest;
@@ -42,6 +52,7 @@ class BodyCompositionSection extends StatelessWidget {
     );
     final List<BiometricMetricSpec> grid = specs
         .where((BiometricMetricSpec s) => s.kind != BiometricMetricKind.somatotype)
+        .where((BiometricMetricSpec s) => hasSmartScale || _withoutScale.contains(s.kind))
         .toList();
 
     void open(BiometricMetricSpec spec) {
@@ -64,7 +75,7 @@ class BodyCompositionSection extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
-          if (latest != null && latest!.impedanceOhms == null) ...<Widget>[
+          if (hasSmartScale && latest != null && latest!.impedanceOhms == null) ...<Widget>[
             Row(
               children: <Widget>[
                 Icon(Icons.info_outline, size: 16, color: c.text3),
@@ -79,8 +90,10 @@ class BodyCompositionSection extends StatelessWidget {
             ),
             const SizedBox(height: ScSpace.m),
           ],
-          _SomatotypeHeroCard(spec: somatotype, onTap: () => open(somatotype)),
-          const SizedBox(height: ScSpace.cardGap),
+          if (hasSmartScale) ...<Widget>[
+            _SomatotypeHeroCard(spec: somatotype, onTap: () => open(somatotype)),
+            const SizedBox(height: ScSpace.cardGap),
+          ],
           // Ficha técnica: una sola tarjeta con las métricas en rejilla y filetes
           // finos entre celdas, en lugar de doce cajas sueltas.
           HealthCard(

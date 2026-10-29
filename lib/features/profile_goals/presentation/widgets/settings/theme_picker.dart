@@ -9,9 +9,17 @@ import '../../../../../shared/widgets/pressable.dart';
 
 /// Selector de tema en cuadrícula compacta, con los modos papel (NXTPAPER) primero.
 class ThemePicker extends StatelessWidget {
-  const ThemePicker({super.key, required this.currentKey, required this.onSelect});
+  const ThemePicker({
+    super.key,
+    required this.currentKey,
+    required this.onSelect,
+    this.showPaper = true,
+  });
 
   final String currentKey;
+
+  /// Los modos de papel solo se ofrecen con pantalla de papel (Ajustes → Tus equipos).
+  final bool showPaper;
   final ValueChanged<String> onSelect;
 
   static bool _isPaper(ScThemeDef d) => d.colors.isFlat || d.key.startsWith('nxtpaper');
@@ -44,10 +52,12 @@ class ThemePicker extends StatelessWidget {
           const SizedBox(height: ScSpace.m),
           _DynamicChip(selected: dynamicSelected, onTap: () => onSelect(kDynamicThemeKey)),
           const SizedBox(height: ScSpace.l),
-          Text(l10n.settingsThemesPaper, style: context.text.labelLarge),
-          const SizedBox(height: ScSpace.s),
-          _Grid(themes: paper, currentKey: currentKey, onSelect: onSelect),
-          const SizedBox(height: ScSpace.l),
+          if (showPaper) ...<Widget>[
+            Text(l10n.settingsThemesPaper, style: context.text.labelLarge),
+            const SizedBox(height: ScSpace.s),
+            _Grid(themes: paper, currentKey: currentKey, onSelect: onSelect),
+            const SizedBox(height: ScSpace.l),
+          ],
           Text(l10n.settingsThemesColor, style: context.text.labelLarge),
           const SizedBox(height: ScSpace.s),
           _Grid(themes: color, currentKey: currentKey, onSelect: onSelect),

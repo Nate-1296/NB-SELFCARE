@@ -64,7 +64,7 @@ Catálogo único en `PetCatalog` (`domain/pet_catalog.dart`); los nombres están
 | Escudos | Escudo de un día, pack de 3. | 25 / 65 |
 
 - La **tienda** solo muestra lo que está a la venta; lo comprado pasa al **armario** y se pone al instante.
-- Sombrero, accesorio, color y escenario se guardan en `pet_status` (esquema v6). Un id desconocido (por ejemplo, de una copia de seguridad de otra versión) se ignora.
+- Sombrero, accesorio, color y escenario se guardan en `pet_status` (desde el esquema v5). Un id desconocido (por ejemplo, de una copia de seguridad de otra versión) se ignora.
 - El aspecto se ve igual en el santuario, el avatar de Inicio y la báscula de Cuerpo (`nibiLookProvider`).
 
 ## 6. Monedas (`coin_ledger`)
@@ -83,6 +83,12 @@ Cada acción paga **una vez al día** (índice único por día y tipo):
 | Alcanzar una meta intermedia | 25 |
 | Revisión del domingo | 15 |
 | Respirar con Nibi | 10 |
+| Sesión de suelo pélvico | 10 |
+| Pausa activa o descanso visual | 10 |
+| Completar todos los hábitos propios del día | 10 |
+| Registrar un chequeo preventivo | 20 |
+
+Los medicamentos y suplementos **no** dan monedas (ADR-17): un tratamiento no es un juego y una toma olvidada nunca debe sentirse como un fallo.
 
 - **Multiplicador de sueño:** si anoche se cumplió la meta de sueño (o REM + profundo ≥ 90 min), las monedas del día valen ×1,5 (redondeando hacia arriba).
 - **Racha:** cuenta los días con al menos una recompensa. Cada día perdido consume un escudo; si no alcanzan, la racha vuelve a 1 y los escudos se conservan (`StreakPolicy`).

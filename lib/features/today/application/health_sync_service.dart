@@ -84,6 +84,9 @@ class HealthSyncService {
           restingHeartRateBpm: snapshot.restingHeartRateBpm == null
               ? const Value.absent()
               : Value(snapshot.restingHeartRateBpm),
+          wakeTimeMinutes: snapshot.wakeMinutes == null
+              ? const Value.absent()
+              : Value(snapshot.wakeMinutes),
         ),
       );
 

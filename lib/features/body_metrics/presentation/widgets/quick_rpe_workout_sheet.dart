@@ -399,16 +399,18 @@ class _QuickRpeWorkoutContentState extends ConsumerState<_QuickRpeWorkoutContent
                     ? context.l10n.bodyMonedas(result.reward.coins.toString())
                     : '';
                 Navigator.of(context).pop();
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      context.l10n.bodyBloqueRegistradoKcalNetas(
-                        NumberFormats.group(result.netKcal),
-                        (coins).toString(),
+                ScaffoldMessenger.of(context)
+                  ..hideCurrentSnackBar()
+                  ..showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        context.l10n.bodyBloqueRegistradoKcalNetas(
+                          NumberFormats.group(result.netKcal),
+                          (coins).toString(),
+                        ),
                       ),
                     ),
-                  ),
-                );
+                  );
               }
             },
             icon: const Icon(AppIcons.check, size: 18),

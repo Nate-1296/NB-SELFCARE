@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../../core/database/app_database.dart';
+import '../../../../../core/domain/care_enums.dart';
 import '../../../../../core/domain/enums.dart';
 import '../../../../../core/l10n/l10n.dart';
 import '../../../../../core/platform/system_permissions.dart';
@@ -10,7 +11,10 @@ import '../../../../../shared/theme/sc_theme.dart';
 import '../../../../../shared/widgets/app_icons.dart';
 import '../../../../../shared/widgets/health_card.dart';
 import '../../../../../shared/widgets/section_head.dart';
+import '../../../../care/application/care_preferences_service.dart';
+import '../../../../care/application/care_queries.dart';
 import '../../../../today/application/movement_nudge_service.dart';
+import '../../../application/profile_queries.dart';
 import '../../../application/reminder_service.dart';
 
 String formatReminderTime(int totalMinutes) {
@@ -27,8 +31,18 @@ String reminderTitle(AppLocalizations l10n, ReminderType type) {
     ReminderType.fastingClose => l10n.settingsCierreDeVentanaAlimenticia,
     ReminderType.journal => l10n.settingsReflexionNocturnaSinPantallas,
     ReminderType.tapeMeasure => l10n.settingsControlQuincenalUsNavy,
+    ReminderType.windDown => l10n.settingsReminderWindDown,
+    ReminderType.pelvicFloor => l10n.settingsReminderPelvicFloor,
+    ReminderType.eyeRest => l10n.settingsReminderEyeRest,
   };
 }
+
+/// Recordatorios de apartados ocultos no se muestran (ni suenan).
+bool _isReminderVisible(ReminderType type, Set<CareModule> modules) => switch (type) {
+  ReminderType.pelvicFloor => modules.contains(CareModule.pelvicFloor),
+  ReminderType.eyeRest => modules.contains(CareModule.activeBreaks),
+  _ => true,
+};
 
 /// Recordatorios y pausas activas.
 class RemindersSection extends ConsumerWidget {
@@ -46,6 +60,12 @@ class RemindersSection extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final ScColors c = context.sc;
+    final Set<CareModule> modules = ref.watch(careModulesProvider);
+    final UserProfile? profile = ref.watch(userProfileStreamProvider).value;
+    final int bedtime = profile?.targetBedtimeMinutes ?? 23 * 60;
+    final List<Reminder> visible = reminders
+        .where((Reminder r) => _isReminderVisible(r.reminderType, modules))
+        .toList();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
@@ -57,8 +77,48 @@ class RemindersSection extends ConsumerWidget {
         const SizedBox(height: 8),
         HealthCard(
           margin: EdgeInsets.zero,
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+          child: Column(
+            children: <Widget>[
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: const Icon(Icons.bedtime_outlined),
+                title: Text(context.l10n.settingsBedtime),
+                subtitle: Text(context.l10n.settingsBedtimeHint),
+                trailing: TextButton(
+                  onPressed: () async {
+                    final TimeOfDay? picked = await showTimePicker(
+                      context: context,
+                      confirmText: context.l10n.commonAccept,
+                      errorInvalidText: context.l10n.commonInvalidTime,
+                      initialTime: TimeOfDay(hour: bedtime ~/ 60, minute: bedtime % 60),
+                    );
+                    if (picked != null) {
+                      await ref
+                          .read(carePreferencesServiceProvider)
+                          .setTargetBedtime(picked.hour * 60 + picked.minute);
+                    }
+                  },
+                  child: Text(formatReminderTime(bedtime)),
+                ),
+              ),
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                secondary: const Icon(Icons.visibility_off_outlined),
+                title: Text(context.l10n.settingsDiscreet),
+                subtitle: Text(context.l10n.settingsDiscreetHint),
+                value: profile?.discreetNotifications ?? true,
+                onChanged: (bool v) =>
+                    ref.read(carePreferencesServiceProvider).setDiscreetNotifications(v),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 8),
+        HealthCard(
+          margin: EdgeInsets.zero,
           padding: const EdgeInsets.all(14),
-          child: reminders.isEmpty
+          child: visible.isEmpty
               ? Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: <Widget>[
@@ -78,7 +138,7 @@ class RemindersSection extends ConsumerWidget {
                 )
               : Column(
                   children: <Widget>[
-                    for (final Reminder rem in reminders)
+                    for (final Reminder rem in visible)
                       SwitchListTile.adaptive(
                         contentPadding: EdgeInsets.zero,
                         dense: true,
@@ -122,7 +182,11 @@ class RemindersSection extends ConsumerWidget {
                         value: rem.isEnabled,
                         onChanged: (bool val) async {
                           // Un recordatorio sin permiso de notificaciones no se vería.
-                          if (val) await ref.read(systemPermissionsProvider).request(AppPermission.notifications);
+                          if (val) {
+                            await ref
+                                .read(systemPermissionsProvider)
+                                .request(AppPermission.notifications);
+                          }
                           await ref.read(reminderServiceProvider).setEnabled(rem.id, val);
                         },
                       ),
@@ -151,7 +215,11 @@ class RemindersSection extends ConsumerWidget {
             onChanged: movementStatus == MovementNudgeStatus.unsupported
                 ? null
                 : (bool enabled) async {
-                    if (enabled) await ref.read(systemPermissionsProvider).request(AppPermission.notifications);
+                    if (enabled) {
+                      await ref
+                          .read(systemPermissionsProvider)
+                          .request(AppPermission.notifications);
+                    }
                     final MovementNudgeStatus next = await ref
                         .read(movementNudgeServiceProvider)
                         .setEnabled(enabled);
@@ -167,4 +235,3 @@ class RemindersSection extends ConsumerWidget {
     );
   }
 }
-

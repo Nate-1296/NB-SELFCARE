@@ -20,6 +20,7 @@ const List<NavDestinationData> kNavDestinations = <NavDestinationData>[
   NavDestinationData(label: 'Inicio', icon: AppIcons.hoy, activeIcon: AppIcons.hoyFilled),
   NavDestinationData(label: 'Comida', icon: AppIcons.comer, activeIcon: AppIcons.comerFilled),
   NavDestinationData(label: 'Cuerpo', icon: AppIcons.cuerpo, activeIcon: AppIcons.cuerpoFilled),
+  NavDestinationData(label: 'Cuidado', icon: AppIcons.cuidado, activeIcon: AppIcons.cuidadoFilled),
   NavDestinationData(label: 'Mascota', icon: AppIcons.nibi, activeIcon: AppIcons.nibiFilled),
   NavDestinationData(label: 'Perfil', icon: AppIcons.perfil, activeIcon: AppIcons.perfilFilled),
 ];
@@ -54,8 +55,9 @@ class BottomNav extends ConsumerWidget {
       kNavDestinations[0],
       kNavDestinations[1],
       kNavDestinations[2],
+      kNavDestinations[3],
       NavDestinationData(label: petLabel, icon: AppIcons.nibi, activeIcon: AppIcons.nibiFilled),
-      kNavDestinations[4],
+      kNavDestinations[5],
     ];
 
     return Container(
@@ -68,7 +70,7 @@ class BottomNav extends ConsumerWidget {
       child: SafeArea(
         top: false,
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(6, 6, 6, 4),
+          padding: const EdgeInsets.fromLTRB(4, 6, 4, 4),
           child: Row(
             children: <Widget>[
               for (int i = 0; i < destinations.length; i++)
@@ -119,7 +121,7 @@ class _NavItem extends StatelessWidget {
               AnimatedContainer(
                 duration: duration,
                 curve: ScMotion.ease,
-                width: active ? 56 : 40,
+                width: active ? 50 : 38,
                 height: 30,
                 decoration: BoxDecoration(
                   color: active ? indicator : Colors.transparent,

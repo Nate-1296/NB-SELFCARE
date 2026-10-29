@@ -1,13 +1,13 @@
 # 01 · Producto
 
-> Qué hace NB Selfcare y por qué. El cómo está en los documentos 02–10; las decisiones, en [`11_DECISIONS.md`](11_DECISIONS.md).
+> Qué hace NB Selfcare y por qué. El cómo está en los documentos 02–10 y 12; las decisiones, en [`11_DECISIONS.md`](11_DECISIONS.md).
 
 ## 1. Visión
 
-Una sola app, solo para ti, que reúne lo que normalmente reparten varias apps de pago: registro de comida y micronutrientes, báscula inteligente, gasto calórico adaptativo, ayuno, sueño y descanso, diario y una mascota que hace agradable la constancia.
+Una sola app, solo para ti, que reúne lo que normalmente reparten varias apps de pago: registro de comida y micronutrientes, báscula inteligente, gasto calórico adaptativo, ayuno, sueño y descanso, medicamentos, suelo pélvico, pausas activas, signos vitales, síntomas, chequeos preventivos, diario y una mascota que hace agradable la constancia.
 
 - **Usuario:** una persona, el dueño del teléfono. Sin cuentas ni funciones sociales.
-- **Dispositivo de referencia:** TCL 50 Pro NXTPAPER (Android 16) + Xiaomi Mi Body Composition Scale 2 (`XMTZC05HM`).
+- **Dispositivo de referencia:** TCL 50 Pro NXTPAPER (Android 16) + Xiaomi Mi Body Composition Scale 2 (`XMTZC05HM`). Ninguno es obligatorio: la persona declara sus equipos y lo que no tiene no aparece (ADR-14).
 - **Idioma:** español; todos los textos están en `lib/core/l10n/arb/app_es.arb`.
 
 ## 2. Principios
@@ -54,6 +54,10 @@ Una sola app, solo para ti, que reúne lo que normalmente reparten varias apps d
 - Cuidados: acariciar, dar agua, merienda, jugar y **respirar** (sesión guiada de 1, 3 o 5 minutos).
 - Armario con lo que ya tiene y **tienda** de escudos y cosméticos (sombreros, accesorios, colores y escenarios). Detalle en [`08`](08_NIBI_AND_REWARDS.md).
 
+### Cuidado (`/cuidado`)
+
+Medicamentos y suplementos (tomas del día, reserva, avisos discretos con "Hecho"), hábitos propios, suelo pélvico guiado por vibración, pausas activas y descanso visual, signos vitales de los aparatos declarados, síntomas, chequeos preventivos y, si se activa, alcohol y tabaco. Cada apartado se puede ocultar. Detalle en [`12`](12_CARE.md).
+
 ### Perfil (`/perfil`)
 
 - Datos personales (la edad se calcula al vuelo), metas y **gasto diario adaptativo** (recalibrado cada 14 días), fase de dieta, ciclado de calorías, suplementos, correlaciones entre hábitos e **informe PDF**.
@@ -81,6 +85,7 @@ Protocolos 14:10, 16:8, 18:6, 20:4 y personalizado; inicio ahora o antes; anillo
 - **No es un dispositivo médico.** La bioimpedancia y las fases del ayuno son estimaciones.
 - La bienvenida pregunta por marcapasos/implantes/embarazo (la báscula mide solo peso), antecedentes de trastornos alimentarios (ritmo suave, ayunos de hasta 16 h, déficit máximo menor) y medicación que baja la glucosa (aviso antes de cada ayuno).
 - Nunca se proponen calorías por debajo del metabolismo basal; el déficit diario tiene un tope.
+- Signos vitales y chequeos son orientativos (AHA, ADA, OMS, Resolución 3280 de 2018) y remiten a consulta; el índice OMS-5 bajo muestra líneas de apoyo (192 opción 4, 106, 123) que abren el marcador sin llamar.
 
 ## 6. Alcance
 
@@ -88,7 +93,9 @@ Protocolos 14:10, 16:8, 18:6, 20:4 y personalizado; inicio ahora o antes; anillo
 | :-- | :-- |
 | SQLite local y copias exportables. | Cuentas, nube, telemetría o copias automáticas en Google. |
 | Mi Scale 2 directa + contrato `BodyScaleDriver` para otras básculas. | Drivers para decenas de marcas (entran por Health Connect). |
-| Health Connect: lee pasos, sueño y FC en reposo; escribe peso, grasa e hidratación. | SDKs privados o deprecados (Google Fit, Samsung Health, Zepp). |
+| Health Connect: lee pasos, sueño, FC en reposo y los signos vitales declarados; escribe peso, grasa, hidratación y respiración. | SDKs privados o deprecados (Google Fit, Samsung Health, Zepp). |
 | Entrenamientos por bloques (tipo + minutos + esfuerzo). | Registro serie por serie. |
 | Gamificación positiva. | Mecánicas de castigo o sociales. |
+| Tratamientos con horario, reserva y avisos discretos; rangos orientativos de signos vitales. | Diagnósticos, dosis sugeridas o interacciones entre fármacos. |
+| Suelo pélvico, pausas activas y respiración guiadas, sin audio. | Bibliotecas de meditaciones o coach de IA. |
 | Android, en español. | iOS, web y escritorio. |

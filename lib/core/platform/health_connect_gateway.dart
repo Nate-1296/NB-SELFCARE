@@ -1,6 +1,7 @@
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../domain/care_enums.dart';
 import 'native_call.dart';
 
 enum HealthConnectAvailability { available, updateRequired, notInstalled, unsupported }
@@ -14,6 +15,7 @@ class DailyActivitySnapshot {
     this.deepSleepMinutes = 0,
     this.remSleepMinutes = 0,
     this.restingHeartRateBpm,
+    this.wakeMinutes,
   });
 
   final int? steps;
@@ -21,6 +23,9 @@ class DailyActivitySnapshot {
   final int deepSleepMinutes;
   final int remSleepMinutes;
   final int? restingHeartRateBpm;
+
+  /// Hora de despertar (minutos desde medianoche) de la noche que termina ese día.
+  final int? wakeMinutes;
 
   /// Construye la instantánea descartando lo que no puede ser un dato real:
   /// pasos negativos o absurdos, más de 24 h de sueño en un día, fases de sueño
@@ -32,6 +37,7 @@ class DailyActivitySnapshot {
     int? deepSleepMinutes,
     int? remSleepMinutes,
     int? restingHeartRateBpm,
+    int? wakeMinutes,
   }) {
     final int? sleep = sleepMinutes == null || sleepMinutes < 0
         ? null
@@ -46,6 +52,9 @@ class DailyActivitySnapshot {
           restingHeartRateBpm == null || restingHeartRateBpm < 25 || restingHeartRateBpm > 220
           ? null
           : restingHeartRateBpm,
+      wakeMinutes: sleep == null || wakeMinutes == null || wakeMinutes < 0 || wakeMinutes >= 24 * 60
+          ? null
+          : wakeMinutes,
     );
   }
 
@@ -56,6 +65,46 @@ class DailyActivitySnapshot {
 }
 
 int? _finiteInt(Object? value) => value is num && value.isFinite ? value.toInt() : null;
+
+/// Lectura de un signo vital escrita en Health Connect por otra app (tensiómetro,
+/// glucómetro, oxímetro, termómetro).
+class VitalSample {
+  const VitalSample({
+    required this.externalId,
+    required this.kind,
+    required this.at,
+    required this.primary,
+    this.secondary,
+    this.context,
+  });
+
+  final String externalId;
+  final VitalKind kind;
+  final DateTime at;
+  final double primary;
+  final double? secondary;
+  final String? context;
+
+  static VitalSample? fromMap(Map<Object?, Object?> raw) {
+    final Object? id = raw['id'];
+    final Object? kind = raw['kind'];
+    final Object? time = raw['time'];
+    final Object? primary = raw['primary'];
+    if (id is! String || kind is! String || time is! num || primary is! num) return null;
+    final VitalKind? parsed = VitalKind.fromKey(kind);
+    if (parsed == null || !primary.isFinite) return null;
+    final Object? secondary = raw['secondary'];
+    final Object? context = raw['context'];
+    return VitalSample(
+      externalId: id,
+      kind: parsed,
+      at: DateTime.fromMillisecondsSinceEpoch(time.toInt()),
+      primary: primary.toDouble(),
+      secondary: secondary is num && secondary.isFinite ? secondary.toDouble() : null,
+      context: context is String ? context : null,
+    );
+  }
+}
 
 /// Puerto hacia Health Connect (docs/07). Health Connect es un almacén local del
 /// sistema: ningún dato sale del dispositivo. Todas las operaciones degradan a
@@ -81,6 +130,18 @@ abstract interface class HealthConnectGateway {
   });
 
   Future<bool> writeHydration({required int volumeMl, required DateTime at});
+
+  /// Pide la lectura de los signos vitales de los aparatos declarados.
+  Future<bool> requestVitalPermissions(Set<VitalKind> kinds);
+
+  Future<List<VitalSample>> readVitals({required Set<VitalKind> kinds, required DateTime since});
+
+  /// Guarda una sesión de respiración guiada como sesión de mindfulness.
+  Future<bool> writeMindfulness({
+    required DateTime start,
+    required DateTime end,
+    required String title,
+  });
 }
 
 class MethodChannelHealthConnectGateway implements HealthConnectGateway {
@@ -131,6 +192,7 @@ class MethodChannelHealthConnectGateway implements HealthConnectGateway {
       deepSleepMinutes: _finiteInt(raw['deepMinutes']),
       remSleepMinutes: _finiteInt(raw['remMinutes']),
       restingHeartRateBpm: _finiteInt(raw['restingHeartRate']),
+      wakeMinutes: _finiteInt(raw['wakeMinutes']),
     );
   }
 
@@ -155,6 +217,47 @@ class MethodChannelHealthConnectGateway implements HealthConnectGateway {
     return await _invoke<bool>('writeHydration', <String, Object?>{
           'amountMl': volumeMl,
           'timestampEpochMs': at.millisecondsSinceEpoch,
+        }) ??
+        false;
+  }
+
+  @override
+  Future<bool> requestVitalPermissions(Set<VitalKind> kinds) async {
+    if (kinds.isEmpty) return false;
+    return await _invoke<bool>('requestVitalPermissions', <String, Object?>{
+          'kinds': kinds.map((VitalKind k) => k.key).toList(),
+        }) ??
+        false;
+  }
+
+  @override
+  Future<List<VitalSample>> readVitals({
+    required Set<VitalKind> kinds,
+    required DateTime since,
+  }) async {
+    if (kinds.isEmpty) return const <VitalSample>[];
+    final List<Object?>? raw = await _invoke<List<Object?>>('readVitals', <String, Object?>{
+      'kinds': kinds.map((VitalKind k) => k.key).toList(),
+      'sinceEpochMs': since.millisecondsSinceEpoch,
+    });
+    if (raw == null) return const <VitalSample>[];
+    return raw
+        .whereType<Map<Object?, Object?>>()
+        .map(VitalSample.fromMap)
+        .whereType<VitalSample>()
+        .toList();
+  }
+
+  @override
+  Future<bool> writeMindfulness({
+    required DateTime start,
+    required DateTime end,
+    required String title,
+  }) async {
+    return await _invoke<bool>('writeMindfulness', <String, Object?>{
+          'startEpochMs': start.millisecondsSinceEpoch,
+          'endEpochMs': end.millisecondsSinceEpoch,
+          'title': title,
         }) ??
         false;
   }

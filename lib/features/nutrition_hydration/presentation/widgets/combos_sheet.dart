@@ -229,17 +229,19 @@ class _CombosModalSheetState extends ConsumerState<CombosModalSheet> {
                       if (context.mounted) {
                         final MealSlotMeta slot = MealSlotMeta.of(_mealType);
                         Navigator.of(context).pop();
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(
-                              context.l10n.foodComboAnadidoA(
-                                item.combo.name.toString(),
-                                _formatMultiplier(_multiplier).toString(),
-                                slot.title(context.l10n).toString(),
+                        ScaffoldMessenger.of(context)
+                          ..hideCurrentSnackBar()
+                          ..showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                context.l10n.foodComboAnadidoA(
+                                  item.combo.name.toString(),
+                                  _formatMultiplier(_multiplier).toString(),
+                                  slot.title(context.l10n).toString(),
+                                ),
                               ),
                             ),
-                          ),
-                        );
+                          );
                       }
                     },
                   ),

@@ -29,6 +29,9 @@ data class ReminderSpec(
     /** Si existe, se repite cada N minutos hasta [windowEndMinutes] (hidratación). */
     val intervalMinutes: Int?,
     val windowEndMinutes: Int,
+    /** Acción de la notificación ("Hecho"): se guarda y la app la aplica al abrirse. */
+    val actionKey: String? = null,
+    val actionLabel: String? = null,
 ) {
     fun toJson(): JSONObject = JSONObject()
         .put("id", id)
@@ -38,6 +41,8 @@ data class ReminderSpec(
         .put("daysMask", daysMask)
         .put("intervalMinutes", intervalMinutes ?: JSONObject.NULL)
         .put("windowEndMinutes", windowEndMinutes)
+        .put("actionKey", actionKey ?: JSONObject.NULL)
+        .put("actionLabel", actionLabel ?: JSONObject.NULL)
 
     companion object {
         fun fromJson(json: JSONObject) = ReminderSpec(
@@ -48,6 +53,8 @@ data class ReminderSpec(
             daysMask = json.getInt("daysMask"),
             intervalMinutes = if (json.isNull("intervalMinutes")) null else json.getInt("intervalMinutes"),
             windowEndMinutes = json.optInt("windowEndMinutes", 21 * 60),
+            actionKey = if (json.isNull("actionKey")) null else json.optString("actionKey", null),
+            actionLabel = if (json.isNull("actionLabel")) null else json.optString("actionLabel", null),
         )
 
         fun fromMap(map: Map<*, *>) = ReminderSpec(
@@ -58,6 +65,8 @@ data class ReminderSpec(
             daysMask = (map["daysMask"] as Number).toInt(),
             intervalMinutes = (map["intervalMinutes"] as Number?)?.toInt(),
             windowEndMinutes = (map["windowEndMinutes"] as Number?)?.toInt() ?: (21 * 60),
+            actionKey = map["actionKey"] as String?,
+            actionLabel = map["actionLabel"] as String?,
         )
     }
 
@@ -150,17 +159,64 @@ class ReminderReceiver : BroadcastReceiver() {
             PackageManager.PERMISSION_GRANTED
         if (canNotify) {
             NotificationChannels.ensure(context)
-            val notification = NotificationCompat.Builder(context, NotificationChannels.REMINDERS)
+            val builder = NotificationCompat.Builder(context, NotificationChannels.REMINDERS)
                 .setSmallIcon(R.drawable.ic_stat_reminder)
                 .setContentTitle(spec.title)
                 .setContentText(spec.body)
                 .setStyle(NotificationCompat.BigTextStyle().bigText(spec.body))
                 .setAutoCancel(true)
                 .setCategory(NotificationCompat.CATEGORY_REMINDER)
+                // En la pantalla de bloqueo solo se ve que hay un recordatorio.
+                .setVisibility(NotificationCompat.VISIBILITY_PRIVATE)
                 .setContentIntent(NotificationChannels.openAppIntent(context, 7000 + id))
-                .build()
-            NotificationManagerCompat.from(context).notify(7000 + id, notification)
+            if (spec.actionKey != null && spec.actionLabel != null) {
+                builder.addAction(0, spec.actionLabel, ReminderActionReceiver.intent(context, spec.id, spec.actionKey))
+            }
+            NotificationManagerCompat.from(context).notify(7000 + id, builder.build())
         }
         scheduler.scheduleNext(spec)
+    }
+}
+
+/**
+ * Acción "Hecho" desde la notificación: no abre la app. Guarda la acción con su
+ * hora y la app la aplica en cuanto se abre o vuelve al primer plano.
+ */
+class ReminderActionReceiver : BroadcastReceiver() {
+    companion object {
+        private const val PREFS = "nb_reminder_actions"
+        private const val KEY_PENDING = "pending"
+        private const val EXTRA_KEY = "action_key"
+
+        fun intent(context: Context, reminderId: Int, actionKey: String): PendingIntent = PendingIntent.getBroadcast(
+            context,
+            8000 + reminderId,
+            Intent(context, ReminderActionReceiver::class.java)
+                .putExtra(ReminderScheduler.EXTRA_ID, reminderId)
+                .putExtra(EXTRA_KEY, actionKey),
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+        )
+
+        /** Devuelve y borra las acciones pendientes. */
+        fun consume(context: Context): List<Map<String, Any>> {
+            val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+            val raw = prefs.getString(KEY_PENDING, null) ?: return emptyList()
+            prefs.edit().remove(KEY_PENDING).apply()
+            val array = JSONArray(raw)
+            return (0 until array.length()).map {
+                val item = array.getJSONObject(it)
+                mapOf("key" to item.getString("key"), "at" to item.getLong("at"))
+            }
+        }
+    }
+
+    override fun onReceive(context: Context, intent: Intent) {
+        val key = intent.getStringExtra(EXTRA_KEY) ?: return
+        val id = intent.getIntExtra(ReminderScheduler.EXTRA_ID, -1)
+        val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+        val array = JSONArray(prefs.getString(KEY_PENDING, null) ?: "[]")
+        array.put(JSONObject().put("key", key).put("at", System.currentTimeMillis()))
+        prefs.edit().putString(KEY_PENDING, array.toString()).apply()
+        NotificationManagerCompat.from(context).cancel(7000 + id)
     }
 }

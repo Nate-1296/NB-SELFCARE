@@ -11,7 +11,7 @@ Un único archivo SQLite (`nb_selfcare.sqlite`) gestionado con Drift. Es la fuen
 - **"Sin dato" ≠ 0**: los micronutrientes desconocidos son `NULL` y la UI muestra la cobertura (ADR-02).
 - Snake case en SQL (`case_from_dart_to_sql: snake_case`). Claves foráneas activas (`PRAGMA foreign_keys = ON`) y WAL.
 
-## 2. Tablas (esquema v6)
+## 2. Tablas (esquema v7)
 
 | Área | Tabla | Contenido |
 | :-- | :-- | :-- |
@@ -38,12 +38,19 @@ Un único archivo SQLite (`nb_selfcare.sqlite`) gestionado con Drift. Es la fuen
 | Nibi | `pet_status` | Nombre, monedas, racha, escudos, objetos desbloqueados y lo que lleva puesto (sombrero, accesorio, color, escenario). |
 | | `coin_ledger` | Libro mayor de monedas; índice único `(date_key, action_type)` salvo compras → cada recompensa, una vez al día. |
 | Plan | `protocol_plans` | Protocolo semanal (días de ayuno y entreno, estilo de comida). |
+| Cuidado | `care_sessions` | Sesiones guiadas completas: suelo pélvico (con su nivel), pausas activas y descanso visual, respiración. |
+| | `custom_habits`, `habit_logs` | Hábitos propios (nombre, icono, días) y su marca diaria (única por hábito y día). |
+| | `checkups`, `checkup_logs` | Chequeos preventivos (catálogo o propios, intervalo en meses) y cuándo se hizo cada uno. |
+| | `symptom_logs` | Síntomas con intensidad 1–5 y nota. |
+| | `vital_readings` | Tensión, glucosa, oxígeno y temperatura, a mano o de Health Connect (`external_id` único: sin duplicados). |
+| | `substance_logs` | Alcohol (bebidas estándar y kcal, enlazado a su registro en Comida) y tabaco. |
+| | `wellbeing_checks` | Índice OMS-5 (respuestas y puntuación 0–100). |
 
 El índice `food_items_fts` (FTS5, `unicode61 remove_diacritics 2`) se mantiene con tres *triggers* y permite buscar "platano" y encontrar "plátano".
 
 ## 3. Migraciones
 
-`schemaVersion = 6`. Cada versión tiene su volcado en `drift_schemas/` y una migración paso a paso (`app_database.steps.dart`, generado con `dart run drift_dev make-migrations`):
+`schemaVersion = 7`. Cada versión tiene su volcado en `drift_schemas/` y una migración paso a paso (`app_database.steps.dart`, generado con `dart run drift_dev make-migrations`):
 
 | Versión | Cambio |
 | :-: | :-- |
@@ -52,6 +59,7 @@ El índice `food_items_fts` (FTS5, `unicode61 remove_diacritics 2`) se mantiene 
 | 3 → 4 | Inicio de la fase de dieta y banderas de seguridad del perfil. |
 | 4 → 5 | `equipped_accessory_id` y `equipped_color_id` en `pet_status`. |
 | 5 → 6 | `progress_photo` (BLOB) en `journal_entries`: las fotos del diario entran en la copia de seguridad. |
+| 6 → 7 | Equipos declarados (pantalla de papel, báscula, aparatos de signos vitales), módulos de Cuidado, avisos discretos y hora de dormir en el perfil; hora de despertar en `daily_summaries`; los suplementos pasan a tratamientos (tipo, varias horas, días, reserva, avisos, "baja la glucosa"); `slot_minutes` en las tomas; nueve tablas de Cuidado. Quien ya usaba la app conserva báscula y modos de papel. |
 
 `test/drift/app_database/migration_test.dart` migra cada versión a todas las posteriores y comprueba que los datos sobreviven.
 

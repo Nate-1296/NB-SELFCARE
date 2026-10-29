@@ -149,6 +149,49 @@ Future<void> _populateEveryTable(AppDatabase db) async {
         MilestoneGoalsCompanion.insert(milestoneOrder: 1, targetWeightKg: 62.5),
       );
   await db.writeUiPreference('hoy_layout', '["rings"]');
+  final DateTime at = DateTime(2026, 10, 1, 9);
+  await db.into(db.careSessions).insert(
+        CareSessionsCompanion.insert(
+          dateKey: '2026-10-01',
+          completedAt: at,
+          kind: 'pelvic_floor',
+          variant: 'level_1',
+          durationSeconds: 120,
+        ),
+      );
+  final int habitId = await db.into(db.customHabits).insert(
+        CustomHabitsCompanion.insert(name: 'Hilo dental', createdAt: at),
+      );
+  await db.into(db.habitLogs).insert(
+        HabitLogsCompanion.insert(habitId: habitId, dateKey: '2026-10-01', loggedAt: at),
+      );
+  final int checkupId = await db.into(db.checkups).insert(
+        CheckupsCompanion.insert(catalogKey: 'dental', intervalMonths: 12),
+      );
+  await db.into(db.checkupLogs).insert(CheckupLogsCompanion.insert(checkupId: checkupId, doneAt: at));
+  await db.into(db.symptomLogs).insert(
+        SymptomLogsCompanion.insert(dateKey: '2026-10-01', loggedAt: at, symptom: 'headache', intensity: 2),
+      );
+  await db.into(db.vitalReadings).insert(
+        VitalReadingsCompanion.insert(
+          kind: 'blood_pressure',
+          measuredAt: at,
+          dateKey: '2026-10-01',
+          primaryValue: 120,
+          secondaryValue: const Value(80),
+        ),
+      );
+  await db.into(db.substanceLogs).insert(
+        SubstanceLogsCompanion.insert(dateKey: '2026-10-01', loggedAt: at, kind: 'alcohol', presetKey: 'wine'),
+      );
+  await db.into(db.wellbeingChecks).insert(
+        WellbeingChecksCompanion.insert(
+          dateKey: '2026-10-01',
+          createdAt: at,
+          answersJson: '[3,3,3,3,3]',
+          percentScore: 60,
+        ),
+      );
 }
 
 Future<Map<String, int>> _rowCounts(AppDatabase db) async {

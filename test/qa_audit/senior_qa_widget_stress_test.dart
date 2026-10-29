@@ -41,10 +41,7 @@ void main() {
     await db.close();
   });
 
-  Widget buildTestWidget({
-    required Size screenSize,
-    String themeKey = 'azul_oceano',
-  }) {
+  Widget buildTestWidget({required Size screenSize, String themeKey = 'azul_oceano'}) {
     final ThemeData themeData = ScTheme.build(themeKey);
 
     return ProviderScope(
@@ -78,6 +75,13 @@ void main() {
               hasImpedanceContraindication: false,
               hasEatingDisorderHistory: false,
               takesHypoglycemicMedication: false,
+              hasEinkScreen: false,
+              hasSmartScale: true,
+              vitalDevicesJson: '[]',
+              careModulesJson:
+                  '["treatments","pelvic_floor","active_breaks","symptoms","checkups","habits"]',
+              discreetNotifications: true,
+              targetBedtimeMinutes: 1380,
               createdAt: DateTime.now(),
             ),
           ),
@@ -90,53 +94,56 @@ void main() {
         theme: themeData,
         home: MediaQuery(
           data: MediaQueryData(size: screenSize),
-          child: const Scaffold(
-            body: PerfilYoScreen(),
-          ),
+          child: const Scaffold(body: PerfilYoScreen()),
         ),
       ),
     );
   }
 
   group('Senior QA Widget Stress & Viewport Tests', () {
-    testWidgets('Narrow Viewport (320px width) renders PerfilYoScreen without RenderFlex overflow', (WidgetTester tester) async {
-      tester.view.physicalSize = const Size(320 * 2.0, 700 * 2.0);
-      tester.view.devicePixelRatio = 2.0;
-      addTearDown(() => tester.view.resetPhysicalSize());
+    testWidgets(
+      'Narrow Viewport (320px width) renders PerfilYoScreen without RenderFlex overflow',
+      (WidgetTester tester) async {
+        tester.view.physicalSize = const Size(320 * 2.0, 700 * 2.0);
+        tester.view.devicePixelRatio = 2.0;
+        addTearDown(() => tester.view.resetPhysicalSize());
 
-      await tester.pumpWidget(buildTestWidget(screenSize: const Size(320, 700)));
-      await tester.pumpAndSettle();
+        await tester.pumpWidget(buildTestWidget(screenSize: const Size(320, 700)));
+        await tester.pumpAndSettle();
 
-      expect(find.text('Nathan QA'), findsOneWidget);
+        expect(find.text('Nathan QA'), findsOneWidget);
 
-      final Finder titleFinder = find.text('Tus patrones');
-      await tester.scrollUntilVisible(titleFinder, 150.0);
-      await tester.pumpAndSettle();
+        final Finder titleFinder = find.text('Tus patrones');
+        await tester.scrollUntilVisible(titleFinder, 150.0);
+        await tester.pumpAndSettle();
 
-      expect(titleFinder, findsOneWidget);
-      expect(tester.takeException(), isNull);
-      await unmountAndFlush(tester);
-    });
+        expect(titleFinder, findsOneWidget);
+        expect(tester.takeException(), isNull);
+        await unmountAndFlush(tester);
+      },
+    );
 
-    testWidgets('NXTPAPER High-Contrast E-Ink theme renders cleanly with zero elevation and flat borders', (WidgetTester tester) async {
-      tester.view.physicalSize = const Size(390 * 2.0, 844 * 2.0);
-      tester.view.devicePixelRatio = 2.0;
-      addTearDown(() => tester.view.resetPhysicalSize());
+    testWidgets(
+      'NXTPAPER High-Contrast E-Ink theme renders cleanly with zero elevation and flat borders',
+      (WidgetTester tester) async {
+        tester.view.physicalSize = const Size(390 * 2.0, 844 * 2.0);
+        tester.view.devicePixelRatio = 2.0;
+        addTearDown(() => tester.view.resetPhysicalSize());
 
-      await tester.pumpWidget(
-        buildTestWidget(
-          screenSize: const Size(390, 844),
-          themeKey: 'nxtpaper_pure',
-        ),
-      );
-      await tester.pumpAndSettle();
+        await tester.pumpWidget(
+          buildTestWidget(screenSize: const Size(390, 844), themeKey: 'nxtpaper_pure'),
+        );
+        await tester.pumpAndSettle();
 
-      expect(find.text('Nathan QA'), findsOneWidget);
-      expect(tester.takeException(), isNull);
-      await unmountAndFlush(tester);
-    });
+        expect(find.text('Nathan QA'), findsOneWidget);
+        expect(tester.takeException(), isNull);
+        await unmountAndFlush(tester);
+      },
+    );
 
-    testWidgets('Interactive Pearson Correlation Refresh button triggers recomputation smoothly', (WidgetTester tester) async {
+    testWidgets('Interactive Pearson Correlation Refresh button triggers recomputation smoothly', (
+      WidgetTester tester,
+    ) async {
       tester.view.physicalSize = const Size(390 * 2.0, 844 * 2.0);
       tester.view.devicePixelRatio = 2.0;
       addTearDown(() => tester.view.resetPhysicalSize());
